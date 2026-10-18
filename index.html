@@ -472,7 +472,7 @@
     }
 
     function extrairDataRegistro(item) {
-      var dStr = buscarCampoFlexivel(item, ['inicio', 'data', 'dataHora', 'Data', 'timestamp', 'criadoEm']);
+      var dStr = buscarCampoFlexivel(item, ['data', 'inicio', 'dataHora', 'Data', 'timestamp', 'criadoEm']);
       if (!dStr) return null;
       return String(dStr).substring(0, 10);
     }
@@ -510,25 +510,6 @@
       abrirModal('modal-add-extra');
     }
 
-    function editarDespesaNuvem(index) {
-      var item = AppEstado.extras[index];
-      if (!item) return;
-      document.getElementById('modal-extra-titulo').textContent = 'Editar Despesa Extra';
-      document.getElementById('input-extra-index').value = index;
-      document.getElementById('input-extra-data').value = item.data || '';
-      document.getElementById('input-extra-desc').value = item.descricao || item.desc || '';
-      document.getElementById('input-extra-carro').value = item.carro || item.veiculo || '';
-      document.getElementById('input-extra-valor').value = item.valor || item.custo || 0;
-      abrirModal('modal-add-extra');
-    }
-
-    function excluirDespesaNuvem(index) {
-      if (confirm('Deseja realmente excluir esta despesa da nuvem?')) {
-        AppEstado.extras.splice(index, 1);
-        persistirEstadoNuvem();
-      }
-    }
-
     function salvarDespesaExtraNuvem() {
       var index = parseInt(document.getElementById('input-extra-index').value);
       var data = document.getElementById('input-extra-data').value;
@@ -555,6 +536,17 @@
       persistirEstadoNuvem();
     }
 
+    function salvarConfigNuvem() {
+      AppEstado.config.refModelo = document.getElementById('input-modelo-ref').value;
+      AppEstado.config.refConsumo = parseFloat(document.getElementById('input-consumo-ref').value) || 15.3;
+      AppEstado.config.gasolina = parseFloat(document.getElementById('input-gasolina').value) || 6.96;
+      AppEstado.config.tarifaKwh = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
+
+      fecharModal('modal-referencia');
+      fecharModal('modal-parametros');
+      persistirEstadoNuvem();
+    }
+
     function iniciarFirebaseAutomatico() {
       try {
         if (!firebase.apps.length) {
@@ -578,7 +570,7 @@
           }
 
           var dados = doc.data();
-          AppEstado.viagens = dados.viagens || dados.viagensList || [];
+          AppEstado.viagens = dados.viagens || dados.viagensList || dados.itens || [];
           AppEstado.recargas = dados.recargas || dados.recargasList || [];
           AppEstado.extras = dados.extras || [];
           
@@ -605,7 +597,7 @@
 
     function persistirEstadoNuvem() {
       if (!dbFirestore) {
-        alert('Banco de dados offline. As alterações não puderam ser salvas na nuvem.');
+        alert('Banco de dados offline.');
         renderizarPainelCompleto();
         return;
       }
@@ -644,8 +636,8 @@
             mesesMap[mesAno] = { km: 0, kwhCost: 0, refCost: 0 };
           }
 
-          var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
-          var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
+          var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance', 'KM', 'Distancia']) || 0);
+          var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh', 'KWH', 'kWh']) || 0);
           var custoRecargaViagem = kwh * AppEstado.config.tarifaKwh;
 
           mesesMap[mesAno].km += dist;
@@ -712,15 +704,15 @@
       var locaisMap = {};
 
       viagensFiltradas.forEach(function(v) {
-        var dist = parsePtBr(v.distancia || v.km || 0);
-        var kwh = parsePtBr(v.energia || v.kwh || 0);
+        var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance', 'KM', 'Distancia']) || 0);
+        var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh', 'KWH', 'kWh']) || 0);
         var custo = kwh * AppEstado.config.tarifaKwh;
 
         distanciaTotal += dist;
         kwhTotal += kwh;
         custoRecargasTotal += custo;
 
-        var carro = buscarCampoFlexivel(v, ['carro', 'veiculo', 'nomeCarro']) || 'MINI';
+        var carro = buscarCampoFlexivel(v, ['carro', 'veiculo', 'nomeCarro', 'modelo']) || 'MINI';
         if (carro.toUpperCase().indexOf('YUAN') > -1) {
           yuanKm += dist;
           yuanViagens++;
@@ -736,7 +728,7 @@
         if (origem) locaisMap[origem] = (locaisMap[origem] || 0) + 1;
         if (destino) locaisMap[destino] = (locaisMap[destino] || 0) + 1;
 
-        var inicio = buscarCampoFlexivel(v, ['inicio', 'dataHora', 'data']) || '—';
+        var inicio = buscarCampoFlexivel(v, ['inicio', 'dataHora', 'data', 'Data']) || '—';
         var coords = buscarCampoFlexivel(v, ['trajeto', 'coordenadas', 'gps']) || (origem + ' → ' + destino);
 
         listaViagensHtml += `<tr class="hover:bg-[#0F1A36]/50 transition">
@@ -823,8 +815,8 @@
 
       var labelsConsumo = viagens.map(function(v) { return (extrairDataRegistro(v) || '').substring(5); });
       var dataConsumo = viagens.map(function(v) {
-        var d = parsePtBr(v.distancia || 0);
-        var k = parsePtBr(v.energia || 0);
+        var d = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
+        var k = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh']) || 0);
         return d > 0 ? (k / (d / 100)) : 0;
       });
 
