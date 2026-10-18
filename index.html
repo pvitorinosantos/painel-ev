@@ -56,7 +56,6 @@
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <!-- BOTÃO DE IMPORTAÇÃO DIRETA DO CARLLOG -->
         <label class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs cursor-pointer transition shadow-md flex items-center gap-1">
           📁 Importar Carllog
           <input type="file" id="input-arquivo-carllog" accept=".json,.csv,.txt" onchange="processarArquivoCarllog(event)" class="hidden">
@@ -308,7 +307,10 @@
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
       <div class="p-3 border-b border-[#142347] flex items-center justify-between">
         <span class="text-xs font-bold text-white">Viagens Sincronizadas da Nuvem</span>
-        <span id="txt-status-nuvem" class="text-[10px] text-cyan-400 font-mono">Conectando...</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="limparDadosNuvem()" class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold text-[10px] hover:bg-rose-500/30 transition">🗑️ Limpar Viagens (Resetar)</button>
+          <span id="txt-status-nuvem" class="text-[10px] text-cyan-400 font-mono">Conectando...</span>
+        </div>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
@@ -496,7 +498,7 @@
       return true;
     }
 
-    // ================= PARSER DEFINITIVO POR ESTRUTURA POSICIONAL TABULADA =================
+    // ================= PARSER CORrigido PARA OS ÍNDICES REAIS DO CARLLOG =================
     function processarArquivoCarllog(event) {
       var arquivo = event.target.files[0];
       if (!arquivo) return;
@@ -521,7 +523,6 @@
             if (cols.length < 3) continue;
 
             if (ehRecarga) {
-              // Recargas estruturadas por índice seguro
               var carro = cols[0] || 'MINI';
               var inicio = cols[2] || '';
               var local = cols[5] || 'Casa';
@@ -540,16 +541,23 @@
                 });
               }
             } else {
-              // Viagens estruturadas por índice seguro
+              // Índices exatos mapeados do seu arquivo de Viagens:
+              // 0: Carro, 1: VIN, 2: Início, 3: Fim, 4: Duração, 5: Distância, 6: Odômetro ini, 7: Odômetro fim
+              // 8: Bat ini, 9: Bat fim, 10: Energia usada, 17: Saída, 18: Lat Saída, 19: Lon Saída
+              // 20: Chegada, 21: Lat Chegada, 22: Lon Chegada, 26/27: Custo
               var carro = cols[0] || 'MINI';
               var inicio = cols[2] || '';
               var distancia = parsePtBr(cols[5]);
               var energiaUsada = parsePtBr(cols[10]);
               var saida = cols[17] || 'Origem';
+              var latSaida = cols[18] || '';
+              var lonSaida = cols[19] || '';
               var chegada = cols[20] || 'Destino';
+              var latChegada = cols[21] || '';
+              var lonChegada = cols[22] || '';
               var custoTotal = parsePtBr(cols[26] || cols[27] || 0);
 
-              if (inicio && distancia >= 0) {
+              if (inicio) {
                 novosItens.push({
                   carro: carro,
                   inicio: inicio,
@@ -559,6 +567,10 @@
                   custo: custoTotal,
                   origem: saida,
                   destino: chegada,
+                  latSaida: latSaida,
+                  lonSaida: lonSaida,
+                  latChegada: latChegada,
+                  lonChegada: lonChegada,
                   trajeto: saida + ' → ' + chegada
                 });
               }
@@ -571,13 +583,13 @@
               AppEstado.recargas = AppEstado.recargas.concat(novosItens);
               alert('Sucesso absoluto! ' + novosItens.length + ' recarga(s) lida(s) e enviadas ao Firebase.');
             } else {
-              if (!AppEstado.viagens) AppEstado.viagens = [];
-              AppEstado.viagens = AppEstado.viagens.concat(novosItens);
+              // Substitui as viagens para evitar duplicidade ao reimportar o arquivo completo
+              AppEstado.viagens = novosItens;
               alert('Sucesso absoluto! ' + novosItens.length + ' viagem(ns) lida(s) e enviadas ao Firebase.');
             }
             persistirEstadoNuvem();
           } else {
-            alert('Nenhum registro válido detectado. Verifique se o arquivo é um export tabulado padrão do Carllog.');
+            alert('Nenhum registro válido detectado.');
           }
 
         } catch (err) {
@@ -586,6 +598,13 @@
         event.target.value = '';
       };
       leitor.readAsText(arquivo);
+    }
+
+    function limparDadosNuvem() {
+      if (confirm('Deseja realmente limpar todas as viagens sincronizadas para reimportar limpo?')) {
+        AppEstado.viagens = [];
+        persistirEstadoNuvem();
+      }
     }
 
     function abrirModalAddExtra() {
@@ -714,7 +733,7 @@
           mesesMap[mesAno] = { km: 0, kwhCost: 0, refCost: 0 };
         }
 
-        var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
+        var dist = parsePtBr(v.distancia !== undefined ? v.distancia : buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
         var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
         var custoRecargaViagem = v.custo !== undefined && v.custo > 0 ? v.custo : (kwh * AppEstado.config.tarifaKwh);
 
@@ -778,7 +797,7 @@
       var locaisMap = {};
 
       viagensFiltradas.forEach(function(v) {
-        var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
+        var dist = parsePtBr(v.distancia !== undefined ? v.distancia : buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
         var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
         var custo = v.custo !== undefined && v.custo > 0 ? v.custo : (kwh * AppEstado.config.tarifaKwh);
 
@@ -793,19 +812,30 @@
           dolphinKm += dist; dolphinViagens++; dolphinRecargas += custo;
         }
 
-        var origem = buscarCampoFlexivel(v, ['origem', 'de', 'start', 'saida']) || '';
-        var destino = buscarCampoFlexivel(v, ['destino', 'para', 'end', 'chegada']) || '';
-        if (origem) locaisMap[origem] = (locaisMap[origem] || 0) + 1;
-        if (destino) locaisMap[destino] = (locaisMap[destino] || 0) + 1;
+        var origem = v.origem || buscarCampoFlexivel(v, ['origem', 'de', 'start', 'saida']) || 'Origem';
+        var destino = v.destino || buscarCampoFlexivel(v, ['destino', 'para', 'end', 'chegada']) || 'Destino';
+        
+        if (origem && origem !== 'Origem') locaisMap[origem] = (locaisMap[origem] || 0) + 1;
+        if (destino && destino !== 'Destino') locaisMap[destino] = (locaisMap[destino] || 0) + 1;
 
         var inicio = buscarCampoFlexivel(v, ['inicio', 'dataHora', 'data']) || '—';
-        var coords = buscarCampoFlexivel(v, ['trajeto', 'coordenadas', 'gps']) || (origem + ' → ' + destino);
+        
+        // Reconstrói o link do mapa se houver coordenadas
+        var lat = v.latChegada || v.latSaida;
+        var lon = v.lonChegada || v.lonSaida;
+        var trajetoHtml = '';
+        if (lat && lon) {
+          var urlMapa = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+          trajetoHtml = `<a href="${urlMapa}" target="_blank" class="text-cyan-400 hover:underline flex items-center gap-1">📍 ${origem} → ${destino}</a>`;
+        } else {
+          trajetoHtml = `<span>${origem} → ${destino}</span>`;
+        }
 
         listaViagensHtml += `<tr class="hover:bg-[#0F1A36]/50 transition">
           <td class="p-2 font-bold text-cyan-400">${carro.toUpperCase().indexOf('YUAN') > -1 ? 'YUAN' : 'MINI'}<br><span class="text-[9px] text-slate-400 font-normal">${inicio}</span></td>
           <td class="p-2 text-right">${fmtNum(dist, 1)} km</td>
           <td class="p-2 text-right text-emerald-400">${fmtNum(kwh, 2)} kWh</td>
-          <td class="p-2 text-slate-300">${coords}</td>
+          <td class="p-2 text-slate-300">${trajetoHtml}</td>
         </tr>`;
       });
 
@@ -856,8 +886,9 @@
 
       var locaisHtml = '';
       locaisOrdenados.forEach(function(loc, idx) {
+        var urlMapaLocal = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.nome)}`;
         locaisHtml += `<tr class="hover:bg-[#0F1A36]/50 transition">
-          <td class="p-2 text-white"><strong>${idx + 1}º</strong> ${loc.nome}</td>
+          <td class="p-2 text-white"><strong>${idx + 1}º</strong> <a href="${urlMapaLocal}" target="_blank" class="text-cyan-400 hover:underline">${loc.nome} 📍</a></td>
           <td class="p-2 text-right text-cyan-400 font-bold">${loc.count} visitas</td>
         </tr>`;
       });
@@ -874,9 +905,16 @@
       var ctxConsumo = document.getElementById('chartConsumo').getContext('2d');
       if (chartConsumoInstancia) chartConsumoInstancia.destroy();
 
-      var labelsConsumo = viagens.map(function(v) { return (extrairDataRegistro(v) || '').substring(5); });
-      var dataConsumo = viagens.map(function(v) {
-        var d = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
+      // Ordena as viagens cronologicamente para o gráfico de linha não ficar invertido ou duplicado
+      var viagensOrdenadas = viagens.slice().sort(function(a, b) {
+        var da = extrairDataRegistro(a) || '';
+        var db = extrairDataRegistro(b) || '';
+        return da.localeCompare(db);
+      });
+
+      var labelsConsumo = viagensOrdenadas.map(function(v) { return (extrairDataRegistro(v) || '').substring(5); });
+      var dataConsumo = viagensOrdenadas.map(function(v) {
+        var d = parsePtBr(v.distancia !== undefined ? v.distancia : buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
         var k = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh']) || 0);
         return d > 0 ? (k / (d / 100)) : 0;
       });
