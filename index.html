@@ -10,8 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   
-  <!-- Chart.js -->
+  <!-- Chart.js & Chart.js Plugin DataLabels -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
   <!-- Firebase SDK Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -56,8 +57,11 @@
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] transition">
-          ⚙️ Parâmetros Térmicos
+        <button type="button" onclick="abrirModal('modal-referencia')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-amber-400 font-semibold text-xs border border-[#142347] transition">
+          🚗 Veículo Combustível Ref.
+        </button>
+        <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#142347] transition">
+          ⚙️ Tarifas
         </button>
       </div>
     </div>
@@ -194,16 +198,16 @@
       <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
         <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
           <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🚗 Veículo a Combustão de Referência</h3>
-          <span class="text-[10px] px-2 py-0.5 bg-[#0F1A36] text-amber-400 rounded-full font-mono border border-[#1F3463]">Parâmetro Ativo</span>
+          <button onclick="abrirModal('modal-referencia')" class="text-[10px] text-cyan-400 hover:underline">Alterar Modelo</button>
         </div>
         <div class="grid grid-cols-2 gap-3 text-xs">
           <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
             <span class="text-[10px] text-slate-400 block">Modelo Base de Comparação:</span>
-            <strong class="text-white font-mono">Renault Kwid / Hatch 1.0</strong>
+            <strong id="ref-modelo-txt" class="text-white font-mono">Renault Kwid / Hatch 1.0</strong>
           </div>
           <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
             <span class="text-[10px] text-slate-400 block">Consumo Médio Referência:</span>
-            <strong class="text-white font-mono">15.3 km/L</strong>
+            <strong id="ref-consumo-txt" class="text-white font-mono">15.3 km/L</strong>
           </div>
           <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
             <span class="text-[10px] text-slate-400 block">Preço Gasolina Atual:</span>
@@ -242,235 +246,22 @@
 
   </main>
 
-  <!-- ================= MODAL PARÂMETROS ================= -->
-  <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+  <!-- ================= MODAL VEÍCULO REFERÊNCIA ================= -->
+  <div id="modal-referencia" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
     <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
       <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
-        <h3 class="text-sm font-bold text-white">Parâmetros Térmicos & Tarifas</h3>
-        <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400 hover:text-white text-base">✕</button>
+        <h3 class="text-sm font-bold text-white">Cadastrar Veículo de Referência (Térmico)</h3>
+        <button type="button" onclick="fecharModal('modal-referencia')" class="text-slate-400 hover:text-white text-base">✕</button>
       </div>
       <div class="space-y-3 text-xs">
         <div>
-          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Preço Gasolina (R$/L):</label>
-          <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Nome / Modelo do Veículo:</label>
+          <input type="text" id="input-modelo-ref" value="Renault Kwid / Hatch 1.0" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
         </div>
         <div>
-          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Tarifa Padrão kWh (R$):</label>
-          <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Consumo Médio (km/L):</label>
+          <input type="number" id="input-consumo-ref" value="15.3" step="0.1" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
-        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-parametros')">Cancelar</button>
-        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarParametros()">Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    var AppEstado = { viagens: [], recargas: [], extras: [], config: { gasolina: 6.96, tarifaKwh: 0.85 } };
-    var chartConsumoInstancia = null;
-    var chartGastosInstancia = null;
-
-    function fmtNum(n, d) {
-      if (n === null || n === undefined || isNaN(n)) return '—';
-      return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
-    }
-
-    function parsePtBr(v) {
-      if (!v && v !== 0) return 0;
-      if (typeof v === 'number') return isNaN(v) ? 0 : v;
-      var s = String(v).replace(/[R$\s]/g, '');
-      if (s.indexOf(',') > -1 && s.indexOf('.') > -1) s = s.replace(/\./g, '').replace(',', '.');
-      else if (s.indexOf(',') > -1) s = s.replace(',', '.');
-      var p = parseFloat(s);
-      return isNaN(p) ? 0 : p;
-    }
-
-    window.onload = function() {
-      iniciarFirebaseAutomatico();
-    };
-
-    function iniciarFirebaseAutomatico() {
-      try {
-        if (!firebase.apps.length) {
-          firebase.initializeApp({
-            apiKey: "AIzaSyBssVxU2b2mM7m7nOahzvx35LRcV22si40",
-            projectId: "frota-byd-ev"
-          });
-        }
-
-        var db = firebase.firestore();
-        db.collection('frota_ev').doc('estado_global').get().then(function(doc) {
-          if (!doc.exists) {
-            console.warn("Documento estado_global não encontrado no Firestore.");
-            document.getElementById('txt-status-nuvem').textContent = 'Documento estado_global não encontrado.';
-            return;
-          }
-
-          var dados = doc.data();
-          console.log("Dados brutos recebidos do Firestore:", dados);
-
-          AppEstado.viagens = dados.viagens || dados.viagensList || [];
-          AppEstado.recargas = dados.recargas || dados.recargasList || [];
-          AppEstado.extras = dados.extras || dados.extrasList || [];
-
-          document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
-          renderizarPainelCompleto();
-
-        }).catch(function(err) {
-          console.error("Erro ao ler Firestore:", err);
-          document.getElementById('txt-status-nuvem').textContent = 'Erro ao conectar nuvem';
-        });
-
-      } catch (e) {
-        console.error("Erro ao inicializar Firebase:", e);
-        document.getElementById('txt-status-nuvem').textContent = 'Erro de inicialização';
-      }
-    }
-
-    function salvarParametros() {
-      var gas = parseFloat(document.getElementById('input-gasolina').value) || 6.96;
-      var tar = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
-      AppEstado.config.gasolina = gas;
-      AppEstado.config.tarifaKwh = tar;
-      fecharModal('modal-parametros');
-      renderizarPainelCompleto();
-    }
-
-    function renderizarPainelCompleto() {
-      var viagens = AppEstado.viagens;
-      var recargas = AppEstado.recargas;
-      var extras = AppEstado.extras;
-      var cfg = AppEstado.config;
-
-      var distTotal = 0, energiaTotal = 0, distComEnergia = 0;
-      for (var i = 0; i < viagens.length; i++) {
-        var d = parsePtBr(viagens[i].dist || viagens[i].distancia);
-        distTotal += d;
-        var kwhV = parsePtBr(viagens[i].kwh || viagens[i].energia);
-        if (kwhV > 0 && d > 0) {
-          energiaTotal += kwhV;
-          distComEnergia += d;
-        }
-      }
-
-      var custoRecargas = 0;
-      for (var j = 0; j < recargas.length; j++) {
-        var c = parsePtBr(recargas[j].custoTotal || recargas[j].custo);
-        var t = parsePtBr(recargas[j].kwhTomada || recargas[j].kwh);
-        custoRecargas += (c === 0 && t > 0 ? t * cfg.tarifaKwh : c);
-      }
-
-      var totalExtras = extras.reduce(function(a, b) { return a + parsePtBr(b.valor || b.custo); }, 0);
-
-      document.getElementById('kpi-distancia').textContent = fmtNum(distTotal, 1);
-      document.getElementById('kpi-recargas').textContent = fmtNum(custoRecargas, 2);
-
-      var custoKm = (distTotal > 0 && (custoRecargas + totalExtras) > 0) ? ((custoRecargas + totalExtras) / distTotal) : null;
-      document.getElementById('kpi-custo-km').textContent = custoKm !== null ? fmtNum(custoKm, 3) : '—';
-
-      var consumo100 = distComEnergia > 0 ? ((energiaTotal / distComEnergia) * 100) : null;
-      document.getElementById('kpi-consumo').textContent = consumo100 !== null ? fmtNum(consumo100, 1) : '—';
-
-      var co2PoupadoKg = distTotal * 0.130;
-      document.getElementById('kpi-co2').textContent = fmtNum(co2PoupadoKg, 1);
-
-      var vMini = viagens.filter(function(v) { var c = (v.carro || v.veiculo || '').toUpperCase(); return c.includes('MINI') || c === 'MINI'; });
-      var vYuan = viagens.filter(function(v) { var c = (v.carro || v.veiculo || '').toUpperCase(); return !c.includes('MINI') && c !== ''; });
-      var rMini = recargas.filter(function(r) { var c = (r.carro || r.veiculo || '').toUpperCase(); return c.includes('MINI') || c === 'MINI'; });
-      var rYuan = recargas.filter(function(r) { var c = (r.carro || r.veiculo || '').toUpperCase(); return !c.includes('MINI') && c !== ''; });
-
-      var kmMini = vMini.reduce(function(a, b) { return a + parsePtBr(b.dist || b.distancia); }, 0);
-      var cMini = rMini.reduce(function(a, b) { return a + parsePtBr(b.custoTotal || b.custo || 0); }, 0);
-      var kmYuan = vYuan.reduce(function(a, b) { return a + parsePtBr(b.dist || b.distancia); }, 0);
-      var cYuan = rYuan.reduce(function(a, b) { return a + parsePtBr(b.custoTotal || b.custo || 0); }, 0);
-
-      document.getElementById('card-dolphin-km').textContent = fmtNum(kmMini, 1) + ' km';
-      document.getElementById('card-dolphin-viagens').textContent = vMini.length;
-      document.getElementById('card-dolphin-recargas').textContent = 'R$ ' + fmtNum(cMini, 2);
-
-      document.getElementById('card-yuan-km').textContent = fmtNum(kmYuan, 1) + ' km';
-      document.getElementById('card-yuan-viagens').textContent = vYuan.length;
-      document.getElementById('card-yuan-recargas').textContent = 'R$ ' + fmtNum(cYuan, 2);
-
-      var litrosRef = distTotal > 0 ? (distTotal / 15.3) : 0;
-      var totalTermico = (litrosRef * cfg.gasolina) + (distTotal * 0.085);
-      var somaEletricos = custoRecargas + totalExtras;
-      var economiaTotal = Math.max(0, totalTermico - somaEletricos);
-
-      document.getElementById('kpi-economia').textContent = fmtNum(economiaTotal, 2);
-      document.getElementById('ref-gasolina-txt').textContent = 'R$ ' + fmtNum(cfg.gasolina, 2) + ' / L';
-      document.getElementById('ref-custo-total').textContent = 'R$ ' + fmtNum(totalTermico, 2);
-      document.getElementById('lbl-total-extras').textContent = 'Total: R$ ' + fmtNum(totalExtras, 2);
-
-      var tbExtras = document.getElementById('lista-extras');
-      if (extras.length === 0) {
-        tbExtras.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada na nuvem.</td></tr>';
-      } else {
-        tbExtras.innerHTML = extras.map(function(e) {
-          return '<tr class="hover:bg-[#0F1A36]"><td class="p-2 text-white">' + (e.descricao || e.desc || 'Despesa') + '</td><td class="p-2 text-slate-400">' + (e.carro || e.veiculo || 'Frota') + '</td><td class="p-2 text-right font-bold text-amber-400">R$ ' + fmtNum(parsePtBr(e.valor || e.custo), 2) + '</td></tr>';
-        }).join('');
-      }
-
-      var tbody = document.getElementById('lista-viagens');
-      if (viagens.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhuma viagem encontrada.</td></tr>';
-      } else {
-        tbody.innerHTML = viagens.map(function(v) {
-          var kwhVal = parsePtBr(v.kwh || v.energia);
-          return '<tr class="hover:bg-[#0F1A36] transition">' +
-            '<td class="p-2 text-cyan-300">' + (v.carro || v.veiculo || 'MINI') + '<br><span class="text-[10px] text-slate-400">' + (v.inicio || v.data || '') + '</span></td>' +
-            '<td class="p-2 text-right font-bold text-white">' + fmtNum(v.dist || v.distancia, 1) + ' km</td>' +
-            '<td class="p-2 text-right text-purple-300">' + (kwhVal > 0 ? fmtNum(kwhVal, 2) + ' kWh' : '—') + '</td>' +
-            '<td class="p-2 text-slate-200">' + (v.orig || v.origem || '—') + ' ➔ ' + (v.dest || v.destino || '—') + '</td>' +
-          '</tr>';
-        }).join('');
-      }
-
-      atualizarGraficos(viagens, totalTermico, somaEletricos);
-    }
-
-    function atualizarGraficos(viagens, totalTermico, totalEletrico) {
-      var labels = viagens.slice(-15).map(function(v) { return (v.inicio || v.data || '').slice(5, 16); });
-      var dadosConsumo = viagens.slice(-15).map(function(v) {
-        var d = parsePtBr(v.dist || v.distancia);
-        var k = parsePtBr(v.kwh || v.energia);
-        return (d > 0 && k > 0) ? Number(((k / d) * 100).toFixed(1)) : null;
-      });
-
-      var ctx1 = document.getElementById('chartConsumo').getContext('2d');
-      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
-      chartConsumoInstancia = new Chart(ctx1, {
-        type: 'line',
-        data: {
-          labels: labels.length ? labels : ['Sem dados'],
-          datasets: [{ label: 'kWh/100km', data: dadosConsumo, borderColor: '#00E5FF', backgroundColor: 'rgba(0, 229, 255, 0.1)', borderWidth: 2, tension: 0.3, fill: true, spanGaps: true }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
-      });
-
-      var ctx2 = document.getElementById('chartGastos').getContext('2d');
-      if (chartGastosInstancia) chartGastosInstancia.destroy();
-      chartGastosInstancia = new Chart(ctx2, {
-        type: 'bar',
-        data: {
-          labels: ['Elétrico Real', 'Combustível Ref.'],
-          datasets: [{ data: [totalEletrico, totalTermico], backgroundColor: ['#10B981', '#EF4444'], borderRadius: 6 }]
-        },
-        options: { 
-          responsive: true, 
-          maintainAspectRatio: false, 
-          plugins: { 
-            legend: { display: false },
-            tooltip: { callbacks: { label: function(context) { return 'R$ ' + Number(context.raw).toLocaleString('pt-BR', {minimumFractionDigits: 2}); } } }
-          }, 
-          scales: { 
-            x: { ticks: { color: '#E2E8F0', font: { size: 10 } }, grid: { display: false } }, 
-            y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } 
-          } 
-        }
-      });
-    }
-  </script>
-</body>
-</html>
+        <button type="button" class="px-3 py-1.5 rounded
