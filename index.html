@@ -328,7 +328,7 @@
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
         <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-add-extra')">Cancelar</button>
-        <button type="button" class="px-4 py-1.5 rounded-lg bg-emerald-500 text-black font-bold text-xs" onclick="salvarDespesaExtra()">Salvar Despesa</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-emerald-500 text-black font-bold text-xs" onclick="salvarDespesaExtraNuvem()">Salvar na Nuvem</button>
       </div>
     </div>
   </div>
@@ -352,7 +352,7 @@
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
         <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-referencia')">Cancelar</button>
-        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarVeiculoRef()">Salvar Referência</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarConfigNuvem()">Salvar Referência</button>
       </div>
     </div>
   </div>
@@ -376,7 +376,7 @@
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
         <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-parametros')">Cancelar</button>
-        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarParametros()">Salvar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarConfigNuvem()">Salvar na Nuvem</button>
       </div>
     </div>
   </div>
@@ -385,12 +385,12 @@
     var AppEstado = { 
       viagens: [], 
       recargas: [], 
-      extrasNuves: [], 
-      extrasLocais: [], 
+      extras: [], 
       config: { gasolina: 6.96, tarifaKwh: 0.85, refModelo: 'Renault Kwid / Hatch 1.0', refConsumo: 15.3 } 
     };
     var chartConsumoInstancia = null;
     var chartGastosInstancia = null;
+    var dbFirestore = null;
 
     function fmtNum(n, d) {
       if (n === null || n === undefined || isNaN(n)) return '—';
@@ -422,6 +422,10 @@
 
     window.onload = function() {
       try {
+        var extrasLocais = localStorage.getItem('ev_extras_locais');
+        if (extrasLocais) {
+          AppEstado.extras = JSON.parse(extrasLocais);
+        }
         var cfgSalva = localStorage.getItem('ev_config_ref');
         if (cfgSalva) {
           var parsed = JSON.parse(cfgSalva);
@@ -430,24 +434,11 @@
           if (parsed.refModelo) AppEstado.config.refModelo = parsed.refModelo;
           if (parsed.refConsumo) AppEstado.config.refConsumo = parsed.refConsumo;
         }
-        var extrasLocais = localStorage.getItem('ev_extras_locais');
-        if (extrasLocais) {
-          AppEstado.extrasLocais = JSON.parse(extrasLocais);
-        }
-      } catch (e) {
-        AppEstado.extrasLocais = [];
-      }
-      
+      } catch (e) {}
+
       renderizarPainelCompleto();
       iniciarFirebaseAutomatico();
     };
-
-    function salvarPreferenciaLocal() {
-      try {
-        localStorage.setItem('ev_config_ref', JSON.stringify(AppEstado.config));
-        localStorage.setItem('ev_extras_locais', JSON.stringify(AppEstado.extrasLocais));
-      } catch (e) {}
-    }
 
     function mudarFiltroRapido() {
       var tipo = document.getElementById('filtro-periodo-rapido').value;
@@ -506,8 +497,8 @@
       abrirModal('modal-add-extra');
     }
 
-    function editarDespesaLocal(index) {
-      var item = AppEstado.extrasLocais[index];
+    function editarDespesaNuvem(index) {
+      var item = AppEstado.extras[index];
       if (!item) return;
       document.getElementById('modal-extra-titulo').textContent = 'Editar Despesa Extra';
       document.getElementById('input-extra-index').value = index;
@@ -518,15 +509,14 @@
       abrirModal('modal-add-extra');
     }
 
-    function excluirDespesaLocal(index) {
-      if (confirm('Deseja realmente excluir esta despesa?')) {
-        AppEstado.extrasLocais.splice(index, 1);
-        salvarPreferenciaLocal();
-        renderizarPainelCompleto();
+    function excluirDespesaNuvem(index) {
+      if (confirm('Deseja realmente excluir esta despesa da nuvem?')) {
+        AppEstado.extras.splice(index, 1);
+        persistirEstadoNuvem();
       }
     }
 
-    function salvarDespesaExtra() {
+    function salvarDespesaExtraNuvem() {
       var index = parseInt(document.getElementById('input-extra-index').value);
       var data = document.getElementById('input-extra-data').value;
       var desc = document.getElementById('input-extra-desc').value || 'Despesa Extra';
@@ -538,19 +528,18 @@
         return;
       }
 
-      if (!AppEstado.extrasLocais) AppEstado.extrasLocais = [];
+      if (!AppEstado.extras) AppEstado.extras = [];
 
       var obj = { data: data, descricao: desc, carro: carro, valor: valor };
 
       if (index > -1) {
-        AppEstado.extrasLocais[index] = obj;
+        AppEstado.extras[index] = obj;
       } else {
-        AppEstado.extrasLocais.push(obj);
+        AppEstado.extras.push(obj);
       }
 
-      salvarPreferenciaLocal();
       fecharModal('modal-add-extra');
-      renderizarPainelCompleto();
+      persistirEstadoNuvem();
     }
 
     function iniciarFirebaseAutomatico() {
@@ -567,10 +556,10 @@
           });
         }
 
-        var db = firebase.firestore();
-        db.collection('frota_ev').doc('estado_global').get().then(function(doc) {
+        dbFirestore = firebase.firestore();
+        dbFirestore.collection('frotas_ev').doc('principal').get().then(function(doc) {
           if (!doc.exists) {
-            document.getElementById('txt-status-nuvem').textContent = 'Nuvem vazia.';
+            document.getElementById('txt-status-nuvem').textContent = 'Documento principal vazio.';
             renderizarPainelCompleto();
             return;
           }
@@ -578,7 +567,16 @@
           var dados = doc.data();
           AppEstado.viagens = dados.viagens || dados.viagensList || [];
           AppEstado.recargas = dados.recargas || dados.recargasList || [];
-          AppEstado.extrasNuves = dados.extras || dados.extrasList || [];
+          if (dados.extras && dados.extras.length > 0) {
+            AppEstado.extras = dados.extras;
+          }
+          
+          if (dados.config) {
+            if (dados.config.gasolina !== undefined) AppEstado.config.gasolina = dados.config.gasolina;
+            if (dados.config.tarifaKwh !== undefined) AppEstado.config.tarifaKwh = dados.config.tarifaKwh;
+            if (dados.config.refModelo !== undefined) AppEstado.config.refModelo = dados.config.refModelo;
+            if (dados.config.refConsumo !== undefined) AppEstado.config.refConsumo = dados.config.refConsumo;
+          }
 
           document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
           renderizarPainelCompleto();
@@ -594,24 +592,45 @@
       }
     }
 
-    function salvarParametros() {
-      var gas = parseFloat(document.getElementById('input-gasolina').value) || 6.96;
-      var tar = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
-      AppEstado.config.gasolina = gas;
-      AppEstado.config.tarifaKwh = tar;
-      salvarPreferenciaLocal();
-      fecharModal('modal-parametros');
-      renderizarPainelCompleto();
+    function persistirEstadoNuvem() {
+      if (!dbFirestore) {
+        alert('Banco de dados offline. As alterações não puderam ser salvas na nuvem.');
+        renderizarPainelCompleto();
+        return;
+      }
+
+      document.getElementById('txt-status-nuvem').textContent = 'Salvando na nuvem...';
+      
+      dbFirestore.collection('frotas_ev').doc('principal').set({
+        viagens: AppEstado.viagens,
+        recargas: AppEstado.recargas,
+        extras: AppEstado.extras,
+        config: AppEstado.config,
+        atualizadoEm: new Date().toISOString()
+      }, { merge: true }).then(function() {
+        document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
+        renderizarPainelCompleto();
+      }).catch(function(err) {
+        alert('Erro ao salvar na nuvem: ' + err.message);
+        document.getElementById('txt-status-nuvem').textContent = 'Erro ao salvar';
+        renderizarPainelCompleto();
+      });
     }
 
-    function salvarVeiculoRef() {
+    function salvarConfigNuvem() {
+      var gas = parseFloat(document.getElementById('input-gasolina').value) || 6.96;
+      var tar = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
       var modelo = document.getElementById('input-modelo-ref').value || 'Renault Kwid / Hatch 1.0';
       var consumo = parseFloat(document.getElementById('input-consumo-ref').value) || 15.3;
+
+      AppEstado.config.gasolina = gas;
+      AppEstado.config.tarifaKwh = tar;
       AppEstado.config.refModelo = modelo;
       AppEstado.config.refConsumo = consumo;
-      salvarPreferenciaLocal();
+
+      fecharModal('modal-parametros');
       fecharModal('modal-referencia');
-      renderizarPainelCompleto();
+      persistirEstadoNuvem();
     }
 
     function renderizarPainelCompleto() {
@@ -628,8 +647,7 @@
 
         var todasViagens = AppEstado.viagens || [];
         var todasRecargas = AppEstado.recargas || [];
-        var extrasNuves = AppEstado.extrasNuves || [];
-        var extrasLocais = AppEstado.extrasLocais || [];
+        var despesasExtrasNuvem = AppEstado.extras || [];
         var cfg = AppEstado.config;
 
         document.getElementById('input-gasolina').value = cfg.gasolina;
@@ -639,8 +657,7 @@
 
         var viagens = todasViagens.filter(function(v) { return itemNoIntervalo(v, dataIni, dataFim, tipoFiltro); });
         var recargas = todasRecargas.filter(function(r) { return itemNoIntervalo(r, dataIni, dataFim, tipoFiltro); });
-        var todasDespesas = extrasNuves.concat(extrasLocais);
-        var despesas = todasDespesas.filter(function(e) { return itemNoIntervalo(e, dataIni, dataFim, tipoFiltro); });
+        var despesas = despesasExtrasNuvem.filter(function(e) { return itemNoIntervalo(e, dataIni, dataFim, tipoFiltro); });
 
         var distTotal = 0, energiaTotal = 0, distComEnergia = 0;
         for (var i = 0; i < viagens.length; i++) {
@@ -713,25 +730,21 @@
         document.getElementById('ref-custo-total').textContent = 'R$ ' + fmtNum(totalTermico, 2);
         document.getElementById('lbl-total-extras').textContent = 'Total: R$ ' + fmtNum(totalExtras, 2);
 
-        // RENDERIZAR LOCAIS FREQUENTADOS
         renderizarLocaisCalor(viagens);
 
         var tbExtras = document.getElementById('lista-extras');
-        if (todasDespesas.length === 0) {
-          tbExtras.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada.</td></tr>';
+        if (despesasExtrasNuvem.length === 0) {
+          tbExtras.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada na nuvem.</td></tr>';
         } else {
-          tbExtras.innerHTML = todasDespesas.map(function(e, idx) {
-            var isLocal = idx >= extrasNuves.length;
-            var localIdx = idx - extrasNuves.length;
+          tbExtras.innerHTML = despesasExtrasNuvem.map(function(e, idx) {
             var dStr = buscarCampoFlexivel(e, ['data', 'Data']);
             var dataStr = dStr ? dStr.split('-').reverse().join('/') : '—';
             var anoDespesa = dStr ? new Date(dStr + 'T00:00:00').getFullYear() : anoAtual;
             var avisoAntigo = anoDespesa < anoAtual ? ' <span class="text-[9px] text-amber-500">(Anterior)</span>' : '';
             
-            var acoesHtml = isLocal ? 
-              '<button onclick="editarDespesaLocal(' + localIdx + ')" class="text-cyan-400 hover:underline mr-2">Editar</button>' +
-              '<button onclick="excluirDespesaLocal(' + localIdx + ')" class="text-rose-400 hover:underline">Excluir</button>' : 
-              '<span class="text-slate-500">Nuvem</span>';
+            var acoesHtml = 
+              '<button onclick="editarDespesaNuvem(' + idx + ')" class="text-cyan-400 hover:underline mr-2">Editar</button>' +
+              '<button onclick="excluirDespesaNuvem(' + idx + ')" class="text-rose-400 hover:underline">Excluir</button>';
 
             return '<tr class="hover:bg-[#0F1A36]">' +
               '<td class="p-2 text-slate-400">' + dataStr + avisoAntigo + '</td>' +
