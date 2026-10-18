@@ -421,10 +421,11 @@
       return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
     }
 
+    // CORREÇÃO ROBUSTA DE PARSE: Remove letras, unidades (km, kwh) e trata formatação pt-BR
     function parsePtBr(v) {
       if (!v && v !== 0) return 0;
       if (typeof v === 'number') return isNaN(v) ? 0 : v;
-      var s = String(v).replace(/[R$\s]/g, '');
+      var s = String(v).replace(/[R$\skmKWh]/gi, '').trim();
       if (s.indexOf(',') > -1 && s.indexOf('.') > -1) s = s.replace(/\./g, '').replace(',', '.');
       else if (s.indexOf(',') > -1) s = s.replace(',', '.');
       var p = parseFloat(s);
@@ -619,7 +620,6 @@
       });
     }
 
-    // CÁLCULO DE FECHAMENTO MENSAL (CORRIGIDO COM LEITURA FLEXÍVEL DE CAMPOS)
     function calcularFechamentoMensal() {
       var tbody = document.getElementById('tabela-fechamento-mensal');
       if (!tbody) return;
@@ -630,7 +630,7 @@
         AppEstado.viagens.forEach(function(v) {
           var dataStr = extrairDataRegistro(v);
           if (!dataStr) return;
-          var mesAno = dataStr.substring(0, 7); // YYYY-MM
+          var mesAno = dataStr.substring(0, 7);
 
           if (!mesesMap[mesAno]) {
             mesesMap[mesAno] = { km: 0, kwhCost: 0, refCost: 0 };
@@ -677,13 +677,11 @@
     }
 
     function renderizarPainelCompleto() {
-      // Sincronizar campos de config nos modais
       document.getElementById('input-modelo-ref').value = AppEstado.config.refModelo || 'Renault Kwid / Hatch 1.0';
       document.getElementById('input-consumo-ref').value = AppEstado.config.refConsumo || 15.3;
       document.getElementById('input-gasolina').value = AppEstado.config.gasolina || 6.96;
       document.getElementById('input-tarifa').value = AppEstado.config.tarifaKwh || 0.85;
 
-      // Textos do bloco de referência térmica
       document.getElementById('ref-modelo-txt').textContent = AppEstado.config.refModelo;
       document.getElementById('ref-consumo-txt').textContent = fmtNum(AppEstado.config.refConsumo, 1) + ' km/L';
       document.getElementById('ref-gasolina-txt').textContent = 'R$ ' + fmtNum(AppEstado.config.gasolina, 2) + ' / L';
@@ -692,7 +690,6 @@
       var dataIni = document.getElementById('filtro-data-inicio').value;
       var dataFim = document.getElementById('filtro-data-fim').value;
 
-      // Filtrar viagens
       var viagensFiltradas = (AppEstado.viagens || []).filter(function(v) {
         return itemNoIntervalo(v, dataIni, dataFim, tipoFiltro);
       });
@@ -726,7 +723,6 @@
           dolphinRecargas += custo;
         }
 
-        // Locais
         var origem = buscarCampoFlexivel(v, ['origem', 'de', 'start']) || '';
         var destino = buscarCampoFlexivel(v, ['destino', 'para', 'end']) || '';
         if (origem) locaisMap[origem] = (locaisMap[origem] || 0) + 1;
@@ -748,7 +744,6 @@
       }
       document.getElementById('lista-viagens').innerHTML = listaViagensHtml;
 
-      // Atualizar KPIs topo
       document.getElementById('kpi-distancia').textContent = fmtNum(distanciaTotal, 1);
       document.getElementById('kpi-recargas').textContent = fmtNum(custoRecargasTotal, 2);
       
@@ -758,11 +753,9 @@
       var consumoMedio = distanciaTotal > 0 ? (kwhTotal / (distanciaTotal / 100)) : 0;
       document.getElementById('kpi-consumo').textContent = fmtNum(consumoMedio, 1);
 
-      // CO2 Evitado (fator aproximado Brasil ~0.081 kg/km evitado comparado a combustão)
       var co2 = distanciaTotal * 0.081;
       document.getElementById('kpi-co2').textContent = fmtNum(co2, 1);
 
-      // Veículo de Referência Térmico Custo
       var consumoRef = AppEstado.config.refConsumo || 15.3;
       var litrosRef = consumoRef > 0 ? (distanciaTotal / consumoRef) : 0;
       var custoRefTotal = litrosRef * AppEstado.config.gasolina;
@@ -771,7 +764,6 @@
       var economiaLiquida = custoRefTotal - custoRecargasTotal;
       document.getElementById('kpi-economia').textContent = fmtNum(economiaLiquida, 2);
 
-      // Cards veículos
       document.getElementById('card-dolphin-km').textContent = fmtNum(dolphinKm, 1) + ' km';
       document.getElementById('card-dolphin-viagens').textContent = dolphinViagens;
       document.getElementById('card-dolphin-recargas').textContent = 'R$ ' + fmtNum(dolphinRecargas, 2);
@@ -780,7 +772,6 @@
       document.getElementById('card-yuan-viagens').textContent = yuanViagens;
       document.getElementById('card-yuan-recargas').textContent = 'R$ ' + fmtNum(yuanRecargas, 2);
 
-      // Despesas Extras
       var totalExtras = 0;
       var extrasHtml = '';
       (AppEstado.extras || []).forEach(function(ex, idx) {
@@ -798,7 +789,6 @@
       document.getElementById('lista-extras').innerHTML = extrasHtml;
       document.getElementById('lbl-total-extras').textContent = 'Total: R$ ' + fmtNum(totalExtras, 2);
 
-      // Locais Frequentes
       var locaisOrdenados = Object.keys(locaisMap).map(function(k) {
         return { nome: k, count: locaisMap[k] };
       }).sort(function(a, b) { return b.count - a.count; });
@@ -815,15 +805,11 @@
       }
       document.getElementById('lista-locais-calor').innerHTML = locaisHtml;
 
-      // Executar cálculo da nova tabela mensal
       calcularFechamentoMensal();
-
-      // Renderizar gráficos
       atualizarGraficos(viagensFiltradas, custoRefTotal, custoRecargasTotal);
     }
 
     function atualizarGraficos(viagens, custoRef, custoEl) {
-      // Gráfico Consumo
       var ctxConsumo = document.getElementById('chartConsumo').getContext('2d');
       if (chartConsumoInstancia) chartConsumoInstancia.destroy();
 
@@ -858,7 +844,6 @@
         }
       });
 
-      // Gráfico Gastos
       var ctxGastos = document.getElementById('chartGastos').getContext('2d');
       if (chartGastosInstancia) chartGastosInstancia.destroy();
 
