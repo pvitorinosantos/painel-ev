@@ -421,9 +421,8 @@
       return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
     }
 
-    // CORREÇÃO ROBUSTA DE PARSE: Remove letras, unidades (km, kwh) e trata formatação pt-BR
     function parsePtBr(v) {
-      if (!v && v !== 0) return 0;
+      if (v === null || v === undefined) return 0;
       if (typeof v === 'number') return isNaN(v) ? 0 : v;
       var s = String(v).replace(/[R$\skmKWh]/gi, '').trim();
       if (s.indexOf(',') > -1 && s.indexOf('.') > -1) s = s.replace(/\./g, '').replace(',', '.');
@@ -636,10 +635,13 @@
             mesesMap[mesAno] = { km: 0, kwhCost: 0, refCost: 0 };
           }
 
-          var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
-          mesesMap[mesAno].km += dist;
+          var rawDist = buscarCampoFlexivel(v, ['distancia', 'km', 'distance']);
+          var rawEnergia = buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']);
 
-          var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
+          var dist = parsePtBr(rawDist);
+          var kwh = parsePtBr(rawEnergia);
+
+          mesesMap[mesAno].km += dist;
           var custoRecargaViagem = kwh * AppEstado.config.tarifaKwh;
           mesesMap[mesAno].kwhCost += custoRecargaViagem;
 
@@ -704,8 +706,11 @@
       var locaisMap = {};
 
       viagensFiltradas.forEach(function(v) {
-        var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
-        var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
+        var rawDist = buscarCampoFlexivel(v, ['distancia', 'km', 'distance']);
+        var rawEnergia = buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']);
+
+        var dist = parsePtBr(rawDist);
+        var kwh = parsePtBr(rawEnergia);
         var custo = kwh * AppEstado.config.tarifaKwh;
 
         distanciaTotal += dist;
@@ -733,8 +738,8 @@
 
         listaViagensHtml += `<tr class="hover:bg-[#0F1A36]/50 transition">
           <td class="p-2 font-bold text-cyan-400">${carro.toUpperCase().indexOf('YUAN') > -1 ? 'YUAN' : 'MINI'}<br><span class="text-[9px] text-slate-400 font-normal">${inicio}</span></td>
-          <td class="p-2 text-right">${fmtNum(dist, 1)} km</td>
-          <td class="p-2 text-right text-emerald-400">${fmtNum(kwh, 2)} kWh</td>
+          <td class="p-2 text-right">${rawDist !== null && rawDist !== undefined ? rawDist : fmtNum(dist, 1) + ' km'}</td>
+          <td class="p-2 text-right text-emerald-400">${rawEnergia !== null && rawEnergia !== undefined ? rawEnergia : fmtNum(kwh, 2) + ' kWh'}</td>
           <td class="p-2 text-slate-300">${coords}</td>
         </tr>`;
       });
