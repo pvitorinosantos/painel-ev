@@ -302,25 +302,28 @@
         var db = firebase.firestore();
         db.collection('frota_ev').doc('estado_global').get().then(function(doc) {
           if (!doc.exists) {
+            console.warn("Documento estado_global não encontrado no Firestore.");
             document.getElementById('txt-status-nuvem').textContent = 'Documento estado_global não encontrado.';
             return;
           }
 
           var dados = doc.data();
-          AppEstado.viagens = dados.viagens || [];
-          AppEstado.recargas = dados.recargas || [];
-          AppEstado.extras = dados.extras || [];
+          console.log("Dados brutos recebidos do Firestore:", dados);
+
+          AppEstado.viagens = dados.viagens || dados.viagensList || [];
+          AppEstado.recargas = dados.recargas || dados.recargasList || [];
+          AppEstado.extras = dados.extras || dados.extrasList || [];
 
           document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
           renderizarPainelCompleto();
 
         }).catch(function(err) {
-          console.error(err);
+          console.error("Erro ao ler Firestore:", err);
           document.getElementById('txt-status-nuvem').textContent = 'Erro ao conectar nuvem';
         });
 
       } catch (e) {
-        console.error(e);
+        console.error("Erro ao inicializar Firebase:", e);
         document.getElementById('txt-status-nuvem').textContent = 'Erro de inicialização';
       }
     }
@@ -342,22 +345,23 @@
 
       var distTotal = 0, energiaTotal = 0, distComEnergia = 0;
       for (var i = 0; i < viagens.length; i++) {
-        var d = parsePtBr(viagens[i].dist);
+        var d = parsePtBr(viagens[i].dist || viagens[i].distancia);
         distTotal += d;
-        if (viagens[i].kwh > 0 && d > 0) {
-          energiaTotal += parsePtBr(viagens[i].kwh);
+        var kwhV = parsePtBr(viagens[i].kwh || viagens[i].energia);
+        if (kwhV > 0 && d > 0) {
+          energiaTotal += kwhV;
           distComEnergia += d;
         }
       }
 
       var custoRecargas = 0;
       for (var j = 0; j < recargas.length; j++) {
-        var c = parsePtBr(recargas[j].custoTotal);
+        var c = parsePtBr(recargas[j].custoTotal || recargas[j].custo);
         var t = parsePtBr(recargas[j].kwhTomada || recargas[j].kwh);
         custoRecargas += (c === 0 && t > 0 ? t * cfg.tarifaKwh : c);
       }
 
-      var totalExtras = extras.reduce(function(a, b) { return a + parsePtBr(b.valor); }, 0);
+      var totalExtras = extras.reduce(function(a, b) { return a + parsePtBr(b.valor || b.custo); }, 0);
 
       document.getElementById('kpi-distancia').textContent = fmtNum(distTotal, 1);
       document.getElementById('kpi-recargas').textContent = fmtNum(custoRecargas, 2);
@@ -371,15 +375,15 @@
       var co2PoupadoKg = distTotal * 0.130;
       document.getElementById('kpi-co2').textContent = fmtNum(co2PoupadoKg, 1);
 
-      var vMini = viagens.filter(function(v) { return v.carro === 'MINI'; });
-      var vYuan = viagens.filter(function(v) { return v.carro !== 'MINI'; });
-      var rMini = recargas.filter(function(r) { return r.carro === 'MINI'; });
-      var rYuan = recargas.filter(function(r) { return r.carro !== 'MINI'; });
+      var vMini = viagens.filter(function(v) { var c = (v.carro || v.veiculo || '').toUpperCase(); return c.includes('MINI') || c === 'MINI'; });
+      var vYuan = viagens.filter(function(v) { var c = (v.carro || v.veiculo || '').toUpperCase(); return !c.includes('MINI') && c !== ''; });
+      var rMini = recargas.filter(function(r) { var c = (r.carro || r.veiculo || '').toUpperCase(); return c.includes('MINI') || c === 'MINI'; });
+      var rYuan = recargas.filter(function(r) { var c = (r.carro || r.veiculo || '').toUpperCase(); return !c.includes('MINI') && c !== ''; });
 
-      var kmMini = vMini.reduce(function(a, b) { return a + parsePtBr(b.dist); }, 0);
-      var cMini = rMini.reduce(function(a, b) { return a + parsePtBr(b.custoTotal || 0); }, 0);
-      var kmYuan = vYuan.reduce(function(a, b) { return a + parsePtBr(b.dist); }, 0);
-      var cYuan = rYuan.reduce(function(a, b) { return a + parsePtBr(b.custoTotal || 0); }, 0);
+      var kmMini = vMini.reduce(function(a, b) { return a + parsePtBr(b.dist || b.distancia); }, 0);
+      var cMini = rMini.reduce(function(a, b) { return a + parsePtBr(b.custoTotal || b.custo || 0); }, 0);
+      var kmYuan = vYuan.reduce(function(a, b) { return a + parsePtBr(b.dist || b.distancia); }, 0);
+      var cYuan = rYuan.reduce(function(a, b) { return a + parsePtBr(b.custoTotal || b.custo || 0); }, 0);
 
       document.getElementById('card-dolphin-km').textContent = fmtNum(kmMini, 1) + ' km';
       document.getElementById('card-dolphin-viagens').textContent = vMini.length;
@@ -401,10 +405,10 @@
 
       var tbExtras = document.getElementById('lista-extras');
       if (extras.length === 0) {
-        tbExtras.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada.</td></tr>';
+        tbExtras.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada na nuvem.</td></tr>';
       } else {
         tbExtras.innerHTML = extras.map(function(e) {
-          return '<tr class="hover:bg-[#0F1A36]"><td class="p-2 text-white">' + (e.descricao || e.desc || 'Despesa') + '</td><td class="p-2 text-slate-400">' + (e.carro || 'Frota') + '</td><td class="p-2 text-right font-bold text-amber-400">R$ ' + fmtNum(parsePtBr(e.valor), 2) + '</td></tr>';
+          return '<tr class="hover:bg-[#0F1A36]"><td class="p-2 text-white">' + (e.descricao || e.desc || 'Despesa') + '</td><td class="p-2 text-slate-400">' + (e.carro || e.veiculo || 'Frota') + '</td><td class="p-2 text-right font-bold text-amber-400">R$ ' + fmtNum(parsePtBr(e.valor || e.custo), 2) + '</td></tr>';
         }).join('');
       }
 
@@ -413,11 +417,12 @@
         tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhuma viagem encontrada.</td></tr>';
       } else {
         tbody.innerHTML = viagens.map(function(v) {
+          var kwhVal = parsePtBr(v.kwh || v.energia);
           return '<tr class="hover:bg-[#0F1A36] transition">' +
-            '<td class="p-2 text-cyan-300">' + (v.carro || 'MINI') + '<br><span class="text-[10px] text-slate-400">' + (v.inicio || '') + '</span></td>' +
-            '<td class="p-2 text-right font-bold text-white">' + fmtNum(v.dist, 1) + ' km</td>' +
-            '<td class="p-2 text-right text-purple-300">' + (v.kwh > 0 ? fmtNum(v.kwh, 2) + ' kWh' : '—') + '</td>' +
-            '<td class="p-2 text-slate-200">' + (v.orig || '—') + ' ➔ ' + (v.dest || '—') + '</td>' +
+            '<td class="p-2 text-cyan-300">' + (v.carro || v.veiculo || 'MINI') + '<br><span class="text-[10px] text-slate-400">' + (v.inicio || v.data || '') + '</span></td>' +
+            '<td class="p-2 text-right font-bold text-white">' + fmtNum(v.dist || v.distancia, 1) + ' km</td>' +
+            '<td class="p-2 text-right text-purple-300">' + (kwhVal > 0 ? fmtNum(kwhVal, 2) + ' kWh' : '—') + '</td>' +
+            '<td class="p-2 text-slate-200">' + (v.orig || v.origem || '—') + ' ➔ ' + (v.dest || v.destino || '—') + '</td>' +
           '</tr>';
         }).join('');
       }
@@ -426,10 +431,10 @@
     }
 
     function atualizarGraficos(viagens, totalTermico, totalEletrico) {
-      var labels = viagens.slice(-15).map(function(v) { return (v.inicio || '').slice(5, 16); });
+      var labels = viagens.slice(-15).map(function(v) { return (v.inicio || v.data || '').slice(5, 16); });
       var dadosConsumo = viagens.slice(-15).map(function(v) {
-        var d = parsePtBr(v.dist);
-        var k = parsePtBr(v.kwh);
+        var d = parsePtBr(v.dist || v.distancia);
+        var k = parsePtBr(v.kwh || v.energia);
         return (d > 0 && k > 0) ? Number(((k / d) * 100).toFixed(1)) : null;
       });
 
