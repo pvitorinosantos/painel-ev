@@ -70,30 +70,30 @@
   <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 flex-1 w-full space-y-4">
 
     <!-- BARRA DE FILTRO DE DATAS -->
-    <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347] flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-bold text-[#00E5FF] uppercase">📅 Período de Análise:</span>
-        <select id="filtro-periodo-rapido" onchange="mudarFiltroRapido()" class="bg-[#060B18] border border-[#1F3463] text-xs text-white rounded-lg px-2.5 py-1.5 font-mono outline-none focus:border-[#00E5FF]">
+    <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#1F3463] shadow-lg flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <span class="text-xs font-bold text-[#00E5FF] uppercase">📅 Filtrar Período:</span>
+        <select id="filtro-periodo-rapido" onchange="mudarFiltroRapido()" class="bg-[#060B18] border border-[#1F3463] text-xs text-white rounded-lg px-3 py-2 font-mono outline-none focus:border-[#00E5FF]">
           <option value="todos">Todas as Datas (Completo)</option>
           <option value="mes_atual">Este Mês</option>
           <option value="ano_atual">Este Ano (2026)</option>
-          <option value="personalizado">Personalizado</option>
+          <option value="personalizado">Personalizado (Intervalo)</option>
         </select>
       </div>
 
-      <div id="container-datas-custom" class="flex items-center gap-2 hidden text-xs">
+      <div id="container-datas-custom" class="hidden flex items-center gap-2 text-xs">
         <div class="flex items-center gap-1">
           <span class="text-slate-400 text-[10px]">De:</span>
-          <input type="date" id="filtro-data-inicio" onchange="aplicarFiltroDatas()" class="bg-[#060B18] border border-[#1F3463] text-white rounded-lg px-2 py-1 font-mono outline-none focus:border-[#00E5FF]">
+          <input type="date" id="filtro-data-inicio" onchange="aplicarFiltroDatas()" class="bg-[#060B18] border border-[#1F3463] text-white rounded-lg px-2.5 py-1.5 font-mono outline-none focus:border-[#00E5FF]">
         </div>
         <div class="flex items-center gap-1">
           <span class="text-slate-400 text-[10px]">Até:</span>
-          <input type="date" id="filtro-data-fim" onchange="aplicarFiltroDatas()" class="bg-[#060B18] border border-[#1F3463] text-white rounded-lg px-2 py-1 font-mono outline-none focus:border-[#00E5FF]">
+          <input type="date" id="filtro-data-fim" onchange="aplicarFiltroDatas()" class="bg-[#060B18] border border-[#1F3463] text-white rounded-lg px-2.5 py-1.5 font-mono outline-none focus:border-[#00E5FF]">
         </div>
       </div>
       
-      <div class="text-[11px] text-slate-400 font-mono" id="txt-status-filtro">
-        Exibindo: <strong class="text-white">Todo o Histórico</strong>
+      <div class="text-xs text-slate-300 font-mono bg-[#060B18] px-3 py-1.5 rounded-lg border border-[#142347]" id="txt-status-filtro">
+        Exibindo: <strong class="text-cyan-400">Todo o Histórico</strong>
       </div>
     </div>
 
@@ -436,14 +436,13 @@
     function extrairDataRegistro(item) {
       var dStr = item.inicio || item.data || item.dataHora || '';
       if (!dStr) return null;
-      // Pega os primeiros 10 caracteres (YYYY-MM-DD)
       return dStr.substring(0, 10);
     }
 
     function itemNoIntervalo(item, dataIni, dataFim, tipoFiltro) {
       if (tipoFiltro === 'todos') return true;
       var dItem = extrairDataRegistro(item);
-      if (!dItem) return true; // Se não tem data, exibe para não ocultar dados órfãos
+      if (!dItem) return true;
 
       var hoje = new Date();
       if (tipoFiltro === 'mes_atual') {
@@ -585,7 +584,7 @@
       if (tipoFiltro === 'mes_atual') lblStatusFiltro = "Este Mês";
       else if (tipoFiltro === 'ano_atual') lblStatusFiltro = "Este Ano (2026)";
       else if (tipoFiltro === 'personalizado') lblStatusFiltro = (dataIni || 'Início') + " até " + (dataFim || 'Fim');
-      document.getElementById('txt-status-filtro').innerHTML = 'Exibindo: <strong class="text-white">' + lblStatusFiltro + '</strong>';
+      document.getElementById('txt-status-filtro').innerHTML = 'Exibindo: <strong class="text-cyan-400">' + lblStatusFiltro + '</strong>';
 
       var todasViagens = AppEstado.viagens || [];
       var todasRecargas = AppEstado.recargas || [];
@@ -598,7 +597,6 @@
       document.getElementById('input-modelo-ref').value = cfg.refModelo;
       document.getElementById('input-consumo-ref').value = cfg.refConsumo;
 
-      // Filtrar por data
       var viagens = todasViagens.filter(function(v) { return itemNoIntervalo(v, dataIni, dataFim, tipoFiltro); });
       var recargas = todasRecargas.filter(function(r) { return itemNoIntervalo(r, dataIni, dataFim, tipoFiltro); });
       var todasDespesas = extrasNuves.concat(extrasLocais);
@@ -627,7 +625,6 @@
       despesas.forEach(function(e) {
         var val = parsePtBr(e.valor || e.custo);
         var anoDespesa = e.data ? new Date(e.data + 'T00:00:00').getFullYear() : anoAtual;
-        // Ignora despesas de anos anteriores caso o filtro seja amplo, a menos que selecionado explicitamente
         if (tipoFiltro !== 'todos' || anoDespesa === anoAtual) {
           totalExtras += val;
         }
