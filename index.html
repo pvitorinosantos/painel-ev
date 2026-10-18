@@ -206,20 +206,24 @@
       </div>
     </div>
 
-    <!-- SEÇÃO DE DESPESAS EXTRAS E COMPARATIVO TÉRMICO -->
+    <!-- SEÇÃO DE LOCAIS MAIS FREQUENTADOS (MAPA DE CALOR / RANKING) E COMPARATIVO TÉRMICO -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
       <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
         <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
-          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🛠️ Despesas Extras (Manutenção / Seguro / IPVA)</h3>
-          <div class="flex items-center gap-2">
-            <span id="lbl-total-extras" class="text-xs font-bold text-amber-400 font-mono">Total: R$ 0,00</span>
-            <button type="button" onclick="abrirModalAddExtra()" class="px-2 py-1 rounded bg-[#142347] hover:bg-[#1F3463] text-emerald-400 font-bold text-[10px] border border-[#142347] transition">+ Incluir</button>
-          </div>
+          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">📍 Locais Mais Frequentados (Calor de Viagens)</h3>
+          <span class="text-[10px] text-cyan-400 font-mono">Saídas & Chegadas</span>
         </div>
-        <div class="overflow-x-auto custom-scroll max-h-40">
+        <div class="overflow-x-auto custom-scroll max-h-48">
           <table class="w-full text-left text-xs font-mono">
-            <tbody id="lista-extras" class="divide-y divide-[#142347] text-slate-300">
-              <tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada.</td></tr>
+            <thead>
+              <tr class="bg-[#0F1A36] text-slate-400 uppercase text-[9px] border-b border-[#142347]">
+                <th class="p-2">Local</th>
+                <th class="p-2 text-right">Visitas (Total)</th>
+                <th class="p-2 text-right">Coordenadas GPS</th>
+              </tr>
+            </thead>
+            <tbody id="lista-locais-calor" class="divide-y divide-[#142347] text-slate-300">
+              <tr><td colspan="3" class="p-3 text-center text-slate-500">Calculando locais...</td></tr>
             </tbody>
           </table>
         </div>
@@ -254,6 +258,24 @@
       </div>
     </div>
 
+    <!-- SEÇÃO DE DESPESAS EXTRAS -->
+    <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+        <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🛠️ Despesas Extras (Manutenção / Seguro / IPVA)</h3>
+        <div class="flex items-center gap-2">
+          <span id="lbl-total-extras" class="text-xs font-bold text-amber-400 font-mono">Total: R$ 0,00</span>
+          <button type="button" onclick="abrirModalAddExtra()" class="px-2 py-1 rounded bg-[#142347] hover:bg-[#1F3463] text-emerald-400 font-bold text-[10px] border border-[#142347] transition">+ Incluir</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto custom-scroll max-h-40">
+        <table class="w-full text-left text-xs font-mono">
+          <tbody id="lista-extras" class="divide-y divide-[#142347] text-slate-300">
+            <tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- TABELA DE VIAGENS -->
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
       <div class="p-3 border-b border-[#142347] flex items-center justify-between">
@@ -267,7 +289,7 @@
               <th class="p-2">Carro / Início</th>
               <th class="p-2 text-right">Distância</th>
               <th class="p-2 text-right">Energia</th>
-              <th class="p-2">Trajeto</th>
+              <th class="p-2">Trajeto & Coordenadas GPS</th>
             </tr>
           </thead>
           <tbody id="lista-viagens" class="divide-y divide-[#142347] text-slate-300">
@@ -672,6 +694,9 @@
       document.getElementById('ref-custo-total').textContent = 'R$ ' + fmtNum(totalTermico, 2);
       document.getElementById('lbl-total-extras').textContent = 'Total: R$ ' + fmtNum(totalExtras, 2);
 
+      // RENDERIZAR CALOR / LOCAIS MAIS FREQUENTADOS
+      renderizarLocaisCalor(viagens);
+
       var tbExtras = document.getElementById('lista-extras');
       if (todasDespesas.length === 0) {
         tbExtras.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada.</td></tr>';
@@ -703,16 +728,64 @@
       } else {
         tbody.innerHTML = viagens.map(function(v) {
           var kwhVal = parsePtBr(v.kwh || v.energia);
+          var saidaTxt = v.Saída || v.saida || v.orig || v.origem || '—';
+          var chegadaTxt = v.Chegada || v.chegada || v.dest || v.destino || '—';
+          var latLonS = (v['Latitude de saída'] && v['Longitude de saída']) ? '(' + v['Latitude de saída'] + ', ' + v['Longitude de saída'] + ')' : '';
+          var latLonC = (v['Latitude de chegada'] && v['Longitude de chegada']) ? '(' + v['Latitude de chegada'] + ', ' + v['Longitude de chegada'] + ')' : '';
+
           return '<tr class="hover:bg-[#0F1A36] transition">' +
             '<td class="p-2 text-cyan-300">' + (v.carro || v.veiculo || 'MINI') + '<br><span class="text-[10px] text-slate-400">' + (v.inicio || v.data || '') + '</span></td>' +
             '<td class="p-2 text-right font-bold text-white">' + fmtNum(v.dist || v.distancia, 1) + ' km</td>' +
             '<td class="p-2 text-right text-purple-300">' + (kwhVal > 0 ? fmtNum(kwhVal, 2) + ' kWh' : '—') + '</td>' +
-            '<td class="p-2 text-slate-200">' + (v.orig || v.origem || '—') + ' ➔ ' + (v.dest || v.destino || '—') + '</td>' +
+            '<td class="p-2 text-slate-200">' + saidaTxt + ' <span class="text-[9px] text-slate-500">' + latLonS + '</span> ➔ ' + chegadaTxt + ' <span class="text-[9px] text-slate-500">' + latLonC + '</span></td>' +
           '</tr>';
         }).join('');
       }
 
       atualizarGraficos(viagens, totalTermico, somaEletricos);
+    }
+
+    function renderizarLocaisCalor(viagens) {
+      var contadorLocais = {};
+      
+      viagens.forEach(function(v) {
+        var saida = v.Saída || v.saida || v.orig || v.origem;
+        var latS = v['Latitude de saída'] || v.latSaida;
+        var lonS = v['Longitude de saída'] || v.lonSaida;
+
+        var chegada = v.Chegada || v.chegada || v.dest || v.destino;
+        var latC = v['Latitude de chegada'] || v.latChegada;
+        var lonC = v['Longitude de chegada'] || v.lonChegada;
+
+        if (saida) {
+          if (!contadorLocais[saida]) contadorLocais[saida] = { count: 0, lat: latS, lon: lonS };
+          contadorLocais[saida].count++;
+        }
+        if (chegada) {
+          if (!contadorLocais[chegada]) contadorLocais[chegada] = { count: 0, lat: latC, lon: lonC };
+          contadorLocais[chegada].count++;
+        }
+      });
+
+      var listaOrdenada = Object.keys(contadorLocais).map(function(nome) {
+        return { nome: nome, count: contadorLocais[nome].count, lat: contadorLocais[nome].lat, lon: contadorLocais[nome].lon };
+      }).sort(function(a, b) { return b.count - a.count; });
+
+      var tbCalor = document.getElementById('lista-locais-calor');
+      if (listaOrdenada.length === 0) {
+        tbCalor.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhum local registrado.</td></tr>';
+        return;
+      }
+
+      tbCalor.innerHTML = listaOrdenada.map(function(item, idx) {
+        var corBadge = idx === 0 ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : (idx === 1 ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40' : 'bg-[#142347] text-slate-300 border-[#1F3463]');
+        var gpsTxt = (item.lat && item.lon) ? item.lat + ', ' + item.lon : '—';
+        return '<tr class="hover:bg-[#0F1A36]">' +
+          '<td class="p-2 font-bold text-white flex items-center gap-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-mono border ' + corBadge + '">' + (idx + 1 + 'º') + '</span> ' + item.nome + '</td>' +
+          '<td class="p-2 text-right font-bold text-emerald-400">' + item.count + ' visitas</td>' +
+          '<td class="p-2 text-right text-[10px] text-slate-400 font-mono">' + gpsTxt + '</td>' +
+        '</tr>';
+      }).join('');
     }
 
     function atualizarGraficos(viagens, totalTermico, totalEletrico) {
