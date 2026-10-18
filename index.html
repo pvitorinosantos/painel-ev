@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Painel de Gestão EV | Frota BYD Estável</title>
+  <title>Painel de Gestão EV | Frota BYD Definitivo</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,7 +49,7 @@
           <h1 class="text-xs sm:text-base font-bold text-white flex items-center gap-2">
             Dolphin Mini & Yuan Pro
             <span id="badge-cloud-status" class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono border border-amber-500/30">
-              Conectando...
+              Aguardando Credenciais
             </span>
           </h1>
         </div>
@@ -58,6 +58,9 @@
       <div class="flex items-center gap-1.5 sm:gap-2">
         <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] transition">
           ⚙️ Parâmetros
+        </button>
+        <button type="button" onclick="abrirModal('modal-cloud')" class="px-3 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs flex items-center gap-1 transition shadow-md">
+          ☁ Credenciais / Conectar
         </button>
       </div>
     </div>
@@ -216,8 +219,8 @@
     <!-- TABELA DE VIAGENS -->
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
       <div class="p-3 border-b border-[#142347] flex items-center justify-between">
-        <span class="text-xs font-bold text-white">Viagens Sincronizadas</span>
-        <span id="txt-status-nuvem" class="text-[10px] text-cyan-400 font-mono">Carregando...</span>
+        <span class="text-xs font-bold text-white">Viagens Sincronizadas da Nuvem (frota_ev / estado_global)</span>
+        <span id="txt-status-nuvem" class="text-[10px] text-cyan-400 font-mono">Aguardando Conexão</span>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
@@ -230,7 +233,7 @@
             </tr>
           </thead>
           <tbody id="lista-viagens" class="divide-y divide-[#142347] text-slate-300">
-            <tr><td colspan="4" class="p-4 text-center text-slate-500">Aguardando dados...</td></tr>
+            <tr><td colspan="4" class="p-4 text-center text-slate-500">Clique em "☁ Credenciais / Conectar" no topo para carregar seus dados.</td></tr>
           </tbody>
         </table>
       </div>
@@ -238,10 +241,62 @@
 
   </main>
 
+  <!-- ================= MODAL CREDENCIAIS FIREBASE ================= -->
+  <div id="modal-cloud" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 class="text-sm font-bold text-white">Configurar Credenciais Firebase</h3>
+        <button type="button" onclick="fecharModal('modal-cloud')" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Firebase API Key:</label>
+          <input type="text" id="fb-apikey" placeholder="Ex: AIzaSy..." class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Firebase Project ID:</label>
+          <input type="text" id="fb-projectid" placeholder="Ex: frota-byd-ev" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+      </div>
+      <div class="flex justify-between items-center pt-3 border-t border-[#142347]">
+        <button type="button" onclick="localStorage.clear(); window.location.reload();" class="text-rose-400 text-xs font-bold">Limpar</button>
+        <div class="flex gap-2">
+          <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-cloud')">Cancelar</button>
+          <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="conectarENuvem()">Salvar & Conectar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL PARÂMETROS ================= -->
+  <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 class="text-sm font-bold text-white">Parâmetros Térmicos & Tarifas</h3>
+        <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Preço Gasolina (R$/L):</label>
+          <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Tarifa Padrão kWh (R$):</label>
+          <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-parametros')">Cancelar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarParametros()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     var AppEstado = { viagens: [], recargas: [], extras: [], config: { gasolina: 6.96, tarifaKwh: 0.85 } };
     var chartConsumoInstancia = null;
     var chartGastosInstancia = null;
+    var dbFirestore = null;
 
     function fmtNum(n, d) {
       if (n === null || n === undefined || isNaN(n)) return '—';
@@ -258,36 +313,75 @@
       return isNaN(p) ? 0 : p;
     }
 
-    // Abertura imediata sem bloqueios
     window.onload = function() {
       renderizarPainelCompleto();
-      setTimeout(tentarConectarNuvemSilenciosa, 300);
+      var key = localStorage.getItem('fb_apikey_v9');
+      var proj = localStorage.getItem('fb_projectid_v9');
+      if (key && proj) {
+        document.getElementById('fb-apikey').value = key;
+        document.getElementById('fb-projectid').value = proj;
+        iniciarFirebase(key, proj);
+      }
     };
 
-    function tentarConectarNuvemSilenciosa() {
+    function conectarENuvem() {
+      var key = document.getElementById('fb-apikey').value.trim();
+      var proj = document.getElementById('fb-projectid').value.trim();
+      if (!key || !proj) { alert('Preencha a API Key e o Project ID.'); return; }
+      localStorage.setItem('fb_apikey_v9', key);
+      localStorage.setItem('fb_projectid_v9', proj);
+      fecharModal('modal-cloud');
+      iniciarFirebase(key, proj);
+    }
+
+    function iniciarFirebase(apiKey, projectId) {
       try {
+        var badge = document.getElementById('badge-cloud-status');
+        badge.textContent = 'Conectando...';
+        badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-mono border border-blue-500/30';
+
         if (!firebase.apps.length) {
-          firebase.initializeApp({
-            apiKey: "AIzaSyDummyKeyForSafetyRestored",
-            projectId: "frota-byd-ev"
-          });
+          firebase.initializeApp({ apiKey: apiKey, projectId: projectId });
         }
-        var db = firebase.firestore();
-        db.collection('frota_ev').doc('estado_global').get().then(function(doc) {
-          if (doc.exists) {
-            var dados = doc.data();
-            AppEstado.viagens = dados.viagens || [];
-            AppEstado.recargas = dados.recargas || [];
-            AppEstado.extras = dados.extras || [];
-            document.getElementById('badge-cloud-status').textContent = 'Nuvem Conectada';
-            document.getElementById('badge-cloud-status').className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30';
-            document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
-            renderizarPainelCompleto();
+        dbFirestore = firebase.firestore();
+
+        dbFirestore.collection('frota_ev').doc('estado_global').get().then(function(doc) {
+          badge.textContent = 'Nuvem Conectada';
+          badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30';
+
+          if (!doc.exists) {
+            document.getElementById('txt-status-nuvem').textContent = 'Documento estado_global não encontrado.';
+            return;
           }
-        }).catch(function(e) {
-          document.getElementById('badge-cloud-status').textContent = 'Modo Local / Offline';
+
+          var dados = doc.data();
+          AppEstado.viagens = dados.viagens || [];
+          AppEstado.recargas = dados.recargas || [];
+          AppEstado.extras = dados.extras || [];
+
+          document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
+          renderizarPainelCompleto();
+
+        }).catch(function(err) {
+          console.error(err);
+          badge.textContent = 'Erro de Acesso';
+          badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 font-mono border border-rose-500/30';
+          alert('Erro ao ler Firestore: ' + err.message);
         });
-      } catch (err) {}
+
+      } catch (e) {
+        console.error(e);
+        alert('Erro ao iniciar Firebase: ' + e.message);
+      }
+    }
+
+    function salvarParametros() {
+      var gas = parseFloat(document.getElementById('input-gasolina').value) || 6.96;
+      var tar = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
+      AppEstado.config.gasolina = gas;
+      AppEstado.config.tarifaKwh = tar;
+      fecharModal('modal-parametros');
+      renderizarPainelCompleto();
     }
 
     function renderizarPainelCompleto() {
@@ -372,22 +466,4 @@
           return '<tr class="hover:bg-[#0F1A36] transition">' +
             '<td class="p-2 text-cyan-300">' + (v.carro || 'MINI') + '<br><span class="text-[10px] text-slate-400">' + (v.inicio || '') + '</span></td>' +
             '<td class="p-2 text-right font-bold text-white">' + fmtNum(v.dist, 1) + ' km</td>' +
-            '<td class="p-2 text-right text-purple-300">' + (v.kwh > 0 ? fmtNum(v.kwh, 2) + ' kWh' : '—') + '</td>' +
-            '<td class="p-2 text-slate-200">' + (v.orig || '—') + ' ➔ ' + (v.dest || '—') + '</td>' +
-          '</tr>';
-        }).join('');
-      }
-
-      atualizarGraficos(viagens, totalTermico, somaEletricos);
-    }
-
-    function atualizarGraficos(viagens, totalTermico, totalEletrico) {
-      var labels = viagens.slice(-15).map(function(v) { return (v.inicio || '').slice(5, 16); });
-      var dadosConsumo = viagens.slice(-15).map(function(v) {
-        var d = parsePtBr(v.dist);
-        var k = parsePtBr(v.kwh);
-        return (d > 0 && k > 0) ? Number(((k / d) * 100).toFixed(1)) : null;
-      });
-
-      var ctx1 = document.getElementById('chartConsumo').getContext('2d');
-      if (chartConsumoInstancia) chartConsumoInstancia.
+            '<td class="p-2 text-right text-purple-300">' + (v.kwh > 0 ? fmtNum(v.kwh, 2) + ' kWh' : '—') + '</td>'
