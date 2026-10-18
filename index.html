@@ -191,7 +191,7 @@
         <div class="overflow-x-auto custom-scroll max-h-40">
           <table class="w-full text-left text-xs font-mono">
             <tbody id="lista-extras" class="divide-y divide-[#142347] text-slate-300">
-              <tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhuma despesa extra registrada na nuvem.</td></tr>
+              <tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhuma despesa extra registrada.</td></tr>
             </tbody>
           </table>
         </div>
@@ -331,7 +331,8 @@
     var AppEstado = { 
       viagens: [], 
       recargas: [], 
-      extras: [], 
+      extrasNuves: [], 
+      extrasLocais: [], 
       config: { gasolina: 6.96, tarifaKwh: 0.85, refModelo: 'Renault Kwid / Hatch 1.0', refConsumo: 15.3 } 
     };
     var chartConsumoInstancia = null;
@@ -365,12 +366,13 @@
         var extrasLocais = localStorage.getItem('ev_extras_locais');
         if (extrasLocais) {
           AppEstado.extrasLocais = JSON.parse(extrasLocais);
-        } else {
-          AppEstado.extrasLocais = [];
         }
       } catch (e) {
         AppEstado.extrasLocais = [];
       }
+      
+      // Renderiza imediatamente com o que tiver ou vazio, para garantir que o painel nunca trave
+      renderizarPainelCompleto();
       iniciarFirebaseAutomatico();
     };
 
@@ -414,13 +416,11 @@
         db.collection('frota_ev').doc('estado_global').get().then(function(doc) {
           if (!doc.exists) {
             console.warn("Documento estado_global não encontrado no Firestore.");
-            document.getElementById('txt-status-nuvem').textContent = 'Documento estado_global não encontrado.';
+            document.getElementById('txt-status-nuvem').textContent = 'Nuvem vazia.';
             return;
           }
 
           var dados = doc.data();
-          console.log("Dados brutos recebidos do Firestore:", dados);
-
           AppEstado.viagens = dados.viagens || dados.viagensList || [];
           AppEstado.recargas = dados.recargas || dados.recargasList || [];
           AppEstado.extrasNuves = dados.extras || dados.extrasList || [];
@@ -430,12 +430,12 @@
 
         }).catch(function(err) {
           console.error("Erro ao ler Firestore:", err);
-          document.getElementById('txt-status-nuvem').textContent = 'Erro ao conectar nuvem';
+          document.getElementById('txt-status-nuvem').textContent = 'Modo Local (Offline)';
         });
 
       } catch (e) {
         console.error("Erro ao inicializar Firebase:", e);
-        document.getElementById('txt-status-nuvem').textContent = 'Erro de inicialização';
+        document.getElementById('txt-status-nuvem').textContent = 'Modo Local (Offline)';
       }
     }
 
@@ -460,8 +460,8 @@
     }
 
     function renderizarPainelCompleto() {
-      var viagens = AppEstado.viagens;
-      var recargas = AppEstado.recargas;
+      var viagens = AppEstado.viagens || [];
+      var recargas = AppEstado.recargas || [];
       var extrasNuves = AppEstado.extrasNuves || [];
       var extrasLocais = AppEstado.extrasLocais || [];
       var extras = extrasNuves.concat(extrasLocais);
