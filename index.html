@@ -68,7 +68,7 @@
 
     <!-- AVISO DE CONEXÃO -->
     <div id="banner-vazio" class="bg-blue-500/10 border border-[#00E5FF]/30 p-4 rounded-xl text-center space-y-2">
-      <p class="text-sm font-bold text-white">Painel pronto para sincronização</p>
+      <p class="text-sm font-bold text-white">Painel pronto para sincronização com o Firestore</p>
       <p class="text-xs text-slate-400">Clique em <strong>"☁ Credenciais / Conectar"</strong> no topo para inserir sua API Key e Project ID do Firebase.</p>
     </div>
 
@@ -82,21 +82,21 @@
         </div>
       </div>
       <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Viagens Registradas</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Viagens na Nuvem</span>
         <div class="mt-1 flex items-baseline gap-1">
           <span id="kpi-viagens" class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">0</span>
         </div>
       </div>
       <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Recargas Registradas</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Recargas na Nuvem</span>
         <div class="mt-1 flex items-baseline gap-1">
           <span id="kpi-recargas" class="text-xl sm:text-2xl font-extrabold text-purple-400 font-mono">0</span>
         </div>
       </div>
       <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Status da Conexão</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Status da Nuvem</span>
         <div class="mt-1 flex items-baseline gap-1">
-          <span id="txt-status-conexao" class="text-xs font-bold text-amber-400 font-mono">Desconectado</span>
+          <span id="txt-status-conexao" class="text-xs font-bold text-amber-400 font-mono">Aguardando</span>
         </div>
       </div>
     </div>
@@ -104,7 +104,7 @@
     <!-- TABELA -->
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
       <div class="p-3 border-b border-[#142347] flex items-center justify-between">
-        <span class="text-xs font-bold text-white">Viagens na Nuvem (frota_ev / estado_global)</span>
+        <span class="text-xs font-bold text-white">Sincronização Automática com Firestore</span>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
@@ -117,7 +117,7 @@
             </tr>
           </thead>
           <tbody id="lista-viagens" class="divide-y divide-[#142347] text-slate-300">
-            <tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhum dado carregado. Clique em ☁ Credenciais.</td></tr>
+            <tr><td colspan="4" class="p-4 text-center text-slate-500">Aguardando conexão com as credenciais da nuvem...</td></tr>
           </tbody>
         </table>
       </div>
@@ -129,7 +129,7 @@
   <div id="modal-cloud" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
     <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
       <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
-        <h3 class="text-sm font-bold text-white">Conexão Firebase Firestore</h3>
+        <h3 class="text-sm font-bold text-white">Configurar Credenciais Firebase</h3>
         <button type="button" onclick="fecharModal('modal-cloud')" class="text-slate-400 hover:text-white text-base">✕</button>
       </div>
 
@@ -145,7 +145,7 @@
       </div>
 
       <div class="flex justify-between items-center pt-3 border-t border-[#142347]">
-        <button type="button" onclick="localStorage.clear(); window.location.reload();" class="text-rose-400 text-xs font-bold">Limpar Dados</button>
+        <button type="button" onclick="localStorage.clear(); window.location.reload();" class="text-rose-400 text-xs font-bold">Limpar Config</button>
         <div class="flex gap-2">
           <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-cloud')">Cancelar</button>
           <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="conectarENuvem()">Salvar & Conectar</button>
@@ -172,9 +172,10 @@
       return isNaN(p) ? 0 : p;
     }
 
+    // Tenta conectar automaticamente se já houver credenciais salvas no navegador
     window.onload = function() {
-      var key = localStorage.getItem('fb_apikey_v6');
-      var proj = localStorage.getItem('fb_projectid_v6');
+      var key = localStorage.getItem('fb_apikey_v7');
+      var proj = localStorage.getItem('fb_projectid_v7');
       if (key && proj) {
         document.getElementById('fb-apikey').value = key;
         document.getElementById('fb-projectid').value = proj;
@@ -189,8 +190,8 @@
         alert('Preencha a API Key e o Project ID.');
         return;
       }
-      localStorage.setItem('fb_apikey_v6', key);
-      localStorage.setItem('fb_projectid_v6', proj);
+      localStorage.setItem('fb_apikey_v7', key);
+      localStorage.setItem('fb_projectid_v7', proj);
       fecharModal('modal-cloud');
       iniciarFirebase(key, proj);
     }
@@ -202,19 +203,21 @@
         
         badge.textContent = 'Conectando...';
         badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-mono border border-blue-500/30';
-        txtStatus.textContent = 'Lendo estado_global...';
+        txtStatus.textContent = 'Sincronizando...';
 
         if (!firebase.apps.length) {
           firebase.initializeApp({ apiKey: apiKey, projectId: projectId });
         }
         dbFirestore = firebase.firestore();
 
-        // Leitura direta do documento 'estado_global' dentro da coleção 'frota_ev'
+        // Leitura automática do documento global da frota no Firestore
         dbFirestore.collection('frota_ev').doc('estado_global').get().then(function(doc) {
+          badge.textContent = 'Nuvem Conectada';
+          badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30';
+
           if (!doc.exists) {
-            badge.textContent = 'Aviso';
-            txtStatus.textContent = 'Documento não existe';
-            alert('O documento "estado_global" não foi encontrado na coleção "frota_ev".');
+            txtStatus.textContent = 'Documento ausente';
+            document.getElementById('lista-viagens').innerHTML = '<tr><td colspan="4" class="p-4 text-center text-amber-400">Conectado ao Firestore, mas o documento "frota_ev / estado_global" não foi encontrado.</td></tr>';
             return;
           }
 
@@ -222,15 +225,13 @@
           var viagens = dados.viagens || [];
           var recargas = dados.recargas || [];
 
-          badge.textContent = 'Nuvem Conectada';
-          badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30';
           txtStatus.textContent = 'Online (' + viagens.length + ' viagens)';
 
           var distTotal = 0;
           var tbody = document.getElementById('lista-viagens');
           
           if (viagens.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-amber-400">Documento carregado, mas a lista de viagens está vazia.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-amber-400">Conectado com sucesso, mas a lista de viagens está vazia.</td></tr>';
           } else {
             tbody.innerHTML = viagens.map(function(v) {
               distTotal += parsePtBr(v.dist);
@@ -252,8 +253,8 @@
           console.error(err);
           badge.textContent = 'Erro de Acesso';
           badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 font-mono border border-rose-500/30';
-          txtStatus.textContent = 'Falha na leitura';
-          alert('Erro ao ler o Firestore: ' + err.message);
+          txtStatus.textContent = 'Falha ao ler';
+          alert('Erro ao ler do Firestore: ' + err.message);
         });
 
       } catch (e) {
