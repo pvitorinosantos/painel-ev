@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Painel de Gestão EV | Frota BYD Conectada</title>
+  <title>Painel de Gestão EV | Frota BYD Nuvem</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +13,7 @@
   <!-- Chart.js para Gráficos Dinâmicos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Firebase SDK para Sincronização em Nuvem -->
+  <!-- Firebase SDK Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -50,34 +50,28 @@
           BYD
         </div>
         <div>
-          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Gestão</span>
+          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Nuvem</span>
           <h1 class="text-xs sm:text-base font-bold text-white flex items-center gap-2">
             Dolphin Mini & Yuan Pro
-            <span id="badge-cloud-status" class="text-[9px] px-2 py-0.5 rounded-full bg-[#142347] text-slate-400 font-mono border border-[#1F3463]">
-              Local
+            <span id="badge-cloud-status" class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono border border-amber-500/30">
+              Aguardando Nuvem
             </span>
           </h1>
         </div>
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button type="button" onclick="abrirModal('modal-despesa')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1 transition shadow-sm" title="Registrar Despesa Extra">
-          🛠️ Despesa Extra
-        </button>
-        <button type="button" onclick="abrirModal('modal-import')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#00E5FF] hover:bg-cyan-400 text-[#060B18] font-bold text-xs flex items-center gap-1 transition shadow-sm">
-          ⬆ CSV
+        <button type="button" onclick="abrirModal('modal-despesa')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1 transition shadow-sm" title="Registrar Despesa Extra na Nuvem">
+          🛠️ Despesa
         </button>
         <button type="button" onclick="abrirModal('modal-config')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] flex items-center gap-1 transition" title="Ajustes e Tarifas">
           ⚙️ Ajustes
         </button>
         <button type="button" onclick="abrirModal('modal-cloud')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-[#00E5FF] font-semibold text-xs border border-[#1F3463] flex items-center gap-1 transition">
-          ☁ Nuvem
+          ☁ Credenciais
         </button>
         <button type="button" onclick="window.print()" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-[#142347] text-slate-300 hover:text-white border border-[#142347] text-xs transition" title="Relatório PDF">
           🖨️
-        </button>
-        <button type="button" onclick="exportarBackupJSON()" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-[#142347] text-slate-300 hover:text-white border border-[#142347] text-xs transition" title="Backup JSON">
-          💾
         </button>
       </div>
     </div>
@@ -120,10 +114,10 @@
   <!-- ================= PAINEL PRINCIPAL ================= -->
   <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 flex-1 w-full space-y-4">
 
-    <!-- AVISO DE BASE VAZIA -->
-    <div id="banner-vazio" class="hidden bg-blue-500/10 border border-[#00E5FF]/30 p-4 rounded-xl text-center space-y-2">
-      <p class="text-sm font-bold text-white">Nenhum dado importado no momento</p>
-      <p class="text-xs text-slate-400">Clique em <strong>"Importar CSV"</strong> no topo para carregar seus arquivos de telemetria.</p>
+    <!-- AVISO DE CONEXÃO -->
+    <div id="banner-vazio" class="bg-blue-500/10 border border-[#00E5FF]/30 p-4 rounded-xl text-center space-y-2">
+      <p class="text-sm font-bold text-white">Painel pronto para sincronização</p>
+      <p class="text-xs text-slate-400">Clique em <strong>"☁ Credenciais"</strong> no topo para conectar o seu projeto do Firebase Firestore.</p>
     </div>
 
     <!-- KPIS -->
@@ -344,7 +338,7 @@
             Despesas Extras (<span id="tab-cnt-e">0</span>)
           </button>
         </div>
-        <span class="text-[10px] text-slate-400 hidden sm:inline">Clique nos cabeçalhos para ordenar ↕</span>
+        <span class="text-[10px] text-slate-400 hidden sm:inline">Sincronizado Firestore ↕</span>
       </div>
 
       <div id="view-v" class="overflow-x-auto custom-scroll">
@@ -397,11 +391,11 @@
 
   </main>
 
-  <!-- ================= MODAL ADICIONAR DESPESA EXTRA ================= -->
+  <!-- ================= MODAL ADICIONAR DESPESA EXTRA (NUVEM) ================= -->
   <div id="modal-despesa" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
     <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-3">
       <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
-        <h3 class="text-sm font-bold text-white">Registrar Revisão ou Despesa Extra</h3>
+        <h3 class="text-sm font-bold text-white">Adicionar Despesa (Salva na Nuvem)</h3>
         <button type="button" onclick="fecharModal('modal-despesa')" class="text-slate-400 hover:text-white text-base">✕</button>
       </div>
 
@@ -438,8 +432,8 @@
 
       <div class="flex justify-end gap-2 pt-2 border-t border-[#142347]">
         <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-despesa')">Cancelar</button>
-        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] hover:bg-cyan-400 text-[#060B18] font-bold text-xs" onclick="salvarDespesaExtra()">
-          Salvar Despesa
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] hover:bg-cyan-400 text-[#060B18] font-bold text-xs" onclick="salvarDespesaNuvem()">
+          Salvar na Nuvem
         </button>
       </div>
     </div>
@@ -497,32 +491,7 @@
     </div>
   </div>
 
-  <!-- ================= MODAL IMPORTAÇÃO ================= -->
-  <div id="modal-import" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
-    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-lg rounded-2xl p-4 sm:p-5 space-y-3">
-      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
-        <h3 class="text-sm font-bold text-white">Importar Dados Complementares</h3>
-        <button type="button" onclick="fecharModal('modal-import')" class="text-slate-400 hover:text-white text-base">✕</button>
-      </div>
-
-      <label for="input-csv-file" class="block border-2 border-dashed border-[#1F3463] hover:border-[#00E5FF] rounded-xl p-5 text-center cursor-pointer bg-[#060B18] transition">
-        <p class="text-xs font-bold text-white">Toque aqui para escolher o arquivo CSV</p>
-        <p class="text-[10px] text-slate-500 mt-1">Reconhece o layout oficial com MINI e YUAN PRO</p>
-      </label>
-      <input type="file" id="input-csv-file" accept=".csv, .txt" class="hidden" onchange="processarArquivoCSVIncremental(event)" />
-
-      <div id="previa-box" class="hidden text-xs bg-[#060B18] p-2.5 rounded-lg border border-[#142347] font-mono space-y-1"></div>
-
-      <div class="flex justify-end gap-2 pt-2 border-t border-[#142347]">
-        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-import')">Cancelar</button>
-        <button type="button" id="btn-gravar-import" disabled class="px-4 py-1.5 rounded-lg bg-[#00E5FF] hover:bg-cyan-400 disabled:opacity-40 text-[#060B18] font-bold text-xs" onclick="confirmarImportacaoIncremental()">
-          Confirmar e Mesclar
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= MODAL NUVEM ================= -->
+  <!-- ================= MODAL CREDENCIAIS FIREBASE ================= -->
   <div id="modal-cloud" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
     <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
       <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
@@ -537,23 +506,272 @@
       <div class="space-y-3 text-xs">
         <div>
           <label for="fb-apikey" class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Firebase API Key:</label>
-          <input type="text" id="fb-apikey" placeholder="AIzaSy..." class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+          <input type="text" id="fb-apikey" placeholder="Ex: AIzaSy..." class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
         </div>
         <div>
           <label for="fb-projectid" class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Firebase Project ID:</label>
-          <input type="text" id="fb-projectid" placeholder="seu-projeto-id" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+          <input type="text" id="fb-projectid" placeholder="Ex: frota-byd-ev" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
         </div>
       </div>
 
-      <div class="flex items-center justify-between pt-3 border-t border-[#142347]">
-        <button type="button" class="text-xs text-rose-400 hover:underline font-semibold" onclick="limparTudoERecomecar()">
-          Zerar Banco
-        </button>
+      <div class="flex justify-between items-center pt-3 border-t border-[#142347]">
+        <button type="button" onclick="zerarCredenciaisLocal()" class="text-rose-400 hover:text-rose-300 text-xs font-bold">Zerar Banco</button>
         <div class="flex gap-2">
           <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-cloud')">Cancelar</button>
-          <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] hover:bg-cyan-400 text-[#060B18] font-bold text-xs" onclick="salvarConfigNuvemEConectar()">
+          <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] hover:bg-cyan-400 text-[#060B18] font-bold text-xs" onclick="salvarCredenciaisEConectar()">
             Salvar & Conectar
           </button>
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ================= SCRIPTS ================= -->
+  <script>
+    var MODELOS_COMBUSTAO = {
+      kwid: { nome: "Renault Kwid 1.0", kmPorL: 15.3, manutKm: 0.085 },
+      onix: { nome: "Chevrolet Onix 1.0 Flex", kmPorL: 13.9, manutKm: 0.092 },
+      citroen: { nome: "Antigo Citroën", kmPorL: 6.5, manutKm: 0.120 },
+      custom: { nome: "Personalizado", kmPorL: 10.0, manutKm: 0.090 }
+    };
+
+    var AppEstado = {
+      viagens: [],
+      recargas: [],
+      extras: [],
+      config: { gasolina: 6.96, tarifaKwh: 0.85, customNome: "Personalizado", customKmPorL: 10.0, fbApiKey: "", fbProjectId: "" }
+    };
+
+    var ordenacaoViagens = { coluna: 'inicio', asc: false };
+    var ordenacaoRecargas = { coluna: 'inicio', asc: false };
+    var chartConsumoInstancia = null;
+    var chartGastosInstancia = null;
+    var dbFirestore = null;
+
+    function alternarAba(aba) {
+      var btnV = document.getElementById('tab-btn-v');
+      var btnR = document.getElementById('tab-btn-r');
+      var btnE = document.getElementById('tab-btn-e');
+      var viewV = document.getElementById('view-v');
+      var viewR = document.getElementById('view-r');
+      var viewE = document.getElementById('view-e');
+
+      btnV.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-[#142347] text-slate-300';
+      btnR.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-[#142347] text-slate-300';
+      btnE.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-[#142347] text-slate-300';
+      viewV.classList.add('hidden');
+      viewR.classList.add('hidden');
+      viewE.classList.add('hidden');
+
+      if (aba === 'viagens') {
+        btnV.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-[#00E5FF] text-[#060B18]';
+        viewV.classList.remove('hidden');
+      } else if (aba === 'recargas') {
+        btnR.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-[#00E5FF] text-[#060B18]';
+        viewR.classList.remove('hidden');
+      } else if (aba === 'extras') {
+        btnE.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-[#00E5FF] text-[#060B18]';
+        viewE.classList.remove('hidden');
+      }
+    }
+
+    function alternarSeletorPeriodo() {
+      var p = document.getElementById('filtro-periodo').value;
+      var box = document.getElementById('box-datas-custom');
+      if (p === 'CUSTOM') { box.classList.remove('hidden'); box.classList.add('flex'); }
+      else { box.classList.add('hidden'); box.classList.remove('flex'); }
+      renderizarInterface();
+    }
+
+    function fmtNum(n, d) {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
+
+    function parsePtBr(v) {
+      if (!v && v !== 0) return 0;
+      if (typeof v === 'number') return isNaN(v) ? 0 : v;
+      var s = String(v).replace(/[R$\s]/g, '');
+      if (s.indexOf(',') > -1 && s.indexOf('.') > -1) s = s.replace(/\./g, '').replace(',', '.');
+      else if (s.indexOf(',') > -1) s = s.replace(',', '.');
+      var p = parseFloat(s);
+      return isNaN(p) ? 0 : p;
+    }
+
+    function ordenarViagens(col) {
+      if (ordenacaoViagens.coluna === col) {
+        ordenacaoViagens.asc = !ordenacaoViagens.asc;
+      } else {
+        ordenacaoViagens.coluna = col;
+        ordenacaoViagens.asc = true;
+      }
+      renderizarInterface();
+    }
+
+    function ordenarRecargas(col) {
+      if (ordenacaoRecargas.coluna === col) {
+        ordenacaoRecargas.asc = !ordenacaoRecargas.asc;
+      } else {
+        ordenacaoRecargas.coluna = col;
+        ordenacaoRecargas.asc = true;
+      }
+      renderizarInterface();
+    }
+
+    function verificarModeloTermicoPersonalizado() {
+      var sel = document.getElementById('sel-modelo-termico').value;
+      if (sel === 'custom') {
+        document.getElementById('custom-termico-nome').value = AppEstado.config.customNome || "Personalizado";
+        document.getElementById('custom-termico-km').value = AppEstado.config.customKmPorL || 10.0;
+        abrirModal('modal-custom-termico');
+      } else {
+        renderizarInterface();
+      }
+    }
+
+    function salvarTermicoPersonalizado() {
+      var nome = document.getElementById('custom-termico-nome').value.trim() || "Personalizado";
+      var kmL = parsePtBr(document.getElementById('custom-termico-km').value);
+      if (kmL <= 0) kmL = 10.0;
+      AppEstado.config.customNome = nome;
+      AppEstado.config.customKmPorL = kmL;
+      MODELOS_COMBUSTAO.custom.nome = nome;
+      MODELOS_COMBUSTAO.custom.kmPorL = kmL;
+      fecharModal('modal-custom-termico');
+      renderizarInterface();
+    }
+
+    function salvarConfiguracoes() {
+      AppEstado.config.gasolina = parsePtBr(document.getElementById('cfg-gasolina').value);
+      AppEstado.config.tarifaKwh = parsePtBr(document.getElementById('cfg-kwh').value);
+      salvarConfigsLocais();
+      fecharModal('modal-config');
+      renderizarInterface();
+      alert('Configurações salvas!');
+    }
+
+    function carregarConfigsLocais() {
+      try {
+        var s = localStorage.getItem('ev_fleet_settings_v3');
+        if (s) {
+          var obj = JSON.parse(s);
+          Object.assign(AppEstado.config, obj);
+        }
+      } catch (e) {}
+    }
+
+    function salvarConfigsLocais() {
+      try {
+        localStorage.setItem('ev_fleet_settings_v3', JSON.stringify(AppEstado.config));
+      } catch (e) {}
+    }
+
+    function zerarCredenciaisLocal() {
+      if (confirm('Deseja limpar as credenciais salvas?')) {
+        localStorage.removeItem('ev_fleet_settings_v3');
+        document.getElementById('fb-apikey').value = '';
+        document.getElementById('fb-projectid').value = '';
+        fecharModal('modal-cloud');
+        window.location.reload();
+      }
+    }
+
+    /* CONEXÃO E LEITURA DO FIRESTORE */
+    function tentarConectarFirebaseAutomatico() {
+      carregarConfigsLocais();
+      document.getElementById('fb-apikey').value = AppEstado.config.fbApiKey || '';
+      document.getElementById('fb-projectid').value = AppEstado.config.fbProjectId || '';
+      document.getElementById('cfg-gasolina').value = AppEstado.config.gasolina !== undefined ? AppEstado.config.gasolina : 6.96;
+      document.getElementById('cfg-kwh').value = AppEstado.config.tarifaKwh !== undefined ? AppEstado.config.tarifaKwh : 0.85;
+
+      if (AppEstado.config.fbApiKey && AppEstado.config.fbProjectId) {
+        conectarFirebase(AppEstado.config.fbApiKey, AppEstado.config.fbProjectId);
+      }
+    }
+
+    function salvarCredenciaisEConectar() {
+      var apiKey = document.getElementById('fb-apikey').value.trim();
+      var projectId = document.getElementById('fb-projectid').value.trim();
+
+      if (!apiKey || !projectId) {
+        alert('Por favor, preencha a API Key e o Project ID.');
+        return;
+      }
+
+      AppEstado.config.fbApiKey = apiKey;
+      AppEstado.config.fbProjectId = projectId;
+      salvarConfigsLocais();
+      fecharModal('modal-cloud');
+
+      conectarFirebase(apiKey, projectId);
+    }
+
+    function conectarFirebase(apiKey, projectId) {
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp({ apiKey: apiKey, projectId: projectId });
+        }
+        dbFirestore = firebase.firestore();
+
+        var badge = document.getElementById('badge-cloud-status');
+        badge.textContent = 'Nuvem Conectada';
+        badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30';
+
+        carregarDadosNuvem();
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao inicializar Firebase: ' + err.message);
+      }
+    }
+
+    function carregarDadosNuvem() {
+      if (!dbFirestore) return;
+
+      // 1. Viagens
+      dbFirestore.collection('viagens').get().then(function(snapshot) {
+        var lista = [];
+        snapshot.forEach(function(doc) {
+          var d = doc.data();
+          d.idDoc = doc.id;
+          lista.push(d);
+        });
+        AppEstado.viagens = lista;
+        renderizarInterface();
+      }).catch(function(err) { console.error('Erro viagens:', err); });
+
+      // 2. Recargas
+      dbFirestore.collection('recargas').get().then(function(snapshot) {
+        var lista = [];
+        snapshot.forEach(function(doc) {
+          var d = doc.data();
+          d.idDoc = doc.id;
+          lista.push(d);
+        });
+        AppEstado.recargas = lista;
+        renderizarInterface();
+      }).catch(function(err) { console.error('Erro recargas:', err); });
+
+      // 3. Extras
+      dbFirestore.collection('extras').get().then(function(snapshot) {
+        var lista = [];
+        snapshot.forEach(function(doc) {
+          var d = doc.data();
+          d.idDoc = doc.id;
+          lista.push(d);
+        });
+        AppEstado.extras = lista;
+        renderizarInterface();
+      }).catch(function(err) { console.error('Erro extras:', err); });
+    }
+
+    function salvarDespesaNuvem() {
+      if (!dbFirestore) {
+        alert('Conecte-se à nuvem primeiro clicando em "☁ Credenciais".');
+        return;
+      }
+
+      var carro = document.getElementById('ext-carro').value;
+      var tipo = document.getElementById('ext-tipo').value;
+      var data = document.getElementById('ext-data').value;
+      var desc = document.getElementById('ext-desc').value.trim();
+      var valor = parse
