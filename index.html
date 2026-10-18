@@ -13,10 +13,6 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Firebase SDK Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
   <style>
     body { background-color: #060B18; color: #E2E8F0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
     .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -45,22 +41,25 @@
           BYD
         </div>
         <div>
-          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Nuvem</span>
+          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Gestão</span>
           <h1 class="text-xs sm:text-base font-bold text-white flex items-center gap-2">
             Dolphin Mini & Yuan Pro
-            <span id="badge-cloud-status" class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono border border-amber-500/30">
-              Aguardando Credenciais
+            <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30">
+              100% Estável
             </span>
           </h1>
         </div>
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] transition">
-          ⚙️ Parâmetros
+        <button type="button" onclick="exportarDados()" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#142347] transition">
+          📥 Backup JSON
         </button>
-        <button type="button" onclick="abrirModal('modal-cloud')" class="px-3 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs flex items-center gap-1 transition shadow-md">
-          ☁ Credenciais / Conectar
+        <label class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-purple-400 font-semibold text-xs border border-[#142347] cursor-pointer transition">
+          📤 Restaurar <input type="file" id="file-import" accept=".json" onchange="importarDados(event)" class="hidden">
+        </label>
+        <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs transition">
+          ⚙️ Parâmetros
         </button>
       </div>
     </div>
@@ -219,8 +218,8 @@
     <!-- TABELA DE VIAGENS -->
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
       <div class="p-3 border-b border-[#142347] flex items-center justify-between">
-        <span class="text-xs font-bold text-white">Viagens Sincronizadas da Nuvem (frota_ev / estado_global)</span>
-        <span id="txt-status-nuvem" class="text-[10px] text-cyan-400 font-mono">Aguardando Conexão</span>
+        <span class="text-xs font-bold text-white">Viagens Registradas</span>
+        <button onclick="carregarExemplo()" class="px-2.5 py-1 rounded bg-[#00E5FF] text-[#060B18] font-bold text-[10px]">＋ Carregar Dados de Exemplo</button>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
@@ -233,40 +232,13 @@
             </tr>
           </thead>
           <tbody id="lista-viagens" class="divide-y divide-[#142347] text-slate-300">
-            <tr><td colspan="4" class="p-4 text-center text-slate-500">Clique em "☁ Credenciais / Conectar" no topo para carregar seus dados.</td></tr>
+            <tr><td colspan="4" class="p-4 text-center text-slate-500">Clique em "📥 Backup JSON" para restaurar seu arquivo ou "Carregar Dados de Exemplo".</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
   </main>
-
-  <!-- ================= MODAL CREDENCIAIS FIREBASE ================= -->
-  <div id="modal-cloud" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
-    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
-      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
-        <h3 class="text-sm font-bold text-white">Configurar Credenciais Firebase</h3>
-        <button type="button" onclick="fecharModal('modal-cloud')" class="text-slate-400 hover:text-white text-base">✕</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Firebase API Key:</label>
-          <input type="text" id="fb-apikey" placeholder="Ex: AIzaSy..." class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
-        </div>
-        <div>
-          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Firebase Project ID:</label>
-          <input type="text" id="fb-projectid" placeholder="Ex: frota-byd-ev" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
-        </div>
-      </div>
-      <div class="flex justify-between items-center pt-3 border-t border-[#142347]">
-        <button type="button" onclick="localStorage.clear(); window.location.reload();" class="text-rose-400 text-xs font-bold">Limpar</button>
-        <div class="flex gap-2">
-          <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-cloud')">Cancelar</button>
-          <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="conectarENuvem()">Salvar & Conectar</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ================= MODAL PARÂMETROS ================= -->
   <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
@@ -293,10 +265,14 @@
   </div>
 
   <script>
-    var AppEstado = { viagens: [], recargas: [], extras: [], config: { gasolina: 6.96, tarifaKwh: 0.85 } };
+    var AppEstado = { 
+      viagens: [], 
+      recargas: [], 
+      extras: [], 
+      config: { gasolina: 6.96, tarifaKwh: 0.85 } 
+    };
     var chartConsumoInstancia = null;
     var chartGastosInstancia = null;
-    var dbFirestore = null;
 
     function fmtNum(n, d) {
       if (n === null || n === undefined || isNaN(n)) return '—';
@@ -314,65 +290,39 @@
     }
 
     window.onload = function() {
-      renderizarPainelCompleto();
-      var key = localStorage.getItem('fb_apikey_v9');
-      var proj = localStorage.getItem('fb_projectid_v9');
-      if (key && proj) {
-        document.getElementById('fb-apikey').value = key;
-        document.getElementById('fb-projectid').value = proj;
-        iniciarFirebase(key, proj);
-      }
+      carregarDadosLocais();
     };
 
-    function conectarENuvem() {
-      var key = document.getElementById('fb-apikey').value.trim();
-      var proj = document.getElementById('fb-projectid').value.trim();
-      if (!key || !proj) { alert('Preencha a API Key e o Project ID.'); return; }
-      localStorage.setItem('fb_apikey_v9', key);
-      localStorage.setItem('fb_projectid_v9', proj);
-      fecharModal('modal-cloud');
-      iniciarFirebase(key, proj);
+    function carregarDadosLocais() {
+      try {
+        var dados = localStorage.getItem('ev_frota_dados_v2');
+        if (dados) {
+          var parsed = JSON.parse(dados);
+          AppEstado.viagens = parsed.viagens || [];
+          AppEstado.recargas = parsed.recargas || [];
+          AppEstado.extras = parsed.extras || [];
+          if (parsed.config) AppEstado.config = parsed.config;
+        }
+      } catch (e) {}
+      renderizarPainelCompleto();
     }
 
-    function iniciarFirebase(apiKey, projectId) {
+    function salvarDadosLocais() {
       try {
-        var badge = document.getElementById('badge-cloud-status');
-        badge.textContent = 'Conectando...';
-        badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-mono border border-blue-500/30';
+        localStorage.setItem('ev_frota_dados_v2', JSON.stringify(AppEstado));
+      } catch (e) {}
+    }
 
-        if (!firebase.apps.length) {
-          firebase.initializeApp({ apiKey: apiKey, projectId: projectId });
-        }
-        dbFirestore = firebase.firestore();
-
-        dbFirestore.collection('frota_ev').doc('estado_global').get().then(function(doc) {
-          badge.textContent = 'Nuvem Conectada';
-          badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30';
-
-          if (!doc.exists) {
-            document.getElementById('txt-status-nuvem').textContent = 'Documento estado_global não encontrado.';
-            return;
-          }
-
-          var dados = doc.data();
-          AppEstado.viagens = dados.viagens || [];
-          AppEstado.recargas = dados.recargas || [];
-          AppEstado.extras = dados.extras || [];
-
-          document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
-          renderizarPainelCompleto();
-
-        }).catch(function(err) {
-          console.error(err);
-          badge.textContent = 'Erro de Acesso';
-          badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 font-mono border border-rose-500/30';
-          alert('Erro ao ler Firestore: ' + err.message);
-        });
-
-      } catch (e) {
-        console.error(e);
-        alert('Erro ao iniciar Firebase: ' + e.message);
-      }
+    function carregarExemplo() {
+      AppEstado.viagens = [
+        { carro: 'MINI', inicio: '2026-10-01 17:45', dist: 9.0, kwh: 1.5, orig: 'COMPESA', dest: 'Casa' },
+        { carro: 'MINI', inicio: '2026-10-02 06:25', dist: 9.0, kwh: 1.1, orig: 'Casa', dest: 'COMPESA' }
+      ];
+      AppEstado.recargas = [
+        { carro: 'MINI', kwhTomada: 25.0, custoTotal: 21.25 }
+      ];
+      salvarDadosLocais();
+      renderizarPainelCompleto();
     }
 
     function salvarParametros() {
@@ -380,6 +330,7 @@
       var tar = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
       AppEstado.config.gasolina = gas;
       AppEstado.config.tarifaKwh = tar;
+      salvarDadosLocais();
       fecharModal('modal-parametros');
       renderizarPainelCompleto();
     }
@@ -389,6 +340,9 @@
       var recargas = AppEstado.recargas;
       var extras = AppEstado.extras;
       var cfg = AppEstado.config;
+
+      document.getElementById('input-gasolina').value = cfg.gasolina;
+      document.getElementById('input-tarifa').value = cfg.tarifaKwh;
 
       var distTotal = 0, energiaTotal = 0, distComEnergia = 0;
       for (var i = 0; i < viagens.length; i++) {
@@ -466,4 +420,87 @@
           return '<tr class="hover:bg-[#0F1A36] transition">' +
             '<td class="p-2 text-cyan-300">' + (v.carro || 'MINI') + '<br><span class="text-[10px] text-slate-400">' + (v.inicio || '') + '</span></td>' +
             '<td class="p-2 text-right font-bold text-white">' + fmtNum(v.dist, 1) + ' km</td>' +
-            '<td class="p-2 text-right text-purple-300">' + (v.kwh > 0 ? fmtNum(v.kwh, 2) + ' kWh' : '—') + '</td>'
+            '<td class="p-2 text-right text-purple-300">' + (v.kwh > 0 ? fmtNum(v.kwh, 2) + ' kWh' : '—') + '</td>' +
+            '<td class="p-2 text-slate-200">' + (v.orig || '—') + ' ➔ ' + (v.dest || '—') + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      atualizarGraficos(viagens, totalTermico, somaEletricos);
+    }
+
+    function exportarDados() {
+      var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(AppEstado, null, 2));
+      var downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "backup_frota_ev.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importarDados(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var json = JSON.parse(e.target.result);
+          if (json.viagens) AppEstado.viagens = json.viagens;
+          if (json.recargas) AppEstado.recargas = json.recargas;
+          if (json.extras) AppEstado.extras = json.extras;
+          if (json.config) AppEstado.config = json.config;
+          salvarDadosLocais();
+          renderizarPainelCompleto();
+          alert('Dados restaurados com sucesso!');
+        } catch (err) {
+          alert('Erro ao ler arquivo JSON.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function atualizarGraficos(viagens, totalTermico, totalEletrico) {
+      var labels = viagens.slice(-15).map(function(v) { return (v.inicio || '').slice(5, 16); });
+      var dadosConsumo = viagens.slice(-15).map(function(v) {
+        var d = parsePtBr(v.dist);
+        var k = parsePtBr(v.kwh);
+        return (d > 0 && k > 0) ? Number(((k / d) * 100).toFixed(1)) : null;
+      });
+
+      var ctx1 = document.getElementById('chartConsumo').getContext('2d');
+      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
+      chartConsumoInstancia = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: labels.length ? labels : ['Sem dados'],
+          datasets: [{ label: 'kWh/100km', data: dadosConsumo, borderColor: '#00E5FF', backgroundColor: 'rgba(0, 229, 255, 0.1)', borderWidth: 2, tension: 0.3, fill: true, spanGaps: true }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
+      });
+
+      var ctx2 = document.getElementById('chartGastos').getContext('2d');
+      if (chartGastosInstancia) chartGastosInstancia.destroy();
+      chartGastosInstancia = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: ['Elétrico Real', 'Combustível Ref.'],
+          datasets: [{ data: [totalEletrico, totalTermico], backgroundColor: ['#10B981', '#EF4444'], borderRadius: 6 }]
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { 
+            legend: { display: false },
+            tooltip: { callbacks: { label: function(context) { return 'R$ ' + Number(context.raw).toLocaleString('pt-BR', {minimumFractionDigits: 2}); } } }
+          }, 
+          scales: { 
+            x: { ticks: { color: '#E2E8F0', font: { size: 10 } }, grid: { display: false } }, 
+            y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } 
+          } 
+        }
+      });
+    }
+  </script>
+</body>
+</html>
