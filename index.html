@@ -193,7 +193,29 @@
         </div>
       </div>
     </div>
-
+<!-- SEÇÃO DE FECHAMENTO MENSAL E HISTÓRICO POR PERÍODO -->
+    <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+        <h3 class="text-xs sm:text-sm font-bold uppercase text-white">📅 Fechamento Mensal e Histórico por Período</h3>
+        <span class="text-[10px] text-cyan-400 font-mono">Agrupado por Competência</span>
+      </div>
+      <div class="overflow-x-auto custom-scroll">
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr class="bg-[#0F1A36] text-slate-400 uppercase text-[9px] border-b border-[#142347]">
+              <th class="p-2">Mês / Ano</th>
+              <th class="p-2 text-right">Distância</th>
+              <th class="p-2 text-right">Custo Recargas</th>
+              <th class="p-2 text-right">Custo Térmico Ref.</th>
+              <th class="p-2 text-right">Economia Líquida</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-fechamento-mensal" class="divide-y divide-[#142347] text-slate-300">
+            <tr><td colspan="5" class="p-3 text-center text-slate-500">Calculando histórico mensal...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
     <!-- GRÁFICOS CHART.JS -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
       <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
@@ -427,7 +449,63 @@
       } catch (e) {}
 
       renderizarPainelCompleto();
+      function calcularFechamentoMensal() {
+      var tbody = document.getElementById('tabela-fechamento-mensal');
+      if (!tbody) return;
+
+      var mesesMap = {};
+
+      if (AppEstado.viagens && AppEstado.viagens.length > 0) {
+        AppEstado.viagens.forEach(function(v) {
+          var dataStr = extrairDataRegistro(v);
+          if (!dataStr) return;
+          var mesAno = dataStr.substring(0, 7); // Pega "AAAA-MM"
+
+          if (!mesesMap[mesAno]) {
+            mesesMap[mesAno] = { km: 0, kwhCost: 0, refCost: 0 };
+          }
+
+          var dist = parsePtBr(v.distancia || v.km || 0);
+          var kwh = parsePtBr(v.energia || v.kwh || 0);
+          var custoRecargaViagem = kwh * AppEstado.config.tarifaKwh;
+
+          mesesMap[mesAno].km += dist;
+          mesesMap[mesAno].kwhCost += custoRecargaViagem;
+
+          var consumoRef = AppEstado.config.refConsumo || 15.3;
+          var precoGasolina = AppEstado.config.gasolina || 6.96;
+          var litrosRef = consumoRef > 0 ? (dist / consumoRef) : 0;
+          mesesMap[mesAno].refCost += (litrosRef * precoGasolina);
+        });
+      }
+
+      var chaves = Object.keys(mesesMap).sort().reverse();
+      if (chaves.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-slate-500">Nenhum registro encontrado para o fechamento mensal.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      chaves.forEach(function(mes) {
+        var item = mesesMap[mes];
+        var economia = item.refCost - item.kwhCost;
+        
+        var partes = mes.split('-');
+        var mesAnoFormatado = partes.length === 2 ? partes[1] + '/' + partes[0] : mes;
+
+        html += `<tr class="hover:bg-[#0F1A36]/50 transition">
+          <td class="p-2 font-bold text-cyan-400">${mesAnoFormatado}</td>
+          <td class="p-2 text-right">${fmtNum(item.km, 1)} km</td>
+          <td class="p-2 text-right text-emerald-400">R$ ${fmtNum(item.kwhCost, 2)}</td>
+          <td class="p-2 text-right text-rose-400">R$ ${fmtNum(item.refCost, 2)}</td>
+          <td class="p-2 text-right font-bold text-emerald-400">R$ ${fmtNum(economia, 2)}</td>
+        </tr>`;
+      });
+
+      tbody.innerHTML = html;
+    }
       iniciarFirebaseAutomatico();
+      calcularFechamentoMensal();
     };
 
     function mudarFiltroRapido() {
