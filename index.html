@@ -210,8 +210,8 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
       <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
         <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
-          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">📍 Locais Mais Frequentados (Calor de Viagens)</h3>
-          <span class="text-[10px] text-cyan-400 font-mono">Saídas & Chegadas (Clique p/ Mapa)</span>
+          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">📍 Locais Mais Frequentados</h3>
+          <span class="text-[10px] text-cyan-400 font-mono">Clique no local p/ abrir o Mapa</span>
         </div>
         <div class="overflow-x-auto custom-scroll max-h-48">
           <table class="w-full text-left text-xs font-mono">
@@ -219,11 +219,10 @@
               <tr class="bg-[#0F1A36] text-slate-400 uppercase text-[9px] border-b border-[#142347]">
                 <th class="p-2">Local</th>
                 <th class="p-2 text-right">Visitas (Total)</th>
-                <th class="p-2 text-right">Coordenadas GPS</th>
               </tr>
             </thead>
             <tbody id="lista-locais-calor" class="divide-y divide-[#142347] text-slate-300">
-              <tr><td colspan="3" class="p-3 text-center text-slate-500">Calculando locais...</td></tr>
+              <tr><td colspan="2" class="p-3 text-center text-slate-500">Calculando locais...</td></tr>
             </tbody>
           </table>
         </div>
@@ -684,221 +683,4 @@
         var rMini = recargas.filter(function(r) { var c = String(buscarCampoFlexivel(r, ['carro', 'veiculo', 'Veículo']) || '').toUpperCase(); return c.includes('MINI') || c === 'MINI'; });
         var rYuan = recargas.filter(function(r) { var c = String(buscarCampoFlexivel(r, ['carro', 'veiculo', 'Veículo']) || '').toUpperCase(); return !c.includes('MINI') && c !== ''; });
 
-        var kmMini = vMini.reduce(function(a, b) { return a + parsePtBr(buscarCampoFlexivel(b, ['dist', 'distancia', 'Distância', 'km'])); }, 0);
-        var cMini = rMini.reduce(function(a, b) { return a + parsePtBr(buscarCampoFlexivel(b, ['custoTotal', 'custo', 'Custo']) || 0); }, 0);
-        var kmYuan = vYuan.reduce(function(a, b) { return a + parsePtBr(buscarCampoFlexivel(b, ['dist', 'distancia', 'Distância', 'km'])); }, 0);
-        var cYuan = rYuan.reduce(function(a, b) { return a + parsePtBr(buscarCampoFlexivel(b, ['custoTotal', 'custo', 'Custo']) || 0); }, 0);
-
-        document.getElementById('card-dolphin-km').textContent = fmtNum(kmMini, 1) + ' km';
-        document.getElementById('card-dolphin-viagens').textContent = vMini.length;
-        document.getElementById('card-dolphin-recargas').textContent = 'R$ ' + fmtNum(cMini, 2);
-
-        document.getElementById('card-yuan-km').textContent = fmtNum(kmYuan, 1) + ' km';
-        document.getElementById('card-yuan-viagens').textContent = vYuan.length;
-        document.getElementById('card-yuan-recargas').textContent = 'R$ ' + fmtNum(cYuan, 2);
-
-        var litrosRef = distTotal > 0 ? (distTotal / cfg.refConsumo) : 0;
-        var totalTermico = (litrosRef * cfg.gasolina) + (distTotal * 0.085);
-        var somaEletricos = custoRecargas + totalExtras;
-        var economiaTotal = Math.max(0, totalTermico - somaEletricos);
-
-        document.getElementById('kpi-economia').textContent = fmtNum(economiaTotal, 2);
-        document.getElementById('ref-modelo-txt').textContent = cfg.refModelo;
-        document.getElementById('ref-consumo-txt').textContent = cfg.refConsumo + ' km/L';
-        document.getElementById('ref-gasolina-txt').textContent = 'R$ ' + fmtNum(cfg.gasolina, 2) + ' / L';
-        document.getElementById('ref-custo-total').textContent = 'R$ ' + fmtNum(totalTermico, 2);
-        document.getElementById('lbl-total-extras').textContent = 'Total: R$ ' + fmtNum(totalExtras, 2);
-
-        // RENDERIZAR LOCAIS FREQUENTADOS (CALOR)
-        renderizarLocaisCalor(viagens);
-
-        var tbExtras = document.getElementById('lista-extras');
-        if (todasDespesas.length === 0) {
-          tbExtras.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada.</td></tr>';
-        } else {
-          tbExtras.innerHTML = todasDespesas.map(function(e, idx) {
-            var isLocal = idx >= extrasNuves.length;
-            var localIdx = idx - extrasNuves.length;
-            var dStr = buscarCampoFlexivel(e, ['data', 'Data']);
-            var dataStr = dStr ? dStr.split('-').reverse().join('/') : '—';
-            var anoDespesa = dStr ? new Date(dStr + 'T00:00:00').getFullYear() : anoAtual;
-            var avisoAntigo = anoDespesa < anoAtual ? ' <span class="text-[9px] text-amber-500">(Anterior)</span>' : '';
-            
-            var acoesHtml = isLocal ? 
-              '<button onclick="editarDespesaLocal(' + localIdx + ')" class="text-cyan-400 hover:underline mr-2">Editar</button>' +
-              '<button onclick="excluirDespesaLocal(' + localIdx + ')" class="text-rose-400 hover:underline">Excluir</button>' : 
-              '<span class="text-slate-500">Nuvem</span>';
-
-            return '<tr class="hover:bg-[#0F1A36]">' +
-              '<td class="p-2 text-slate-400">' + dataStr + avisoAntigo + '</td>' +
-              '<td class="p-2 text-white">' + (buscarCampoFlexivel(e, ['descricao', 'desc', 'Descrição']) || 'Despesa') + '<br><span class="text-[10px] text-slate-400">' + (buscarCampoFlexivel(e, ['carro', 'veiculo', 'Veículo']) || 'Frota') + '</span></td>' +
-              '<td class="p-2 text-right font-bold text-amber-400">R$ ' + fmtNum(parsePtBr(buscarCampoFlexivel(e, ['valor', 'custo', 'Valor'])), 2) + '</td>' +
-              '<td class="p-2 text-right">' + acoesHtml + '</td>' +
-            '</tr>';
-          }).join('');
-        }
-
-        var tbody = document.getElementById('lista-viagens');
-        if (viagens.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhuma viagem encontrada para o período.</td></tr>';
-        } else {
-          tbody.innerHTML = viagens.map(function(v) {
-            var kwhVal = parsePtBr(buscarCampoFlexivel(v, ['kwh', 'energia', 'Energia']));
-            var saidaTxt = buscarCampoFlexivel(v, ['Saída', 'saida', 'Saida', 'orig', 'origem', 'Origem']) || '—';
-            var chegadaTxt = buscarCampoFlexivel(v, ['Chegada', 'chegada', 'Chegada', 'dest', 'destino', 'Destino']) || '—';
-            
-            var latS = buscarCampoFlexivel(v, ['Latitude de saída', 'Latitude de saida', 'latSaida', 'lat_saida', 'latitudeSaida', 'LatSaida', 'lat_s']);
-            var lonS = buscarCampoFlexivel(v, ['Longitude de saída', 'Longitude de saida', 'lonSaida', 'lon_saida', 'longitudeSaida', 'LonSaida', 'lon_s']);
-            var latC = buscarCampoFlexivel(v, ['Latitude de chegada', 'latChegada', 'lat_chegada', 'latitudeChegada', 'LatChegada', 'lat_c']);
-            var lonC = buscarCampoFlexivel(v, ['Longitude de chegada', 'lonChegada', 'lon_chegada', 'longitudeChegada', 'LonChegada', 'lon_c']);
-
-            var linkS = (latS && lonS) ? 'https://www.google.com/maps/search/?api=1&query=' + latS + ',' + lonS : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(saidaTxt);
-            var linkC = (latC && lonC) ? 'https://www.google.com/maps/search/?api=1&query=' + latC + ',' + lonC : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(chegadaTxt);
-
-            var latLonS = (latS && lonS) ? '(<a href="' + linkS + '" target="_blank" class="text-cyan-400 hover:underline">' + latS + ', ' + lonS + '</a>)' : '';
-            var latLonC = (latC && lonC) ? '(<a href="' + linkC + '" target="_blank" class="text-cyan-400 hover:underline">' + latC + ', ' + lonC + '</a>)' : '';
-
-            return '<tr class="hover:bg-[#0F1A36] transition">' +
-              '<td class="p-2 text-cyan-300">' + (buscarCampoFlexivel(v, ['carro', 'veiculo', 'Veículo']) || 'MINI') + '<br><span class="text-[10px] text-slate-400">' + (buscarCampoFlexivel(v, ['inicio', 'data', 'Data']) || '') + '</span></td>' +
-              '<td class="p-2 text-right font-bold text-white">' + fmtNum(buscarCampoFlexivel(v, ['dist', 'distancia', 'Distância', 'km']), 1) + ' km</td>' +
-              '<td class="p-2 text-right text-purple-300">' + (kwhVal > 0 ? fmtNum(kwhVal, 2) + ' kWh' : '—') + '</td>' +
-              '<td class="p-2 text-slate-200"><a href="' + linkS + '" target="_blank" class="hover:text-cyan-300 underline">' + saidaTxt + '</a> <span class="text-[9px] text-slate-500">' + latLonS + '</span> ➔ <a href="' + linkC + '" target="_blank" class="hover:text-cyan-300 underline">' + chegadaTxt + '</a> <span class="text-[9px] text-slate-500">' + latLonC + '</span></td>' +
-            '</tr>';
-          }).join('');
-        }
-
-        atualizarGraficos(viagens, totalTermico, somaEletricos);
-      } catch (err) {
-        console.error("Erro no renderizarPainelCompleto:", err);
-      }
-    }
-
-    function renderizarLocaisCalor(viagens) {
-      var tbCalor = document.getElementById('lista-locais-calor');
-      if (!viagens || viagens.length === 0) {
-        tbCalor.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhum local registrado.</td></tr>';
-        return;
-      }
-
-      var contadorLocais = {};
-      
-      viagens.forEach(function(v) {
-        try {
-          var saida = buscarCampoFlexivel(v, ['Saída', 'saida', 'Saida', 'orig', 'origem', 'Origem']);
-          var latS = buscarCampoFlexivel(v, ['Latitude de saída', 'Latitude de saida', 'latSaida', 'lat_saida', 'latitudeSaida', 'LatSaida', 'lat_s']);
-          var lonS = buscarCampoFlexivel(v, ['Longitude de saída', 'Longitude de saida', 'lonSaida', 'lon_saida', 'longitudeSaida', 'LonSaida', 'lon_s']);
-
-          var chegada = buscarCampoFlexivel(v, ['Chegada', 'chegada', 'Chegada', 'dest', 'destino', 'Destino']);
-          var latC = buscarCampoFlexivel(v, ['Latitude de chegada', 'latChegada', 'lat_chegada', 'latitudeChegada', 'LatChegada', 'lat_c']);
-          var lonC = buscarCampoFlexivel(v, ['Longitude de chegada', 'lonChegada', 'lon_chegada', 'longitudeChegada', 'LonChegada', 'lon_c']);
-
-          if (saida) {
-            var nomeSaida = String(saida).trim();
-            if (!contadorLocais[nomeSaida]) contadorLocais[nomeSaida] = { count: 0, lat: latS, lon: lonS };
-            contadorLocais[nomeSaida].count++;
-            if (latS && lonS) { contadorLocais[nomeSaida].lat = latS; contadorLocais[nomeSaida].lon = lonS; }
-          }
-          if (chegada) {
-            var nomeChegada = String(chegada).trim();
-            if (!contadorLocais[nomeChegada]) contadorLocais[nomeChegada] = { count: 0, lat: latC, lon: lonC };
-            contadorLocais[nomeChegada].count++;
-            if (latC && lonC) { contadorLocais[nomeChegada].lat = latC; contadorLocais[nomeChegada].lon = lonC; }
-          }
-        } catch (e) {}
-      });
-
-      var listaOrdenada = Object.keys(contadorLocais).map(function(nome) {
-        return { nome: nome, count: contadorLocais[nome].count, lat: contadorLocais[nome].lat, lon: contadorLocais[nome].lon };
-      }).sort(function(a, b) { return b.count - a.count; });
-
-      if (listaOrdenada.length === 0) {
-        tbCalor.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhum local registrado.</td></tr>';
-        return;
-      }
-
-      tbCalor.innerHTML = listaOrdenada.map(function(item, idx) {
-        var corBadge = idx === 0 ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : (idx === 1 ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40' : 'bg-[#142347] text-slate-300 border-[#1F3463]');
-        
-        var temLatLon = (item.lat !== null && item.lat !== undefined && item.lon !== null && item.lon !== undefined && String(item.lat).trim() !== '');
-        var linkMapa = temLatLon ? 'https://www.google.com/maps/search/?api=1&query=' + item.lat + ',' + item.lon : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(item.nome);
-        
-        var gpsTxt = temLatLon ? '<a href="' + linkMapa + '" target="_blank" class="text-cyan-400 hover:underline font-mono">' + item.lat + ', ' + item.lon + '</a>' : '<a href="' + linkMapa + '" target="_blank" class="text-slate-400 hover:underline">Ver no Mapa</a>';
-        var linkNome = '<a href="' + linkMapa + '" target="_blank" class="text-white hover:text-cyan-300 hover:underline">' + item.nome + '</a>';
-
-        return '<tr class="hover:bg-[#0F1A36]">' +
-          '<td class="p-2 font-bold flex items-center gap-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-mono border ' + corBadge + '">' + (idx + 1 + 'º') + '</span> ' + linkNome + '</td>' +
-          '<td class="p-2 text-right font-bold text-emerald-400">' + item.count + ' visitas</td>' +
-          '<td class="p-2 text-right text-[10px] font-mono">' + gpsTxt + '</td>' +
-        '</tr>';
-      }).join('');
-    }
-
-    function atualizarGraficos(viagens, totalTermico, totalEletrico) {
-      var labels = viagens.slice(-15).map(function(v) { 
-        var dStr = buscarCampoFlexivel(v, ['inicio', 'data', 'Data']);
-        return dStr ? String(dStr).slice(5, 16) : ''; 
-      });
-
-      var dadosConsumo = viagens.slice(-15).map(function(v) {
-        var d = parsePtBr(buscarCampoFlexivel(v, ['dist', 'distancia', 'Distância', 'km']));
-        var k = parsePtBr(buscarCampoFlexivel(v, ['kwh', 'energia', 'Energia']));
-        return (d > 0 && k > 0) ? Number(((k / d) * 100).toFixed(1)) : null;
-      });
-
-      var ctx1 = document.getElementById('chartConsumo').getContext('2d');
-      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
-      chartConsumoInstancia = new Chart(ctx1, {
-        type: 'line',
-        data: {
-          labels: labels.length ? labels : ['Sem dados'],
-          datasets: [{ label: 'kWh/100km', data: dadosConsumo, borderColor: '#00E5FF', backgroundColor: 'rgba(0, 229, 255, 0.1)', borderWidth: 2, tension: 0.3, fill: true, spanGaps: true }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
-      });
-
-      var ctx2 = document.getElementById('chartGastos').getContext('2d');
-      if (chartGastosInstancia) chartGastosInstancia.destroy();
-      
-      var pluginValoresNasBarras = {
-        id: 'pluginValoresNasBarras',
-        afterDatasetsDraw: function(chart) {
-          var ctx = chart.ctx;
-          chart.data.datasets.forEach(function(dataset, i) {
-            var meta = chart.getDatasetMeta(i);
-            meta.data.forEach(function(bar, index) {
-              var valor = dataset.data[index];
-              var texto = 'R$ ' + Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-              ctx.fillStyle = '#FFFFFF';
-              ctx.font = 'bold 11px sans-serif';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'bottom';
-              ctx.fillText(texto, bar.x, bar.y - 6);
-            });
-          });
-        }
-      };
-
-      chartGastosInstancia = new Chart(ctx2, {
-        type: 'bar',
-        data: {
-          labels: ['Elétrico Real', 'Combustível Ref.'],
-          datasets: [{ data: [totalEletrico, totalTermico], backgroundColor: ['#10B981', '#EF4444'], borderRadius: 6 }]
-        },
-        options: { 
-          responsive: true, 
-          maintainAspectRatio: false, 
-          plugins: { 
-            legend: { display: false },
-            tooltip: { callbacks: { label: function(context) { return 'R$ ' + Number(context.raw).toLocaleString('pt-BR', {minimumFractionDigits: 2}); } } }
-          }, 
-          scales: { 
-            x: { ticks: { color: '#E2E8F0', font: { size: 10 } }, grid: { display: false } }, 
-            y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' }, suggestMax: Math.max(totalEletrico, totalTermico) * 1.2 } 
-          } 
-        },
-        plugins: [pluginValoresNasBarras]
-      });
-    }
-  </script>
-</body>
-</html>
+        var kmMini = vMini.reduce(function(a, b) { return a + parsePtBr
