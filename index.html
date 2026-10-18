@@ -496,7 +496,7 @@
       return true;
     }
 
-    // ================= LEITOR DINÂMICO DEFINITIVO (BASEADO NO NOME DA COLUNA DO CABEÇALHO) =================
+    // ================= PARSER DEFINITIVO POR ESTRUTURA POSICIONAL TABULADA =================
     function processarArquivoCarllog(event) {
       var arquivo = event.target.files[0];
       if (!arquivo) return;
@@ -507,109 +507,81 @@
         try {
           var linhas = conteudo.split(/\r?\n/).filter(function(l) { return l && l.trim() !== ''; });
           if (linhas.length < 2) {
-            alert('Arquivo vazio ou formato inválido.');
+            alert('Arquivo vazio ou inválido.');
             return;
           }
 
-          // Identifica se usa Tabulação (\t) ou Ponto-e-vírgula (;)
-          var sep = linhas[0].includes('\t') ? '\t' : (linhas[0].includes(';') ? ';' : ',');
-          var cabecalho = linhas[0].split(sep).map(function(c) { return c.trim().toLowerCase().replace(/^"|"$/g, ''); });
+          var cabecalhoLinha = linhas[0].toLowerCase();
+          var ehRecarga = cabecalhoLinha.includes('carregador') || cabecalhoLinha.includes('energia na bateria');
 
-          // Descobre automaticamente o índice exato de cada coluna pelo nome real do Carllog
-          function getColIdx(possiveisNomes) {
-            for (var p = 0; p < possiveisNomes.length; p++) {
-              var idx = cabecalho.findIndex(function(h) { return h.indexOf(possiveisNomes[p]) > -1; });
-              if (idx > -1) return idx;
-            }
-            return -1;
-          }
-
-          var idxCarro = getColIdx(['carro', 'veiculo', 'veículo']);
-          var idxInicio = getColIdx(['início', 'inicio', 'date', 'data']);
-          
-          var ehRecarga = cabecalho.some(function(h) { return h.includes('carregador') || h.includes('energia na bateria'); });
           var novosItens = [];
 
-          if (ehRecarga) {
-            var idxEnergia = getColIdx(['energia na bateria', 'energia']);
-            var idxCusto = getColIdx(['custo total', 'custo']);
-            var idxLocal = getColIdx(['local', 'carregador']);
+          for (var i = 1; i < linhas.length; i++) {
+            var cols = linhas[i].split('\t').map(function(c) { return c.trim().replace(/^"|"$/g, ''); });
+            if (cols.length < 3) continue;
 
-            for (var i = 1; i < linhas.length; i++) {
-              var cols = linhas[i].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ''); });
-              if (cols.length < 2) continue;
+            if (ehRecarga) {
+              // Recargas estruturadas por índice seguro
+              var carro = cols[0] || 'MINI';
+              var inicio = cols[2] || '';
+              var local = cols[5] || 'Casa';
+              var energiaBat = parsePtBr(cols[11]);
+              var custoTotal = parsePtBr(cols[17]);
 
-              var carro = idxCarro > -1 ? cols[idxCarro] : 'MINI';
-              var inicio = idxInicio > -1 ? cols[idxInicio] : new Date().toISOString();
-              var energia = parsePtBr(idxEnergia > -1 ? cols[idxEnergia] : 0);
-              var custo = parsePtBr(idxCusto > -1 ? cols[idxCusto] : 0);
-              var local = idxLocal > -1 ? cols[idxLocal] : 'Casa';
+              if (inicio) {
+                novosItens.push({
+                  carro: carro,
+                  inicio: inicio,
+                  data: inicio,
+                  energia: energiaBat,
+                  custo: custoTotal > 0 ? custoTotal : (energiaBat * AppEstado.config.tarifaKwh),
+                  local: local,
+                  tipo: 'recarga'
+                });
+              }
+            } else {
+              // Viagens estruturadas por índice seguro
+              var carro = cols[0] || 'MINI';
+              var inicio = cols[2] || '';
+              var distancia = parsePtBr(cols[5]);
+              var energiaUsada = parsePtBr(cols[10]);
+              var saida = cols[17] || 'Origem';
+              var chegada = cols[20] || 'Destino';
+              var custoTotal = parsePtBr(cols[26] || cols[27] || 0);
 
-              novosItens.push({
-                carro: carro,
-                inicio: inicio,
-                data: inicio,
-                energia: energia,
-                custo: custo > 0 ? custo : (energia * AppEstado.config.tarifaKwh),
-                local: local,
-                tipo: 'recarga'
-              });
+              if (inicio && distancia >= 0) {
+                novosItens.push({
+                  carro: carro,
+                  inicio: inicio,
+                  data: inicio,
+                  distancia: distancia,
+                  energia: energiaUsada > 0 ? energiaUsada : (distancia * 0.12),
+                  custo: custoTotal,
+                  origem: saida,
+                  destino: chegada,
+                  trajeto: saida + ' → ' + chegada
+                });
+              }
             }
+          }
 
-            if (novosItens.length > 0) {
+          if (novosItens.length > 0) {
+            if (ehRecarga) {
               if (!AppEstado.recargas) AppEstado.recargas = [];
               AppEstado.recargas = AppEstado.recargas.concat(novosItens);
-              alert('Sucesso! ' + novosItens.length + ' recarga(s) importada(s). Salvando na nuvem...');
-              persistirEstadoNuvem();
+              alert('Sucesso absoluto! ' + novosItens.length + ' recarga(s) lida(s) e enviadas ao Firebase.');
             } else {
-              alert('Nenhum registro de recarga válido foi encontrado.');
-            }
-
-          } else {
-            // VIAGENS
-            var idxDistancia = getColIdx(['distância', 'distancia', 'km']);
-            var idxEnergiaUsada = getColIdx(['energia usada', 'energia']);
-            var idxSaida = getColIdx(['saída', 'saida', 'origem']);
-            var idxChegada = getColIdx(['chegada', 'destino']);
-            var idxCusto = getColIdx(['custo total', 'custo']);
-
-            for (var i = 1; i < linhas.length; i++) {
-              var cols = linhas[i].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ''); });
-              if (cols.length < 2) continue;
-
-              var carro = idxCarro > -1 ? cols[idxCarro] : 'MINI';
-              var inicio = idxInicio > -1 ? cols[idxInicio] : new Date().toISOString();
-              var distancia = parsePtBr(idxDistancia > -1 ? cols[idxDistancia] : 0);
-              var energia = parsePtBr(idxEnergiaUsada > -1 ? cols[idxEnergiaUsada] : (distancia * 0.12));
-              var saida = idxSaida > -1 ? cols[idxSaida] : 'Saída';
-              var chegada = idxChegada > -1 ? cols[idxChegada] : 'Chegada';
-              var custo = parsePtBr(idxCusto > -1 ? cols[idxCusto] : 0);
-
-              novosItens.push({
-                carro: carro,
-                inicio: inicio,
-                data: inicio,
-                distancia: distancia,
-                energia: energia,
-                custo: custo,
-                origem: saida,
-                destino: chegada,
-                trajeto: (saida && chegada) ? (saida + ' → ' + chegada) : 'Trajeto Urbano'
-              });
-            }
-
-            if (novosItens.length > 0) {
               if (!AppEstado.viagens) AppEstado.viagens = [];
               AppEstado.viagens = AppEstado.viagens.concat(novosItens);
-              alert('Sucesso! ' + novosItens.length + ' viagem(ns) importada(s). Salvando na nuvem...');
-              persistirEstadoNuvem();
-            } else {
-              alert('Nenhum registro de viagem válido foi encontrado.');
+              alert('Sucesso absoluto! ' + novosItens.length + ' viagem(ns) lida(s) e enviadas ao Firebase.');
             }
+            persistirEstadoNuvem();
+          } else {
+            alert('Nenhum registro válido detectado. Verifique se o arquivo é um export tabulado padrão do Carllog.');
           }
 
         } catch (err) {
-          alert('Erro ao processar o arquivo: ' + err.message);
+          alert('Erro crítico ao processar o arquivo: ' + err.message);
         }
         event.target.value = '';
       };
