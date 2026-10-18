@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Painel de Gestão EV | Frota BYD Definitivo</title>
+  <title>Painel de Gestão EV | Frota BYD Nuvem</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +12,10 @@
   
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <style>
     body { background-color: #060B18; color: #E2E8F0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -41,25 +45,19 @@
           BYD
         </div>
         <div>
-          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Gestão</span>
+          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Nuvem</span>
           <h1 class="text-xs sm:text-base font-bold text-white flex items-center gap-2">
             Dolphin Mini & Yuan Pro
-            <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30">
-              100% Estável
+            <span id="badge-cloud-status" class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30">
+              Nuvem Conectada
             </span>
           </h1>
         </div>
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button type="button" onclick="exportarDados()" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#142347] transition">
-          📥 Exportar JSON
-        </button>
-        <label class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-purple-400 font-semibold text-xs border border-[#142347] cursor-pointer transition">
-          📤 Importar JSON <input type="file" id="file-import" accept=".json" onchange="importarDados(event)" class="hidden">
-        </label>
-        <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs transition">
-          ⚙️ Parâmetros
+        <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] transition">
+          ⚙️ Parâmetros Térmicos
         </button>
       </div>
     </div>
@@ -177,17 +175,17 @@
       </div>
     </div>
 
-    <!-- SEÇÃO EXTRAS E COMPARATIVO -->
+    <!-- SEÇÃO DE DESPESAS EXTRAS E COMPARATIVO TÉRMICO -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
       <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
         <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
-          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🛠️ Despesas Extras</h3>
+          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🛠️ Despesas Extras (Manutenção / Seguro / IPVA)</h3>
           <span id="lbl-total-extras" class="text-xs font-bold text-amber-400 font-mono">Total: R$ 0,00</span>
         </div>
         <div class="overflow-x-auto custom-scroll max-h-40">
           <table class="w-full text-left text-xs font-mono">
             <tbody id="lista-extras" class="divide-y divide-[#142347] text-slate-300">
-              <tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhuma despesa extra.</td></tr>
+              <tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhuma despesa extra registrada na nuvem.</td></tr>
             </tbody>
           </table>
         </div>
@@ -195,19 +193,23 @@
 
       <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
         <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
-          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🚗 Veículo a Combustão Referência</h3>
-          <span class="text-[10px] px-2 py-0.5 bg-[#0F1A36] text-amber-400 rounded-full font-mono border border-[#1F3463]">Ativo</span>
+          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🚗 Veículo a Combustão de Referência</h3>
+          <span class="text-[10px] px-2 py-0.5 bg-[#0F1A36] text-amber-400 rounded-full font-mono border border-[#1F3463]">Parâmetro Ativo</span>
         </div>
         <div class="grid grid-cols-2 gap-3 text-xs">
           <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
-            <span class="text-[10px] text-slate-400 block">Modelo Base:</span>
-            <strong class="text-white font-mono">Hatch 1.0 (15.3 km/L)</strong>
+            <span class="text-[10px] text-slate-400 block">Modelo Base de Comparação:</span>
+            <strong class="text-white font-mono">Renault Kwid / Hatch 1.0</strong>
           </div>
           <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
-            <span class="text-[10px] text-slate-400 block">Preço Gasolina:</span>
+            <span class="text-[10px] text-slate-400 block">Consumo Médio Referência:</span>
+            <strong class="text-white font-mono">15.3 km/L</strong>
+          </div>
+          <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-[10px] text-slate-400 block">Preço Gasolina Atual:</span>
             <strong id="ref-gasolina-txt" class="text-amber-400 font-mono">R$ 6,96 / L</strong>
           </div>
-          <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]" colspan="2">
+          <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
             <span class="text-[10px] text-slate-400 block">Custo Estimado Combustível:</span>
             <strong id="ref-custo-total" class="text-rose-400 font-mono">R$ 0,00</strong>
           </div>
@@ -218,8 +220,8 @@
     <!-- TABELA DE VIAGENS -->
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
       <div class="p-3 border-b border-[#142347] flex items-center justify-between">
-        <span class="text-xs font-bold text-white">Viagens Registradas</span>
-        <button onclick="carregarExemplo()" class="px-2.5 py-1 rounded bg-[#00E5FF] text-[#060B18] font-bold text-[10px]">＋ Carregar Exemplo</button>
+        <span class="text-xs font-bold text-white">Viagens Sincronizadas da Nuvem</span>
+        <span id="txt-status-nuvem" class="text-[10px] text-cyan-400 font-mono">Conectando...</span>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
@@ -232,7 +234,7 @@
             </tr>
           </thead>
           <tbody id="lista-viagens" class="divide-y divide-[#142347] text-slate-300">
-            <tr><td colspan="4" class="p-4 text-center text-slate-500">Importe seu JSON ou clique em "Carregar Exemplo".</td></tr>
+            <tr><td colspan="4" class="p-4 text-center text-slate-500">Carregando dados da nuvem...</td></tr>
           </tbody>
         </table>
       </div>
@@ -265,12 +267,7 @@
   </div>
 
   <script>
-    var AppEstado = { 
-      viagens: [], 
-      recargas: [], 
-      extras: [], 
-      config: { gasolina: 6.96, tarifaKwh: 0.85 } 
-    };
+    var AppEstado = { viagens: [], recargas: [], extras: [], config: { gasolina: 6.96, tarifaKwh: 0.85 } };
     var chartConsumoInstancia = null;
     var chartGastosInstancia = null;
 
@@ -290,39 +287,42 @@
     }
 
     window.onload = function() {
-      carregarDadosLocais();
+      iniciarFirebaseAutomatico();
     };
 
-    function carregarDadosLocais() {
+    function iniciarFirebaseAutomatico() {
       try {
-        var dados = localStorage.getItem('ev_frota_dados_v3');
-        if (dados) {
-          var parsed = JSON.parse(dados);
-          AppEstado.viagens = parsed.viagens || [];
-          AppEstado.recargas = parsed.recargas || [];
-          AppEstado.extras = parsed.extras || [];
-          if (parsed.config) AppEstado.config = parsed.config;
+        if (!firebase.apps.length) {
+          firebase.initializeApp({
+            apiKey: "AIzaSyBssVxU2b2mM7m7nOahzvx35LRcV22si40",
+            projectId: "frota-byd-ev"
+          });
         }
-      } catch (e) {}
-      renderizarPainelCompleto();
-    }
 
-    function salvarDadosLocais() {
-      try {
-        localStorage.setItem('ev_frota_dados_v3', JSON.stringify(AppEstado));
-      } catch (e) {}
-    }
+        var db = firebase.firestore();
+        db.collection('frota_ev').doc('estado_global').get().then(function(doc) {
+          if (!doc.exists) {
+            document.getElementById('txt-status-nuvem').textContent = 'Documento estado_global não encontrado.';
+            return;
+          }
 
-    function carregarExemplo() {
-      AppEstado.viagens = [
-        { carro: 'MINI', inicio: '2026-10-01 17:45', dist: 9.0, kwh: 1.5, orig: 'COMPESA', dest: 'Casa' },
-        { carro: 'MINI', inicio: '2026-10-02 06:25', dist: 9.0, kwh: 1.1, orig: 'Casa', dest: 'COMPESA' }
-      ];
-      AppEstado.recargas = [
-        { carro: 'MINI', kwhTomada: 25.0, custoTotal: 21.25 }
-      ];
-      salvarDadosLocais();
-      renderizarPainelCompleto();
+          var dados = doc.data();
+          AppEstado.viagens = dados.viagens || [];
+          AppEstado.recargas = dados.recargas || [];
+          AppEstado.extras = dados.extras || [];
+
+          document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
+          renderizarPainelCompleto();
+
+        }).catch(function(err) {
+          console.error(err);
+          document.getElementById('txt-status-nuvem').textContent = 'Erro ao conectar nuvem';
+        });
+
+      } catch (e) {
+        console.error(e);
+        document.getElementById('txt-status-nuvem').textContent = 'Erro de inicialização';
+      }
     }
 
     function salvarParametros() {
@@ -330,7 +330,6 @@
       var tar = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
       AppEstado.config.gasolina = gas;
       AppEstado.config.tarifaKwh = tar;
-      salvarDadosLocais();
       fecharModal('modal-parametros');
       renderizarPainelCompleto();
     }
@@ -340,9 +339,6 @@
       var recargas = AppEstado.recargas;
       var extras = AppEstado.extras;
       var cfg = AppEstado.config;
-
-      document.getElementById('input-gasolina').value = cfg.gasolina;
-      document.getElementById('input-tarifa').value = cfg.tarifaKwh;
 
       var distTotal = 0, energiaTotal = 0, distComEnergia = 0;
       for (var i = 0; i < viagens.length; i++) {
@@ -378,20 +374,4 @@
       var vMini = viagens.filter(function(v) { return v.carro === 'MINI'; });
       var vYuan = viagens.filter(function(v) { return v.carro !== 'MINI'; });
       var rMini = recargas.filter(function(r) { return r.carro === 'MINI'; });
-      var rYuan = recargas.filter(function(r) { return r.carro !== 'MINI'; });
-
-      var kmMini = vMini.reduce(function(a, b) { return a + parsePtBr(b.dist); }, 0);
-      var cMini = rMini.reduce(function(a, b) { return a + parsePtBr(b.custoTotal || 0); }, 0);
-      var kmYuan = vYuan.reduce(function(a, b) { return a + parsePtBr(b.dist); }, 0);
-      var cYuan = rYuan.reduce(function(a, b) { return a + parsePtBr(b.custoTotal || 0); }, 0);
-
-      document.getElementById('card-dolphin-km').textContent = fmtNum(kmMini, 1) + ' km';
-      document.getElementById('card-dolphin-viagens').textContent = vMini.length;
-      document.getElementById('card-dolphin-recargas').textContent = 'R$ ' + fmtNum(cMini, 2);
-
-      document.getElementById('card-yuan-km').textContent = fmtNum(kmYuan, 1) + ' km';
-      document.getElementById('card-yuan-viagens').textContent = vYuan.length;
-      document.getElementById('card-yuan-recargas').textContent = 'R$ ' + fmtNum(cYuan, 2);
-
-      var litrosRef = distTotal > 0 ? (distTotal / 15.3) : 0;
-      var totalTermico
+      var rYuan = recargas.filter(function(r) { return r.
