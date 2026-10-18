@@ -472,7 +472,7 @@
     }
 
     function extrairDataRegistro(item) {
-      var dStr = buscarCampoFlexivel(item, ['inicio', 'data', 'dataHora', 'Data']);
+      var dStr = buscarCampoFlexivel(item, ['inicio', 'data', 'dataHora', 'Data', 'timestamp', 'criadoEm']);
       if (!dStr) return null;
       return String(dStr).substring(0, 10);
     }
@@ -545,4 +545,336 @@
 
       var obj = { data: data, descricao: desc, carro: carro, valor: valor };
 
-      if (index
+      if (index > -1) {
+        AppEstado.extras[index] = obj;
+      } else {
+        AppEstado.extras.push(obj);
+      }
+
+      fecharModal('modal-add-extra');
+      persistirEstadoNuvem();
+    }
+
+    function iniciarFirebaseAutomatico() {
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp({
+            apiKey: "AIzaSyBssVxU2b2zM7m7nOahzvx35LRcV22si40",
+            authDomain: "frota-byd-ev.firebaseapp.com",
+            projectId: "frota-byd-ev",
+            storageBucket: "frota-byd-ev.firebasestorage.app",
+            messagingSenderId: "868970976462",
+            appId: "1:868970976462:web:a141a94c13c9d24b102c9f",
+            measurementId: "G-2PTG6GYQWQ"
+          });
+        }
+
+        dbFirestore = firebase.firestore();
+        dbFirestore.collection('frotas_ev').doc('principal').get().then(function(doc) {
+          if (!doc.exists) {
+            document.getElementById('txt-status-nuvem').textContent = 'Documento principal vazio.';
+            renderizarPainelCompleto();
+            return;
+          }
+
+          var dados = doc.data();
+          AppEstado.viagens = dados.viagens || dados.viagensList || [];
+          AppEstado.recargas = dados.recargas || dados.recargasList || [];
+          AppEstado.extras = dados.extras || [];
+          
+          if (dados.config) {
+            if (dados.config.gasolina !== undefined) AppEstado.config.gasolina = dados.config.gasolina;
+            if (dados.config.tarifaKwh !== undefined) AppEstado.config.tarifaKwh = dados.config.tarifaKwh;
+            if (dados.config.refModelo !== undefined) AppEstado.config.refModelo = dados.config.refModelo;
+            if (dados.config.refConsumo !== undefined) AppEstado.config.refConsumo = dados.config.refConsumo;
+          }
+
+          document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
+          renderizarPainelCompleto();
+
+        }).catch(function(err) {
+          document.getElementById('txt-status-nuvem').textContent = 'Modo Local (Offline)';
+          renderizarPainelCompleto();
+        });
+
+      } catch (e) {
+        document.getElementById('txt-status-nuvem').textContent = 'Modo Local (Offline)';
+        renderizarPainelCompleto();
+      }
+    }
+
+    function persistirEstadoNuvem() {
+      if (!dbFirestore) {
+        alert('Banco de dados offline. As alterações não puderam ser salvas na nuvem.');
+        renderizarPainelCompleto();
+        return;
+      }
+
+      document.getElementById('txt-status-nuvem').textContent = 'Salvando na nuvem...';
+      
+      dbFirestore.collection('frotas_ev').doc('principal').set({
+        viagens: AppEstado.viagens,
+        recargas: AppEstado.recargas,
+        extras: AppEstado.extras,
+        config: AppEstado.config,
+        atualizadoEm: new Date().toISOString()
+      }, { merge: true }).then(function() {
+        document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
+        renderizarPainelCompleto();
+      }).catch(function(err) {
+        alert('Erro ao salvar na nuvem: ' + err.message);
+        document.getElementById('txt-status-nuvem').textContent = 'Erro ao salvar';
+      });
+    }
+
+    function calcularFechamentoMensal() {
+      var tbody = document.getElementById('tabela-fechamento-mensal');
+      if (!tbody) return;
+
+      var mesesMap = {};
+      var viagensParaCalcular = AppEstado.viagens || [];
+
+      if (viagensParaCalcular.length > 0) {
+        viagensParaCalcular.forEach(function(v) {
+          var dataStr = extrairDataRegistro(v);
+          if (!dataStr) return;
+          var mesAno = dataStr.substring(0, 7);
+
+          if (!mesesMap[mesAno]) {
+            mesesMap[mesAno] = { km: 0, kwhCost: 0, refCost: 0 };
+          }
+
+          var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
+          var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
+          var custoRecargaViagem = kwh * AppEstado.config.tarifaKwh;
+
+          mesesMap[mesAno].km += dist;
+          mesesMap[mesAno].kwhCost += custoRecargaViagem;
+
+          var consumoRef = AppEstado.config.refConsumo || 15.3;
+          var precoGasolina = AppEstado.config.gasolina || 6.96;
+          var litrosRef = consumoRef > 0 ? (dist / consumoRef) : 0;
+          mesesMap[mesAno].refCost += (litrosRef * precoGasolina);
+        });
+      }
+
+      var chaves = Object.keys(mesesMap).sort().reverse();
+      if (chaves.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-slate-500">Nenhum registro encontrado para o fechamento mensal.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      chaves.forEach(function(mes) {
+        var item = mesesMap[mes];
+        var economia = item.refCost - item.kwhCost;
+        
+        var partes = mes.split('-');
+        var mesAnoFormatado = partes.length === 2 ? partes[1] + '/' + partes[0] : mes;
+
+        html += `<tr class="hover:bg-[#0F1A36]/50 transition">
+          <td class="p-2 font-bold text-cyan-400">${mesAnoFormatado}</td>
+          <td class="p-2 text-right">${fmtNum(item.km, 1)} km</td>
+          <td class="p-2 text-right text-emerald-400">R$ ${fmtNum(item.kwhCost, 2)}</td>
+          <td class="p-2 text-right text-rose-400">R$ ${fmtNum(item.refCost, 2)}</td>
+          <td class="p-2 text-right font-bold text-emerald-400">R$ ${fmtNum(economia, 2)}</td>
+        </tr>`;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function renderizarPainelCompleto() {
+      document.getElementById('input-modelo-ref').value = AppEstado.config.refModelo || 'Renault Kwid / Hatch 1.0';
+      document.getElementById('input-consumo-ref').value = AppEstado.config.refConsumo || 15.3;
+      document.getElementById('input-gasolina').value = AppEstado.config.gasolina || 6.96;
+      document.getElementById('input-tarifa').value = AppEstado.config.tarifaKwh || 0.85;
+
+      document.getElementById('ref-modelo-txt').textContent = AppEstado.config.refModelo;
+      document.getElementById('ref-consumo-txt').textContent = fmtNum(AppEstado.config.refConsumo, 1) + ' km/L';
+      document.getElementById('ref-gasolina-txt').textContent = 'R$ ' + fmtNum(AppEstado.config.gasolina, 2) + ' / L';
+
+      var tipoFiltro = document.getElementById('filtro-periodo-rapido').value;
+      var dataIni = document.getElementById('filtro-data-inicio').value;
+      var dataFim = document.getElementById('filtro-data-fim').value;
+
+      var viagensFiltradas = (AppEstado.viagens || []).filter(function(v) {
+        return itemNoIntervalo(v, dataIni, dataFim, tipoFiltro);
+      });
+
+      var distanciaTotal = 0;
+      var custoRecargasTotal = 0;
+      var kwhTotal = 0;
+      var dolphinKm = 0, dolphinViagens = 0, dolphinRecargas = 0;
+      var yuanKm = 0, yuanViagens = 0, yuanRecargas = 0;
+
+      var listaViagensHtml = '';
+      var locaisMap = {};
+
+      viagensFiltradas.forEach(function(v) {
+        var dist = parsePtBr(v.distancia || v.km || 0);
+        var kwh = parsePtBr(v.energia || v.kwh || 0);
+        var custo = kwh * AppEstado.config.tarifaKwh;
+
+        distanciaTotal += dist;
+        kwhTotal += kwh;
+        custoRecargasTotal += custo;
+
+        var carro = buscarCampoFlexivel(v, ['carro', 'veiculo', 'nomeCarro']) || 'MINI';
+        if (carro.toUpperCase().indexOf('YUAN') > -1) {
+          yuanKm += dist;
+          yuanViagens++;
+          yuanRecargas += custo;
+        } else {
+          dolphinKm += dist;
+          dolphinViagens++;
+          dolphinRecargas += custo;
+        }
+
+        var origem = buscarCampoFlexivel(v, ['origem', 'de', 'start']) || '';
+        var destino = buscarCampoFlexivel(v, ['destino', 'para', 'end']) || '';
+        if (origem) locaisMap[origem] = (locaisMap[origem] || 0) + 1;
+        if (destino) locaisMap[destino] = (locaisMap[destino] || 0) + 1;
+
+        var inicio = buscarCampoFlexivel(v, ['inicio', 'dataHora', 'data']) || '—';
+        var coords = buscarCampoFlexivel(v, ['trajeto', 'coordenadas', 'gps']) || (origem + ' → ' + destino);
+
+        listaViagensHtml += `<tr class="hover:bg-[#0F1A36]/50 transition">
+          <td class="p-2 font-bold text-cyan-400">${carro.toUpperCase().indexOf('YUAN') > -1 ? 'YUAN' : 'MINI'}<br><span class="text-[9px] text-slate-400 font-normal">${inicio}</span></td>
+          <td class="p-2 text-right">${fmtNum(dist, 1)} km</td>
+          <td class="p-2 text-right text-emerald-400">${fmtNum(kwh, 2)} kWh</td>
+          <td class="p-2 text-slate-300">${coords}</td>
+        </tr>`;
+      });
+
+      if (viagensFiltradas.length === 0) {
+        listaViagensHtml = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhuma viagem encontrada para o período selecionado.</td></tr>';
+      }
+      document.getElementById('lista-viagens').innerHTML = listaViagensHtml;
+
+      document.getElementById('kpi-distancia').textContent = fmtNum(distanciaTotal, 1);
+      document.getElementById('kpi-recargas').textContent = fmtNum(custoRecargasTotal, 2);
+      
+      var custoPorKm = distanciaTotal > 0 ? (custoRecargasTotal / distanciaTotal) : 0;
+      document.getElementById('kpi-custo-km').textContent = fmtNum(custoPorKm, 3);
+
+      var consumoMedio = distanciaTotal > 0 ? (kwhTotal / (distanciaTotal / 100)) : 0;
+      document.getElementById('kpi-consumo').textContent = fmtNum(consumoMedio, 1);
+
+      var co2 = distanciaTotal * 0.081;
+      document.getElementById('kpi-co2').textContent = fmtNum(co2, 1);
+
+      var consumoRef = AppEstado.config.refConsumo || 15.3;
+      var litrosRef = consumoRef > 0 ? (distanciaTotal / consumoRef) : 0;
+      var custoRefTotal = litrosRef * AppEstado.config.gasolina;
+      document.getElementById('ref-custo-total').textContent = 'R$ ' + fmtNum(custoRefTotal, 2);
+
+      var economiaLiquida = custoRefTotal - custoRecargasTotal;
+      document.getElementById('kpi-economia').textContent = fmtNum(economiaLiquida, 2);
+
+      document.getElementById('card-dolphin-km').textContent = fmtNum(dolphinKm, 1) + ' km';
+      document.getElementById('card-dolphin-viagens').textContent = dolphinViagens;
+      document.getElementById('card-dolphin-recargas').textContent = 'R$ ' + fmtNum(dolphinRecargas, 2);
+
+      document.getElementById('card-yuan-km').textContent = fmtNum(yuanKm, 1) + ' km';
+      document.getElementById('card-yuan-viagens').textContent = yuanViagens;
+      document.getElementById('card-yuan-recargas').textContent = 'R$ ' + fmtNum(yuanRecargas, 2);
+
+      var totalExtras = 0;
+      var extrasHtml = '';
+      (AppEstado.extras || []).forEach(function(ex, idx) {
+        totalExtras += ex.valor || 0;
+        extrasHtml += `<tr class="hover:bg-[#0F1A36]/50 transition">
+          <td class="p-2 text-cyan-400">${ex.data || '—'}</td>
+          <td class="p-2">${ex.descricao || ex.desc || 'Despesa'}</td>
+          <td class="p-2 text-slate-400">${ex.carro || 'Frota'}</td>
+          <td class="p-2 text-right text-amber-400">R$ ${fmtNum(ex.valor, 2)}</td>
+        </tr>`;
+      });
+      if (!AppEstado.extras || AppEstado.extras.length === 0) {
+        extrasHtml = '<tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada.</td></tr>';
+      }
+      document.getElementById('lista-extras').innerHTML = extrasHtml;
+      document.getElementById('lbl-total-extras').textContent = 'Total: R$ ' + fmtNum(totalExtras, 2);
+
+      var locaisOrdenados = Object.keys(locaisMap).map(function(k) {
+        return { nome: k, count: locaisMap[k] };
+      }).sort(function(a, b) { return b.count - a.count; });
+
+      var locaisHtml = '';
+      locaisOrdenados.forEach(function(loc, idx) {
+        locaisHtml += `<tr class="hover:bg-[#0F1A36]/50 transition">
+          <td class="p-2 text-white"><strong>${idx + 1}º</strong> ${loc.nome}</td>
+          <td class="p-2 text-right text-cyan-400 font-bold">${loc.count} visitas</td>
+        </tr>`;
+      });
+      if (locaisOrdenados.length === 0) {
+        locaisHtml = '<tr><td colspan="2" class="p-3 text-center text-slate-500">Nenhum local registrado.</td></tr>';
+      }
+      document.getElementById('lista-locais-calor').innerHTML = locaisHtml;
+
+      calcularFechamentoMensal();
+      atualizarGraficos(viagensFiltradas, custoRefTotal, custoRecargasTotal);
+    }
+
+    function atualizarGraficos(viagens, custoRef, custoEl) {
+      var ctxConsumo = document.getElementById('chartConsumo').getContext('2d');
+      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
+
+      var labelsConsumo = viagens.map(function(v) { return (extrairDataRegistro(v) || '').substring(5); });
+      var dataConsumo = viagens.map(function(v) {
+        var d = parsePtBr(v.distancia || 0);
+        var k = parsePtBr(v.energia || 0);
+        return d > 0 ? (k / (d / 100)) : 0;
+      });
+
+      chartConsumoInstancia = new Chart(ctxConsumo, {
+        type: 'line',
+        data: {
+          labels: labelsConsumo.length ? labelsConsumo : ['Início'],
+          datasets: [{
+            label: 'kWh/100km',
+            data: dataConsumo.length ? dataConsumo : [0],
+            borderColor: '#00E5FF',
+            backgroundColor: 'rgba(0, 229, 255, 0.1)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } },
+            y: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } }
+          }
+        }
+      });
+
+      var ctxGastos = document.getElementById('chartGastos').getContext('2d');
+      if (chartGastosInstancia) chartGastosInstancia.destroy();
+
+      chartGastosInstancia = new Chart(ctxGastos, {
+        type: 'bar',
+        data: {
+          labels: ['Elétrico Real', 'Combustível Ref.'],
+          datasets: [{
+            data: [custoEl, custoRef],
+            backgroundColor: ['#10B981', '#F43F5E']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#94A3B8', font: { size: 10 } } },
+            y: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
