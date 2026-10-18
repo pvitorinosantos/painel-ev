@@ -500,4 +500,64 @@
       var labels = viagens.slice(-15).map(function(v) { return (v.inicio || v.data || '').slice(5, 16); });
       var dadosConsumo = viagens.slice(-15).map(function(v) {
         var d = parsePtBr(v.dist || v.distancia);
-        var k = parsePtBr
+        var k = parsePtBr(v.kwh || v.energia);
+        return (d > 0 && k > 0) ? Number(((k / d) * 100).toFixed(1)) : null;
+      });
+
+      var ctx1 = document.getElementById('chartConsumo').getContext('2d');
+      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
+      chartConsumoInstancia = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: labels.length ? labels : ['Sem dados'],
+          datasets: [{ label: 'kWh/100km', data: dadosConsumo, borderColor: '#00E5FF', backgroundColor: 'rgba(0, 229, 255, 0.1)', borderWidth: 2, tension: 0.3, fill: true, spanGaps: true }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
+      });
+
+      var ctx2 = document.getElementById('chartGastos').getContext('2d');
+      if (chartGastosInstancia) chartGastosInstancia.destroy();
+      
+      var pluginValoresNasBarras = {
+        id: 'pluginValoresNasBarras',
+        afterDatasetsDraw: function(chart) {
+          var ctx = chart.ctx;
+          chart.data.datasets.forEach(function(dataset, i) {
+            var meta = chart.getDatasetMeta(i);
+            meta.data.forEach(function(bar, index) {
+              var valor = dataset.data[index];
+              var texto = 'R$ ' + Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              ctx.fillStyle = '#FFFFFF';
+              ctx.font = 'bold 11px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'bottom';
+              ctx.fillText(texto, bar.x, bar.y - 6);
+            });
+          });
+        }
+      };
+
+      chartGastosInstancia = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: ['Elétrico Real', 'Combustível Ref.'],
+          datasets: [{ data: [totalEletrico, totalTermico], backgroundColor: ['#10B981', '#EF4444'], borderRadius: 6 }]
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { 
+            legend: { display: false },
+            tooltip: { callbacks: { label: function(context) { return 'R$ ' + Number(context.raw).toLocaleString('pt-BR', {minimumFractionDigits: 2}); } } }
+          }, 
+          scales: { 
+            x: { ticks: { color: '#E2E8F0', font: { size: 10 } }, grid: { display: false } }, 
+            y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' }, suggestMax: Math.max(totalEletrico, totalTermico) * 1.2 } 
+          } 
+        },
+        plugins: [pluginValoresNasBarras]
+      });
+    }
+  </script>
+</body>
+</html>
