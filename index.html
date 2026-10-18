@@ -69,6 +69,34 @@
   <!-- ================= PAINEL PRINCIPAL ================= -->
   <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 flex-1 w-full space-y-4">
 
+    <!-- BARRA DE FILTRO DE DATAS -->
+    <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347] flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-bold text-[#00E5FF] uppercase">📅 Período de Análise:</span>
+        <select id="filtro-periodo-rapido" onchange="mudarFiltroRapido()" class="bg-[#060B18] border border-[#1F3463] text-xs text-white rounded-lg px-2.5 py-1.5 font-mono outline-none focus:border-[#00E5FF]">
+          <option value="todos">Todas as Datas (Completo)</option>
+          <option value="mes_atual">Este Mês</option>
+          <option value="ano_atual">Este Ano (2026)</option>
+          <option value="personalizado">Personalizado</option>
+        </select>
+      </div>
+
+      <div id="container-datas-custom" class="flex items-center gap-2 hidden text-xs">
+        <div class="flex items-center gap-1">
+          <span class="text-slate-400 text-[10px]">De:</span>
+          <input type="date" id="filtro-data-inicio" onchange="aplicarFiltroDatas()" class="bg-[#060B18] border border-[#1F3463] text-white rounded-lg px-2 py-1 font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div class="flex items-center gap-1">
+          <span class="text-slate-400 text-[10px]">Até:</span>
+          <input type="date" id="filtro-data-fim" onchange="aplicarFiltroDatas()" class="bg-[#060B18] border border-[#1F3463] text-white rounded-lg px-2 py-1 font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+      </div>
+      
+      <div class="text-[11px] text-slate-400 font-mono" id="txt-status-filtro">
+        Exibindo: <strong class="text-white">Todo o Histórico</strong>
+      </div>
+    </div>
+
     <!-- KPIS COMPLETOS -->
     <div class="grid grid-cols-2 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
       <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
@@ -387,6 +415,54 @@
       } catch (e) {}
     }
 
+    function mudarFiltroRapido() {
+      var tipo = document.getElementById('filtro-periodo-rapido').value;
+      var containerCustom = document.getElementById('container-datas-custom');
+      
+      if (tipo === 'personalizado') {
+        containerCustom.classList.remove('hidden');
+        containerCustom.classList.add('flex');
+      } else {
+        containerCustom.classList.add('hidden');
+        containerCustom.classList.remove('flex');
+        renderizarPainelCompleto();
+      }
+    }
+
+    function aplicarFiltroDatas() {
+      renderizarPainelCompleto();
+    }
+
+    function extrairDataRegistro(item) {
+      var dStr = item.inicio || item.data || item.dataHora || '';
+      if (!dStr) return null;
+      // Pega os primeiros 10 caracteres (YYYY-MM-DD)
+      return dStr.substring(0, 10);
+    }
+
+    function itemNoIntervalo(item, dataIni, dataFim, tipoFiltro) {
+      if (tipoFiltro === 'todos') return true;
+      var dItem = extrairDataRegistro(item);
+      if (!dItem) return true; // Se não tem data, exibe para não ocultar dados órfãos
+
+      var hoje = new Date();
+      if (tipoFiltro === 'mes_atual') {
+        var anoAtual = hoje.getFullYear();
+        var mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+        return dItem.startsWith(anoAtual + '-' + mesAtual);
+      }
+      if (tipoFiltro === 'ano_atual') {
+        var anoAtualStr = String(hoje.getFullYear());
+        return dItem.startsWith(anoAtualStr);
+      }
+      if (tipoFiltro === 'personalizado') {
+        if (dataIni && dItem < dataIni) return false;
+        if (dataFim && dItem > dataFim) return false;
+        return true;
+      }
+      return true;
+    }
+
     function abrirModalAddExtra() {
       document.getElementById('modal-extra-titulo').textContent = 'Cadastrar Nova Despesa Extra';
       document.getElementById('input-extra-index').value = '-1';
@@ -501,8 +577,18 @@
     }
 
     function renderizarPainelCompleto() {
-      var viagens = AppEstado.viagens || [];
-      var recargas = AppEstado.recargas || [];
+      var tipoFiltro = document.getElementById('filtro-periodo-rapido').value;
+      var dataIni = document.getElementById('filtro-data-inicio').value;
+      var dataFim = document.getElementById('filtro-data-fim').value;
+
+      var lblStatusFiltro = "Todo o Histórico";
+      if (tipoFiltro === 'mes_atual') lblStatusFiltro = "Este Mês";
+      else if (tipoFiltro === 'ano_atual') lblStatusFiltro = "Este Ano (2026)";
+      else if (tipoFiltro === 'personalizado') lblStatusFiltro = (dataIni || 'Início') + " até " + (dataFim || 'Fim');
+      document.getElementById('txt-status-filtro').innerHTML = 'Exibindo: <strong class="text-white">' + lblStatusFiltro + '</strong>';
+
+      var todasViagens = AppEstado.viagens || [];
+      var todasRecargas = AppEstado.recargas || [];
       var extrasNuves = AppEstado.extrasNuves || [];
       var extrasLocais = AppEstado.extrasLocais || [];
       var cfg = AppEstado.config;
@@ -511,6 +597,12 @@
       document.getElementById('input-tarifa').value = cfg.tarifaKwh;
       document.getElementById('input-modelo-ref').value = cfg.refModelo;
       document.getElementById('input-consumo-ref').value = cfg.refConsumo;
+
+      // Filtrar por data
+      var viagens = todasViagens.filter(function(v) { return itemNoIntervalo(v, dataIni, dataFim, tipoFiltro); });
+      var recargas = todasRecargas.filter(function(r) { return itemNoIntervalo(r, dataIni, dataFim, tipoFiltro); });
+      var todasDespesas = extrasNuves.concat(extrasLocais);
+      var despesas = todasDespesas.filter(function(e) { return itemNoIntervalo(e, dataIni, dataFim, tipoFiltro); });
 
       var distTotal = 0, energiaTotal = 0, distComEnergia = 0;
       for (var i = 0; i < viagens.length; i++) {
@@ -531,14 +623,12 @@
       }
 
       var anoAtual = new Date().getFullYear();
-
       var totalExtras = 0;
-      var todasDespesas = extrasNuves.concat(extrasLocais);
-
-      todasDespesas.forEach(function(e) {
+      despesas.forEach(function(e) {
         var val = parsePtBr(e.valor || e.custo);
         var anoDespesa = e.data ? new Date(e.data + 'T00:00:00').getFullYear() : anoAtual;
-        if (anoDespesa === anoAtual) {
+        // Ignora despesas de anos anteriores caso o filtro seja amplo, a menos que selecionado explicitamente
+        if (tipoFiltro !== 'todos' || anoDespesa === anoAtual) {
           totalExtras += val;
         }
       });
@@ -565,131 +655,4 @@
       var kmYuan = vYuan.reduce(function(a, b) { return a + parsePtBr(b.dist || b.distancia); }, 0);
       var cYuan = rYuan.reduce(function(a, b) { return a + parsePtBr(b.custoTotal || b.custo || 0); }, 0);
 
-      document.getElementById('card-dolphin-km').textContent = fmtNum(kmMini, 1) + ' km';
-      document.getElementById('card-dolphin-viagens').textContent = vMini.length;
-      document.getElementById('card-dolphin-recargas').textContent = 'R$ ' + fmtNum(cMini, 2);
-
-      document.getElementById('card-yuan-km').textContent = fmtNum(kmYuan, 1) + ' km';
-      document.getElementById('card-yuan-viagens').textContent = vYuan.length;
-      document.getElementById('card-yuan-recargas').textContent = 'R$ ' + fmtNum(cYuan, 2);
-
-      var litrosRef = distTotal > 0 ? (distTotal / cfg.refConsumo) : 0;
-      var totalTermico = (litrosRef * cfg.gasolina) + (distTotal * 0.085);
-      var somaEletricos = custoRecargas + totalExtras;
-      var economiaTotal = Math.max(0, totalTermico - somaEletricos);
-
-      document.getElementById('kpi-economia').textContent = fmtNum(economiaTotal, 2);
-      document.getElementById('ref-modelo-txt').textContent = cfg.refModelo;
-      document.getElementById('ref-consumo-txt').textContent = cfg.refConsumo + ' km/L';
-      document.getElementById('ref-gasolina-txt').textContent = 'R$ ' + fmtNum(cfg.gasolina, 2) + ' / L';
-      document.getElementById('ref-custo-total').textContent = 'R$ ' + fmtNum(totalTermico, 2);
-      document.getElementById('lbl-total-extras').textContent = 'Total: R$ ' + fmtNum(totalExtras, 2);
-
-      var tbExtras = document.getElementById('lista-extras');
-      if (todasDespesas.length === 0) {
-        tbExtras.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada.</td></tr>';
-      } else {
-        tbExtras.innerHTML = todasDespesas.map(function(e, idx) {
-          var isLocal = idx >= extrasNuves.length;
-          var localIdx = idx - extrasNuves.length;
-          var dataStr = e.data ? e.data.split('-').reverse().join('/') : '—';
-          var anoDespesa = e.data ? new Date(e.data + 'T00:00:00').getFullYear() : anoAtual;
-          var avisoAntigo = anoDespesa < anoAtual ? ' <span class="text-[9px] text-amber-500">(Anterior)</span>' : '';
-          
-          var acoesHtml = isLocal ? 
-            '<button onclick="editarDespesaLocal(' + localIdx + ')" class="text-cyan-400 hover:underline mr-2">Editar</button>' +
-            '<button onclick="excluirDespesaLocal(' + localIdx + ')" class="text-rose-400 hover:underline">Excluir</button>' : 
-            '<span class="text-slate-500">Nuvem</span>';
-
-          return '<tr class="hover:bg-[#0F1A36]">' +
-            '<td class="p-2 text-slate-400">' + dataStr + avisoAntigo + '</td>' +
-            '<td class="p-2 text-white">' + (e.descricao || e.desc || 'Despesa') + '<br><span class="text-[10px] text-slate-400">' + (e.carro || e.veiculo || 'Frota') + '</span></td>' +
-            '<td class="p-2 text-right font-bold text-amber-400">R$ ' + fmtNum(parsePtBr(e.valor || e.custo), 2) + '</td>' +
-            '<td class="p-2 text-right">' + acoesHtml + '</td>' +
-          '</tr>';
-        }).join('');
-      }
-
-      var tbody = document.getElementById('lista-viagens');
-      if (viagens.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhuma viagem encontrada.</td></tr>';
-      } else {
-        tbody.innerHTML = viagens.map(function(v) {
-          var kwhVal = parsePtBr(v.kwh || v.energia);
-          return '<tr class="hover:bg-[#0F1A36] transition">' +
-            '<td class="p-2 text-cyan-300">' + (v.carro || v.veiculo || 'MINI') + '<br><span class="text-[10px] text-slate-400">' + (v.inicio || v.data || '') + '</span></td>' +
-            '<td class="p-2 text-right font-bold text-white">' + fmtNum(v.dist || v.distancia, 1) + ' km</td>' +
-            '<td class="p-2 text-right text-purple-300">' + (kwhVal > 0 ? fmtNum(kwhVal, 2) + ' kWh' : '—') + '</td>' +
-            '<td class="p-2 text-slate-200">' + (v.orig || v.origem || '—') + ' ➔ ' + (v.dest || v.destino || '—') + '</td>' +
-          '</tr>';
-        }).join('');
-      }
-
-      atualizarGraficos(viagens, totalTermico, somaEletricos);
-    }
-
-    function atualizarGraficos(viagens, totalTermico, totalEletrico) {
-      var labels = viagens.slice(-15).map(function(v) { return (v.inicio || v.data || '').slice(5, 16); });
-      var dadosConsumo = viagens.slice(-15).map(function(v) {
-        var d = parsePtBr(v.dist || v.distancia);
-        var k = parsePtBr(v.kwh || v.energia);
-        return (d > 0 && k > 0) ? Number(((k / d) * 100).toFixed(1)) : null;
-      });
-
-      var ctx1 = document.getElementById('chartConsumo').getContext('2d');
-      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
-      chartConsumoInstancia = new Chart(ctx1, {
-        type: 'line',
-        data: {
-          labels: labels.length ? labels : ['Sem dados'],
-          datasets: [{ label: 'kWh/100km', data: dadosConsumo, borderColor: '#00E5FF', backgroundColor: 'rgba(0, 229, 255, 0.1)', borderWidth: 2, tension: 0.3, fill: true, spanGaps: true }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
-      });
-
-      var ctx2 = document.getElementById('chartGastos').getContext('2d');
-      if (chartGastosInstancia) chartGastosInstancia.destroy();
-      
-      var pluginValoresNasBarras = {
-        id: 'pluginValoresNasBarras',
-        afterDatasetsDraw: function(chart) {
-          var ctx = chart.ctx;
-          chart.data.datasets.forEach(function(dataset, i) {
-            var meta = chart.getDatasetMeta(i);
-            meta.data.forEach(function(bar, index) {
-              var valor = dataset.data[index];
-              var texto = 'R$ ' + Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-              ctx.fillStyle = '#FFFFFF';
-              ctx.font = 'bold 11px sans-serif';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'bottom';
-              ctx.fillText(texto, bar.x, bar.y - 6);
-            });
-          });
-        }
-      };
-
-      chartGastosInstancia = new Chart(ctx2, {
-        type: 'bar',
-        data: {
-          labels: ['Elétrico Real', 'Combustível Ref.'],
-          datasets: [{ data: [totalEletrico, totalTermico], backgroundColor: ['#10B981', '#EF4444'], borderRadius: 6 }]
-        },
-        options: { 
-          responsive: true, 
-          maintainAspectRatio: false, 
-          plugins: { 
-            legend: { display: false },
-            tooltip: { callbacks: { label: function(context) { return 'R$ ' + Number(context.raw).toLocaleString('pt-BR', {minimumFractionDigits: 2}); } } }
-          }, 
-          scales: { 
-            x: { ticks: { color: '#E2E8F0', font: { size: 10 } }, grid: { display: false } }, 
-            y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' }, suggestMax: Math.max(totalEletrico, totalTermico) * 1.2 } 
-          } 
-        },
-        plugins: [pluginValoresNasBarras]
-      });
-    }
-  </script>
-</body>
-</html>
+      document.getElementById('card-dolphin-km').textContent = fmtNum(km
