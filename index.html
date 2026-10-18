@@ -457,6 +457,7 @@
         db.collection('frota_ev').doc('estado_global').get().then(function(doc) {
           if (!doc.exists) {
             document.getElementById('txt-status-nuvem').textContent = 'Nuvem vazia.';
+            renderizarPainelCompleto();
             return;
           }
 
@@ -470,10 +471,12 @@
 
         }).catch(function(err) {
           document.getElementById('txt-status-nuvem').textContent = 'Modo Local (Offline)';
+          renderizarPainelCompleto();
         });
 
       } catch (e) {
         document.getElementById('txt-status-nuvem').textContent = 'Modo Local (Offline)';
+        renderizarPainelCompleto();
       }
     }
 
