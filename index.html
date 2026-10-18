@@ -206,7 +206,7 @@
       </div>
     </div>
 
-    <!-- SEÇÃO DE FECHAMENTO MENSAL E HISTÓRICO POR PERÍODO (NOVA) -->
+    <!-- SEÇÃO DE FECHAMENTO MENSAL E HISTÓRICO POR PERÍODO -->
     <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
       <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
         <h3 class="text-xs sm:text-sm font-bold uppercase text-white">📅 Fechamento Mensal e Histórico por Período</h3>
@@ -619,7 +619,7 @@
       });
     }
 
-    // NOVA FUNÇÃO: Cálculo do Fechamento Mensal
+    // CÁLCULO DE FECHAMENTO MENSAL (CORRIGIDO COM LEITURA FLEXÍVEL DE CAMPOS)
     function calcularFechamentoMensal() {
       var tbody = document.getElementById('tabela-fechamento-mensal');
       if (!tbody) return;
@@ -636,10 +636,10 @@
             mesesMap[mesAno] = { km: 0, kwhCost: 0, refCost: 0 };
           }
 
-          var dist = parsePtBr(v.distancia || v.km || 0);
+          var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
           mesesMap[mesAno].km += dist;
 
-          var kwh = parsePtBr(v.energia || v.kwh || 0);
+          var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
           var custoRecargaViagem = kwh * AppEstado.config.tarifaKwh;
           mesesMap[mesAno].kwhCost += custoRecargaViagem;
 
@@ -707,8 +707,8 @@
       var locaisMap = {};
 
       viagensFiltradas.forEach(function(v) {
-        var dist = parsePtBr(v.distancia || v.km || 0);
-        var kwh = parsePtBr(v.energia || v.kwh || 0);
+        var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
+        var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
         var custo = kwh * AppEstado.config.tarifaKwh;
 
         distanciaTotal += dist;
@@ -829,8 +829,8 @@
 
       var labelsConsumo = viagens.map(function(v) { return (extrairDataRegistro(v) || '').substring(5); });
       var dataConsumo = viagens.map(function(v) {
-        var d = parsePtBr(v.distancia || 0);
-        var k = parsePtBr(v.energia || 0);
+        var d = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
+        var k = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
         return d > 0 ? (k / (d / 100)) : 0;
       });
 
