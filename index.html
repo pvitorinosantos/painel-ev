@@ -472,7 +472,7 @@
     }
 
     function extrairDataRegistro(item) {
-      var dStr = buscarCampoFlexivel(item, ['data', 'inicio', 'dataHora', 'Data', 'timestamp', 'criadoEm']);
+      var dStr = buscarCampoFlexivel(item, ['inicio', 'data', 'dataHora', 'Data', 'timestamp', 'criadoEm']);
       if (!dStr) return null;
       return String(dStr).substring(0, 10);
     }
@@ -570,7 +570,7 @@
           }
 
           var dados = doc.data();
-          AppEstado.viagens = dados.viagens || dados.viagensList || dados.itens || [];
+          AppEstado.viagens = dados.viagens || dados.viagensList || [];
           AppEstado.recargas = dados.recargas || dados.recargasList || [];
           AppEstado.extras = dados.extras || [];
           
@@ -636,8 +636,8 @@
             mesesMap[mesAno] = { km: 0, kwhCost: 0, refCost: 0 };
           }
 
-          var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance', 'KM', 'Distancia']) || 0);
-          var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh', 'KWH', 'kWh']) || 0);
+          var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
+          var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
           var custoRecargaViagem = kwh * AppEstado.config.tarifaKwh;
 
           mesesMap[mesAno].km += dist;
@@ -704,15 +704,15 @@
       var locaisMap = {};
 
       viagensFiltradas.forEach(function(v) {
-        var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance', 'KM', 'Distancia']) || 0);
-        var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh', 'KWH', 'kWh']) || 0);
+        var dist = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
+        var kwh = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
         var custo = kwh * AppEstado.config.tarifaKwh;
 
         distanciaTotal += dist;
         kwhTotal += kwh;
         custoRecargasTotal += custo;
 
-        var carro = buscarCampoFlexivel(v, ['carro', 'veiculo', 'nomeCarro', 'modelo']) || 'MINI';
+        var carro = buscarCampoFlexivel(v, ['carro', 'veiculo', 'nomeCarro']) || 'MINI';
         if (carro.toUpperCase().indexOf('YUAN') > -1) {
           yuanKm += dist;
           yuanViagens++;
@@ -728,7 +728,7 @@
         if (origem) locaisMap[origem] = (locaisMap[origem] || 0) + 1;
         if (destino) locaisMap[destino] = (locaisMap[destino] || 0) + 1;
 
-        var inicio = buscarCampoFlexivel(v, ['inicio', 'dataHora', 'data', 'Data']) || '—';
+        var inicio = buscarCampoFlexivel(v, ['inicio', 'dataHora', 'data']) || '—';
         var coords = buscarCampoFlexivel(v, ['trajeto', 'coordenadas', 'gps']) || (origem + ' → ' + destino);
 
         listaViagensHtml += `<tr class="hover:bg-[#0F1A36]/50 transition">
@@ -816,7 +816,7 @@
       var labelsConsumo = viagens.map(function(v) { return (extrairDataRegistro(v) || '').substring(5); });
       var dataConsumo = viagens.map(function(v) {
         var d = parsePtBr(buscarCampoFlexivel(v, ['distancia', 'km', 'distance']) || 0);
-        var k = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh']) || 0);
+        var k = parsePtBr(buscarCampoFlexivel(v, ['energia', 'kwh', 'consumoKwh']) || 0);
         return d > 0 ? (k / (d / 100)) : 0;
       });
 
@@ -853,20 +853,3 @@
           labels: ['Elétrico Real', 'Combustível Ref.'],
           datasets: [{
             data: [custoEl, custoRef],
-            backgroundColor: ['#10B981', '#F43F5E']
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: '#94A3B8', font: { size: 10 } } },
-            y: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } }
-          }
-        }
-      });
-    }
-  </script>
-</body>
-</html>
