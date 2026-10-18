@@ -421,19 +421,9 @@
     }
 
     window.onload = function() {
+      // Limpeza forçada do localStorage antigo para evitar conflito de dados fantasmas
       try {
-        var extrasLocais = localStorage.getItem('ev_extras_locais');
-        if (extrasLocais) {
-          AppEstado.extras = JSON.parse(extrasLocais);
-        }
-        var cfgSalva = localStorage.getItem('ev_config_ref');
-        if (cfgSalva) {
-          var parsed = JSON.parse(cfgSalva);
-          if (parsed.gasolina) AppEstado.config.gasolina = parsed.gasolina;
-          if (parsed.tarifaKwh) AppEstado.config.tarifaKwh = parsed.tarifaKwh;
-          if (parsed.refModelo) AppEstado.config.refModelo = parsed.refModelo;
-          if (parsed.refConsumo) AppEstado.config.refConsumo = parsed.refConsumo;
-        }
+        localStorage.removeItem('ev_extras_locais');
       } catch (e) {}
 
       renderizarPainelCompleto();
@@ -567,9 +557,7 @@
           var dados = doc.data();
           AppEstado.viagens = dados.viagens || dados.viagensList || [];
           AppEstado.recargas = dados.recargas || dados.recargasList || [];
-          if (dados.extras && dados.extras.length > 0) {
-            AppEstado.extras = dados.extras;
-          }
+          AppEstado.extras = dados.extras || [];
           
           if (dados.config) {
             if (dados.config.gasolina !== undefined) AppEstado.config.gasolina = dados.config.gasolina;
