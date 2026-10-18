@@ -56,9 +56,6 @@
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button type="button" onclick="abrirModal('modal-referencia')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-amber-400 font-semibold text-xs border border-[#1F3463] transition">
-          🚗 Veículo Combustível Ref.
-        </button>
         <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] transition">
           ⚙️ Parâmetros Térmicos
         </button>
@@ -202,11 +199,11 @@
         <div class="grid grid-cols-2 gap-3 text-xs">
           <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
             <span class="text-[10px] text-slate-400 block">Modelo Base de Comparação:</span>
-            <strong id="ref-modelo-txt" class="text-white font-mono">Renault Kwid / Hatch 1.0</strong>
+            <strong class="text-white font-mono">Renault Kwid / Hatch 1.0</strong>
           </div>
           <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
             <span class="text-[10px] text-slate-400 block">Consumo Médio Referência:</span>
-            <strong id="ref-consumo-txt" class="text-white font-mono">15.3 km/L</strong>
+            <strong class="text-white font-mono">15.3 km/L</strong>
           </div>
           <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
             <span class="text-[10px] text-slate-400 block">Preço Gasolina Atual:</span>
@@ -245,30 +242,6 @@
 
   </main>
 
-  <!-- ================= MODAL VEÍCULO REFERÊNCIA ================= -->
-  <div id="modal-referencia" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
-    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
-      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
-        <h3 class="text-sm font-bold text-white">Cadastrar Veículo de Referência (Térmico)</h3>
-        <button type="button" onclick="fecharModal('modal-referencia')" class="text-slate-400 hover:text-white text-base">✕</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Nome / Modelo do Veículo:</label>
-          <input type="text" id="input-modelo-ref" value="Renault Kwid / Hatch 1.0" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
-        </div>
-        <div>
-          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Consumo Médio (km/L):</label>
-          <input type="number" id="input-consumo-ref" value="15.3" step="0.1" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
-        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-referencia')">Cancelar</button>
-        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarVeiculoRef()">Salvar Referência</button>
-      </div>
-    </div>
-  </div>
-
   <!-- ================= MODAL PARÂMETROS ================= -->
   <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
     <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
@@ -294,12 +267,7 @@
   </div>
 
   <script>
-    var AppEstado = { 
-      viagens: [], 
-      recargas: [], 
-      extras: [], 
-      config: { gasolina: 6.96, tarifaKwh: 0.85, refModelo: 'Renault Kwid / Hatch 1.0', refConsumo: 15.3 } 
-    };
+    var AppEstado = { viagens: [], recargas: [], extras: [], config: { gasolina: 6.96, tarifaKwh: 0.85 } };
     var chartConsumoInstancia = null;
     var chartGastosInstancia = null;
 
@@ -319,24 +287,8 @@
     }
 
     window.onload = function() {
-      try {
-        var cfgSalva = localStorage.getItem('ev_config_ref');
-        if (cfgSalva) {
-          var parsed = JSON.parse(cfgSalva);
-          if (parsed.gasolina) AppEstado.config.gasolina = parsed.gasolina;
-          if (parsed.tarifaKwh) AppEstado.config.tarifaKwh = parsed.tarifaKwh;
-          if (parsed.refModelo) AppEstado.config.refModelo = parsed.refModelo;
-          if (parsed.refConsumo) AppEstado.config.refConsumo = parsed.refConsumo;
-        }
-      } catch (e) {}
       iniciarFirebaseAutomatico();
     };
-
-    function salvarPreferenciaLocal() {
-      try {
-        localStorage.setItem('ev_config_ref', JSON.stringify(AppEstado.config));
-      } catch (e) {}
-    }
 
     function iniciarFirebaseAutomatico() {
       try {
@@ -381,18 +333,7 @@
       var tar = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
       AppEstado.config.gasolina = gas;
       AppEstado.config.tarifaKwh = tar;
-      salvarPreferenciaLocal();
       fecharModal('modal-parametros');
-      renderizarPainelCompleto();
-    }
-
-    function salvarVeiculoRef() {
-      var modelo = document.getElementById('input-modelo-ref').value || 'Veículo Combustão';
-      var consumo = parseFloat(document.getElementById('input-consumo-ref').value) || 12.0;
-      AppEstado.config.refModelo = modelo;
-      AppEstado.config.refConsumo = consumo;
-      salvarPreferenciaLocal();
-      fecharModal('modal-referencia');
       renderizarPainelCompleto();
     }
 
@@ -401,11 +342,6 @@
       var recargas = AppEstado.recargas;
       var extras = AppEstado.extras;
       var cfg = AppEstado.config;
-
-      document.getElementById('input-gasolina').value = cfg.gasolina;
-      document.getElementById('input-tarifa').value = cfg.tarifaKwh;
-      document.getElementById('input-modelo-ref').value = cfg.refModelo;
-      document.getElementById('input-consumo-ref').value = cfg.refConsumo;
 
       var distTotal = 0, energiaTotal = 0, distComEnergia = 0;
       for (var i = 0; i < viagens.length; i++) {
@@ -457,14 +393,12 @@
       document.getElementById('card-yuan-viagens').textContent = vYuan.length;
       document.getElementById('card-yuan-recargas').textContent = 'R$ ' + fmtNum(cYuan, 2);
 
-      var litrosRef = distTotal > 0 ? (distTotal / cfg.refConsumo) : 0;
+      var litrosRef = distTotal > 0 ? (distTotal / 15.3) : 0;
       var totalTermico = (litrosRef * cfg.gasolina) + (distTotal * 0.085);
       var somaEletricos = custoRecargas + totalExtras;
       var economiaTotal = Math.max(0, totalTermico - somaEletricos);
 
       document.getElementById('kpi-economia').textContent = fmtNum(economiaTotal, 2);
-      document.getElementById('ref-modelo-txt').textContent = cfg.refModelo;
-      document.getElementById('ref-consumo-txt').textContent = cfg.refConsumo + ' km/L';
       document.getElementById('ref-gasolina-txt').textContent = 'R$ ' + fmtNum(cfg.gasolina, 2) + ' / L';
       document.getElementById('ref-custo-total').textContent = 'R$ ' + fmtNum(totalTermico, 2);
       document.getElementById('lbl-total-extras').textContent = 'Total: R$ ' + fmtNum(totalExtras, 2);
@@ -517,27 +451,6 @@
 
       var ctx2 = document.getElementById('chartGastos').getContext('2d');
       if (chartGastosInstancia) chartGastosInstancia.destroy();
-      
-      // Plugin nativo seguro para desenhar os valores em reais diretamente nas barras
-      var pluginValoresNasBarras = {
-        id: 'pluginValoresNasBarras',
-        afterDatasetsDraw: function(chart) {
-          var ctx = chart.ctx;
-          chart.data.datasets.forEach(function(dataset, i) {
-            var meta = chart.getDatasetMeta(i);
-            meta.data.forEach(function(bar, index) {
-              var valor = dataset.data[index];
-              var texto = 'R$ ' + Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-              ctx.fillStyle = '#FFFFFF';
-              ctx.font = 'bold 11px "JetBrains Mono", monospace';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'bottom';
-              ctx.fillText(texto, bar.x, bar.y - 6);
-            });
-          });
-        }
-      };
-
       chartGastosInstancia = new Chart(ctx2, {
         type: 'bar',
         data: {
@@ -553,10 +466,9 @@
           }, 
           scales: { 
             x: { ticks: { color: '#E2E8F0', font: { size: 10 } }, grid: { display: false } }, 
-            y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' }, suggestMax: Math.max(totalEletrico, totalTermico) * 1.25 } 
+            y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } 
           } 
-        },
-        plugins: [pluginValoresNasBarras]
+        }
       });
     }
   </script>
