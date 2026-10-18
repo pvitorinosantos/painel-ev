@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Painel de Gestão EV | Frota BYD Conectada</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js para Gráficos Dinâmicos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase SDK para Sincronização em Nuvem -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body { background-color: #060B18; color: #E2E8F0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #0A1226; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #1F3463; border-radius: 4px; }
+    @media print {
+      body { background: #FFFFFF !important; color: #000000 !important; }
+      header, section, button, .no-print { display: none !important; }
+      main { max-width: 100% !important; padding: 0 !important; }
+    }
+  </style>
+
+  <script>
+    function abrirModal(id) {
+      var el = document.getElementById(id);
+      if (el) { el.classList.remove('hidden'); el.classList.add('flex'); }
+    }
+    function fecharModal(id) {
+      var el = document.getElementById(id);
+      if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col bg-[#060B18] text-slate-100 antialiased selection:bg-[#00E5FF] selection:text-black">
+
+  <!-- ================= TOPBAR ================= -->
+  <header class="sticky top-0 z-40 bg-[#0A1226]/95 backdrop-blur border-b border-[#142347] px-3 sm:px-6 py-2.5">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00E5FF] to-blue-600 flex items-center justify-center font-extrabold text-[#060B18] text-sm shadow-md shadow-[#00E5FF]/20">
+          BYD
+        </div>
+        <div>
+          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Gestão</span>
+          <h1 class="text-xs sm:text-base font-bold text-white flex items-center gap-2">
+            Dolphin Mini & Yuan Pro
+            <span id="badge-cloud-status" class="text-[9px] px-2 py-0.5 rounded-full bg-[#142347] text-slate-400 font-mono border border-[#1F3463]">
+              Local
+            </span>
+          </h1>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button type="button" onclick="abrirModal('modal-despesa')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1 transition shadow-sm" title="Registrar Despesa Extra">
+          🛠️ Despesa Extra
+        </button>
+        <button type="button" onclick="abrirModal('modal-import')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#00E5FF] hover:bg-cyan-400 text-[#060B18] font-bold text-xs flex items-center gap-1 transition shadow-sm">
+          ⬆ CSV
+        </button>
+        <button type="button" onclick="abrirModal('modal-config')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] flex items-center gap-1 transition" title="Ajustes e Tarifas">
+          ⚙️ Ajustes
+        </button>
+        <button type="button" onclick="abrirModal('modal-cloud')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-[#00E5FF] font-semibold text-xs border border-[#1F3463] flex items-center gap-1 transition">
+          ☁ Nuvem
+        </button>
+        <button type="button" onclick="window.print()" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-[#142347] text-slate-300 hover:text-white border border-[#142347] text-xs transition" title="Relatório PDF">
+          🖨️
+        </button>
+        <button type="button" onclick="exportarBackupJSON()" class="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-[#142347] text-slate-300 hover:text-white border border-[#142347] text-xs transition" title="Backup JSON">
+          💾
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= FILTROS DINÂMICOS ================= -->
+  <section class="bg-[#0A1226] border-b border-[#142347] px-3 sm:px-6 py-2 sticky top-[53px] z-30 shadow-md">
+    <div class="max-w-7xl mx-auto flex flex-wrap gap-2 items-center justify-between text-xs">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-1 bg-[#0F1A36] px-2 py-1 rounded-md border border-[#1F3463]">
+          <label for="filtro-carro" class="text-[9px] text-slate-400 uppercase font-semibold">Carro:</label>
+          <select id="filtro-carro" onchange="renderizarInterface()" class="bg-transparent text-white font-semibold outline-none cursor-pointer">
+            <option value="ALL" class="bg-[#0A1226]">Todos</option>
+            <option value="MINI" class="bg-[#0A1226]">Dolphin Mini (MINI)</option>
+            <option value="BYD YUAN PRO" class="bg-[#0A1226]">Yuan Pro</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-1 bg-[#0F1A36] px-2 py-1 rounded-md border border-[#1F3463]">
+          <label for="filtro-periodo" class="text-[9px] text-slate-400 uppercase font-semibold">Período:</label>
+          <select id="filtro-periodo" onchange="alternarSeletorPeriodo()" class="bg-transparent text-white font-semibold outline-none cursor-pointer">
+            <option value="ALL" class="bg-[#0A1226]">Tudo</option>
+            <option value="7D" class="bg-[#0A1226]">7 dias</option>
+            <option value="30D" class="bg-[#0A1226]">30 dias</option>
+            <option value="CUSTOM" class="bg-[#0A1226]">Personalizado...</option>
+          </select>
+        </div>
+
+        <div id="box-datas-custom" class="hidden items-center gap-1 bg-[#0F1A36] px-2 py-1 rounded-md border border-[#1F3463]">
+          <input type="date" id="data-ini" onchange="renderizarInterface()" class="bg-[#060B18] text-[10px] text-white px-1 rounded border border-[#1F3463]" />
+          <span class="text-slate-500">até</span>
+          <input type="date" id="data-fim" onchange="renderizarInterface()" class="bg-[#060B18] text-[10px] text-white px-1 rounded border border-[#1F3463]" />
+        </div>
+      </div>
+
+      <input type="text" id="filtro-busca" oninput="renderizarInterface()" placeholder="🔍 Buscar trajeto..." class="bg-[#060B18] border border-[#1F3463] text-xs rounded-lg px-2.5 py-1 text-white placeholder-slate-500 focus:outline-none focus:border-[#00E5FF] w-full sm:w-56" />
+    </div>
+  </section>
+
+  <!-- ================= PAINEL PRINCIPAL ================= -->
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 flex-1 w-full space-y-4">
+
+    <!-- AVISO DE BASE VAZIA -->
+    <div id="banner-vazio" class="hidden bg-blue-500/10 border border-[#00E5FF]/30 p-4 rounded-xl text-center space-y-2">
+      <p class="text-sm font-bold text-white">Nenhum dado importado no momento</p>
+      <p class="text-xs text-slate-400">Clique em <strong>"Importar CSV"</strong> no topo para carregar seus arquivos de telemetria.</p>
+    </div>
+
+    <!-- KPIS -->
+    <div class="grid grid-cols-2 lg:grid-cols-7 gap-2.5 sm:gap-3.5">
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Distância Total</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span id="kpi-distancia" class="text-xl sm:text-2xl font-extrabold text-white font-mono">0,0</span>
+          <span class="text-xs text-slate-400">km</span>
+        </div>
+        <p id="kpi-viagens" class="text-[10px] text-slate-400 mt-0.5">0 viagens</p>
+      </div>
+
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Custo Recargas</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span class="text-xs text-slate-400">R$</span>
+          <span id="kpi-recargas" class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">0,00</span>
+        </div>
+        <p id="kpi-qtd-recargas" class="text-[10px] text-slate-400 mt-0.5">0 faturas registradas</p>
+      </div>
+
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Custo Real / km</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span id="kpi-custo-km" class="text-xl sm:text-2xl font-extrabold text-white font-mono">—</span>
+          <span class="text-xs text-slate-400">R$/km</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-0.5">(Recargas+Extras) ÷ km</p>
+      </div>
+
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Consumo Médio</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span id="kpi-consumo" class="text-xl sm:text-2xl font-extrabold text-purple-400 font-mono">—</span>
+          <span class="text-xs text-slate-400">kWh/100km</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-0.5">Média ponderada real</p>
+      </div>
+
+      <!-- CO2 EVITADO (ESG) -->
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">CO₂ Evitado (ESG)</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span id="kpi-co2" class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">0,0</span>
+          <span class="text-xs text-slate-400">kg</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-0.5">Base: ~130g CO₂/km</p>
+      </div>
+
+      <!-- DESPESAS EXTRAS -->
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Despesas Extras</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span class="text-xs text-slate-400">R$</span>
+          <span id="kpi-extras-total" class="text-xl sm:text-2xl font-extrabold text-purple-400 font-mono">0,00</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-0.5">Revisões, lavagens, etc.</p>
+      </div>
+
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347] col-span-2 lg:col-span-1">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Economia Líquida</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span class="text-xs text-slate-400">R$</span>
+          <span id="kpi-economia" class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">—</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-0.5">vs Térmico + Extras</p>
+      </div>
+    </div>
+
+    <!-- COMPARATIVO POR VEÍCULO -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+          <div>
+            <span class="text-[9px] uppercase font-bold text-[#00E5FF]">Subcompacto EV</span>
+            <h2 class="text-sm sm:text-base font-bold text-white">BYD Dolphin Mini (MINI)</h2>
+          </div>
+          <span class="text-[9px] px-2 py-0.5 bg-[#0F1A36] text-[#00E5FF] rounded-full font-mono border border-[#1F3463]">LGXCE4CC8S0046239</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 my-2.5 text-center">
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Distância</span>
+            <strong id="card-dolphin-km" class="text-sm font-bold font-mono text-white">0,0 km</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Viagens</span>
+            <strong id="card-dolphin-viagens" class="text-sm font-bold font-mono text-white">0</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Gasto Total</span>
+            <strong id="card-dolphin-recargas" class="text-sm font-bold font-mono text-emerald-400">R$ 0,00</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+          <div>
+            <span class="text-[9px] uppercase font-bold text-purple-400">SUV Urbano EV</span>
+            <h2 class="text-sm sm:text-base font-bold text-white">BYD Yuan Pro</h2>
+          </div>
+          <span class="text-[9px] px-2 py-0.5 bg-[#0F1A36] text-purple-400 rounded-full font-mono border border-[#1F3463]">LC0CE4CB0S4003744</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 my-2.5 text-center">
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Distância</span>
+            <strong id="card-yuan-km" class="text-sm font-bold font-mono text-white">0,0 km</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Viagens</span>
+            <strong id="card-yuan-viagens" class="text-sm font-bold font-mono text-white">0</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Gasto Total</span>
+            <strong id="card-yuan-recargas" class="text-sm font-bold font-mono text-emerald-400">R$ 0,00</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRÁFICOS VISUAIS CHART.JS -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <h3 class="text-xs sm:text-sm font-bold uppercase text-white mb-2">📊 Evolução do Consumo (kWh/100km)</h3>
+        <div class="relative h-48 w-full">
+          <canvas id="chartConsumo"></canvas>
+        </div>
+      </div>
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <h3 class="text-xs sm:text-sm font-bold uppercase text-white mb-2">📊 Comparativo de Gastos: Elétrico vs. Térmico</h3>
+        <div class="relative h-48 w-full">
+          <canvas id="chartGastos"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCAIS MAIS VISITADOS -->
+    <div class="bg-[#0A1226] rounded-xl border border-[#142347] p-3.5 sm:p-4">
+      <div class="flex justify-between items-center pb-2.5 border-b border-[#142347] mb-3">
+        <div>
+          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🔥 Locais Mais Frequentes</h3>
+          <p class="text-[10px] text-slate-400">Origens e destinos com maior frequência de passagens</p>
+        </div>
+      </div>
+      <div id="lista-calor-locais" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+    </div>
+
+    <!-- COMPARATIVO COMBUSTÃO -->
+    <div class="bg-[#0A1226] rounded-xl border border-[#142347] p-3.5 sm:p-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-[#142347] mb-3">
+        <div>
+          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">⛽ Comparativo Operacional: Combustão vs. Elétricos</h3>
+          <p class="text-[10px] text-slate-400">Combustível, manutenção e despesas extras comparados à telemetria</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <label for="sel-modelo-termico" class="text-[10px] text-slate-400 uppercase font-semibold">Comparar com:</label>
+          <select id="sel-modelo-termico" onchange="verificarModeloTermicoPersonalizado()" class="bg-[#060B18] border border-[#1F3463] text-xs rounded-lg px-2 py-1 text-[#00E5FF] font-semibold outline-none cursor-pointer">
+            <option value="kwid">Renault Kwid 1.0 (15,3 km/L)</option>
+            <option value="onix">Chevrolet Onix 1.0 (13,9 km/L)</option>
+            <option value="citroen">Antigo Citroën (6,5 km/L)</option>
+            <option value="custom" class="text-cyan-300 font-bold">+ Personalizado...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto custom-scroll">
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr class="bg-[#0F1A36] text-slate-400 uppercase text-[10px] border-b border-[#142347]">
+              <th class="p-2">Despesa Operacional</th>
+              <th class="p-2 text-rose-400" id="th-termico-nome">Térmico Ref.</th>
+              <th class="p-2 text-[#00E5FF]">BYD Dolphin Mini</th>
+              <th class="p-2 text-purple-400">BYD Yuan Pro</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#142347] text-slate-300">
+            <tr>
+              <td class="p-2 text-slate-400">Combustível / Recargas Faturadas</td>
+              <td id="cmp-comb-termico" class="p-2 font-bold text-rose-400">—</td>
+              <td id="cmp-rec-dolphin" class="p-2 font-bold text-emerald-400">—</td>
+              <td id="cmp-rec-yuan" class="p-2 font-bold text-emerald-400">—</td>
+            </tr>
+            <tr>
+              <td class="p-2 text-slate-400">Despesas Extras (Revisão / Funilaria / Lavagem)</td>
+              <td id="cmp-extras-termico" class="p-2 text-rose-400">—</td>
+              <td id="cmp-extras-dolphin" class="p-2 text-purple-300">—</td>
+              <td id="cmp-extras-yuan" class="p-2 text-purple-300">—</td>
+            </tr>
+            <tr class="bg-[#060B18] font-bold">
+              <td class="p-2 text-white">Custo Total de Operação</td>
+              <td id="cmp-total-termico" class="p-2 text-rose-400">—</td>
+              <td id="cmp-total-dolphin" class="p-2 text-[#00E5FF]">—</td>
+              <td id="cmp-total-yuan" class="p-2 text-purple-400">—</td>
+            </tr>
+            <tr class="bg-emerald-500/10 font-bold">
+              <td class="p-2 text-emerald-400">Economia Real Líquida</td>
+              <td class="p-2 text-slate-500">0% (Referência)</td>
+              <td id="cmp-econ-dolphin" class="p-2 text-emerald-400">—</td>
+              <td id="cmp-econ-yuan" class="p-2 text-emerald-400">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABELAS DETALHADAS -->
+    <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
+      <div class="p-2.5 sm:p-3 border-b border-[#142347] flex items-center justify-between">
+        <div class="flex items-center space-x-1.5 overflow-x-auto">
+          <button type="button" id="tab-btn-v" onclick="alternarAba('viagens')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-[#00E5FF] text-[#060B18]">
+            Viagens (<span id="tab-cnt-v">0</span>)
+          </button>
+          <button type="button" id="tab-btn-r" onclick="alternarAba('recargas')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-[#142347] text-slate-300">
+            Recargas (<span id="tab-cnt-r">0</span>)
+          </button>
+          <button type="button" id="tab-btn-e" onclick="alternarAba('extras')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-[#142347] text-slate-300">
+            Despesas Extras (<span id="tab-cnt-e">0</span>)
+          </button>
+        </div>
+        <span class="text-[10px] text-slate-400 hidden sm:inline">Clique nos cabeçalhos para ordenar ↕</span>
+      </div>
+
+      <div id="view-v" class="overflow-x-auto custom-scroll">
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr class="bg-[#0F1A36] text-slate-400 uppercase text-[10px] border-b border-[#142347] cursor-pointer select-none">
+              <th class="p-2 hover:text-white" onclick="ordenarViagens('inicio')">Carro / Início ↕</th>
+              <th class="p-2 text-right hover:text-white" onclick="ordenarViagens('dist')">Distância ↕</th>
+              <th class="p-2 text-right hover:text-white" onclick="ordenarViagens('odo')">Odômetro ↕</th>
+              <th class="p-2 text-center">Bateria</th>
+              <th class="p-2 text-right">Energia</th>
+              <th class="p-2">Trajeto</th>
+            </tr>
+          </thead>
+          <tbody id="lista-viagens" class="divide-y divide-[#142347] text-slate-300"></tbody>
+        </table>
+      </div>
+
+      <div id="view-r" class="overflow-x-auto custom-scroll hidden">
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr class="bg-[#0F1A36] text-slate-400 uppercase text-[10px] border-b border-[#142347] cursor-pointer select-none">
+              <th class="p-2 hover:text-white" onclick="ordenarRecargas('inicio')">Carro / Início ↕</th>
+              <th class="p-2">Local</th>
+              <th class="p-2 text-center">Bateria</th>
+              <th class="p-2 text-right">Tomada (kWh)</th>
+              <th class="p-2 text-right">Bateria (kWh)</th>
+              <th class="p-2 text-right text-emerald-400 font-bold hover:text-white" onclick="ordenarRecargas('custoTotal')">Custo Total ↕</th>
+            </tr>
+          </thead>
+          <tbody id="lista-recargas" class="divide-y divide-[#142347] text-slate-300"></tbody>
+        </table>
+      </div>
+
+      <div id="view-e" class="overflow-x-auto custom-scroll hidden">
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr class="bg-[#0F1A36] text-slate-400 uppercase text-[10px] border-b border-[#142347]">
+              <th class="p-2">Carro / Data</th>
+              <th class="p-2">Categoria</th>
+              <th class="p-2">Descrição</th>
+              <th class="p-2 text-right text-emerald-400">Valor</th>
+              <th class="p-2 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="lista-extras" class="divide-y divide-[#142347] text-slate-300"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ================= MODAL ADICIONAR DESPESA EXTRA ================= -->
+  <div id="modal-despesa" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-3">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 class="text-sm font-bold text-white">Registrar Revisão ou Despesa Extra</h3>
+        <button type="button" onclick="fecharModal('modal-despesa')" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="ext-carro" class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Veículo:</label>
+          <select id="ext-carro" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1.5 text-white font-semibold outline-none focus:border-[#00E5FF]">
+            <option value="MINI">BYD Dolphin Mini (MINI)</option>
+            <option value="BYD YUAN PRO">BYD Yuan Pro</option>
+          </select>
+        </div>
+        <div>
+          <label for="ext-tipo" class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Categoria:</label>
+          <select id="ext-tipo" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1.5 text-white font-semibold outline-none focus:border-[#00E5FF]">
+            <option value="Revisão Anual">Revisão Periódica / Anual</option>
+            <option value="Lavagem">Lavagem / Estética</option>
+            <option value="Funilaria">Funilaria / Pintura / Vidros</option>
+            <option value="Acessórios">Acessórios / Outros</option>
+          </select>
+        </div>
+        <div>
+          <label for="ext-data" class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Data:</label>
+          <input type="date" id="ext-data" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1.5 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label for="ext-desc" class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Descrição (opcional):</label>
+          <input type="text" id="ext-desc" placeholder="Ex: Revisão de 1 ano na concessionária" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1.5 text-white outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label for="ext-valor" class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Valor Total (R$):</label>
+          <input type="number" step="0.01" id="ext-valor" placeholder="0,00" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1.5 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-[#142347]">
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-despesa')">Cancelar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] hover:bg-cyan-400 text-[#060B18] font-bold text-xs" onclick="salvarDespesaExtra()">
+          Salvar Despesa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL VEÍCULO TÉRMICO PERSONALIZADO ================= -->
+  <div id="modal-custom-termico" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-sm rounded-2xl p-4 space-y-3">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 class="text-sm font-bold text-white">Cadastrar Veículo Térmico</h3>
+        <button type="button" onclick="fecharModal('modal-custom-termico')" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Nome do Veículo:</label>
+          <input type="text" id="custom-termico-nome" placeholder="Ex: Citroën Antigo" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1.5 text-white outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Consumo (km por Litro):</label>
+          <input type="number" step="0.1" id="custom-termico-km" placeholder="6.5" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1.5 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-[#142347]">
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-custom-termico')">Cancelar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarTermicoPersonalizado()">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL CONFIGURAÇÕES / AJUSTES ================= -->
+  <div id="modal-config" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-3">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 class="text-sm font-bold text-white">Configurar Parâmetros & Tarifas</h3>
+        <button type="button" onclick="fecharModal('modal-config')" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="cfg-gasolina" class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Preço Gasolina (R$/Litro):</label>
+          <input type="number" step="0.01" id="cfg-gasolina" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1.5 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label for="cfg-kwh" class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Tarifa Média kWh (R$):</label>
+          <input type="number" step="0.01" id="cfg-kwh" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1.5 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-[#142347]">
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-config')">Cancelar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] hover:bg-cyan-400 text-[#060B18] font-bold text-xs" onclick="salvarConfiguracoes()">
+          Salvar Alterações
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL IMPORTAÇÃO ================= -->
+  <div id="modal-import" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-lg rounded-2xl p-4 sm:p-5 space-y-3">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 class="text-sm font-bold text-white">Importar Dados Complementares</h3>
+        <button type="button" onclick="fecharModal('modal-import')" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <label for="input-csv-file" class="block border-2 border-dashed border-[#1F3463] hover:border-[#00E5FF] rounded-xl p-5 text-center cursor-pointer bg-[#060B18] transition">
+        <p class="text-xs font-bold text-white">Toque aqui para escolher o arquivo CSV</p>
+        <p class="text-[10px] text-slate-500 mt-1">Reconhece o layout oficial com MINI e YUAN PRO</p>
+      </label>
+      <input type="file" id="input-csv-file" accept=".csv, .txt" class="hidden" onchange="processarArquivoCSVIncremental(event)" />
+
+      <div id="previa-box" class="hidden text-xs bg-[#060B18] p-2.5 rounded-lg border border-[#142347] font-mono space-y-1"></div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-[#142347]">
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-import')">Cancelar</button>
+        <button type="button" id="btn-gravar-import" disabled class="px-4 py-1.5 rounded-lg bg-[#00E5FF] hover:bg-cyan-400 disabled:opacity-40 text-[#060B18] font-bold text-xs" onclick="confirmarImportacaoIncremental()">
+          Confirmar e Mesclar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL NUVEM ================= -->
+  <div id="modal-cloud" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 class="text-sm font-bold text-white">Sincronização em Nuvem (Firebase)</h3>
+        <button type="button" onclick="fecharModal('modal-cloud')" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+
+      <p class="text-xs text-slate-300">
+        Insira abaixo as credenciais do seu projeto Firebase para sincronizar o painel:
+      </p>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="fb-apikey" class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Firebase API Key:</label>
+          <input type="text" id="fb-apikey" placeholder="AIzaSy..." class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label for="fb-projectid" class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Firebase Project ID:</label>
+          <input type="text" id="fb-projectid" placeholder="seu-projeto-id" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t border-[#142347]">
+        <button type="button" class="text-xs text-rose-400 hover:underline font-semibold" onclick="limparTudoERecomecar()">
+          Zerar Banco
+        </button>
+        <div class="flex gap-2">
+          <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-cloud')">Cancelar</button>
+          <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] hover:bg-cyan-400 text-[#060B18] font-bold text-xs" onclick="salvarConfigNuvemEConectar()">
+            Salvar & Conectar
+          </button>
+        </div>
+      </div>
+    </div>
