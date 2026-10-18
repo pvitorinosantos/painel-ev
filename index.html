@@ -58,7 +58,7 @@
       <div class="flex items-center gap-1.5 sm:gap-2">
         <label class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs cursor-pointer transition shadow-md flex items-center gap-1">
           📁 Importar Carllog
-          <input type="file" id="input-arquivo-carllog" accept=".json,.csv,.txt" onchange="processarArquivoCarllog(event)" class="hidden">
+          <input type="file" id="input-arquivo-carllog" accept=".json,.csv,.txt,.tsv" onchange="processarArquivoCarllog(event)" class="hidden">
         </label>
         <button type="button" onclick="abrirModal('modal-referencia')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-amber-400 font-semibold text-xs border border-[#142347] transition">
           🚗 Ref. Combustível
@@ -308,7 +308,7 @@
       <div class="p-3 border-b border-[#142347] flex items-center justify-between">
         <span class="text-xs font-bold text-white">Viagens Sincronizadas da Nuvem</span>
         <div class="flex items-center gap-2">
-          <button type="button" onclick="limparDadosNuvem()" class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold text-[10px] hover:bg-rose-500/30 transition">🗑️ Limpar Viagens (Resetar)</button>
+          <button type="button" onclick="limparDadosNuvem()" class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold text-[10px] hover:bg-rose-500/30 transition">🗑️ Limpar Viagens</button>
           <span id="txt-status-nuvem" class="text-[10px] text-cyan-400 font-mono">Conectando...</span>
         </div>
       </div>
@@ -498,7 +498,7 @@
       return true;
     }
 
-    // ================= PARSER CORrigido PARA OS ÍNDICES REAIS DO CARLLOG =================
+    // ================= PARSER TOLERANTE UNIVERSAL PARA CARLLOG =================
     function processarArquivoCarllog(event) {
       var arquivo = event.target.files[0];
       if (!arquivo) return;
@@ -513,21 +513,29 @@
             return;
           }
 
-          var cabecalhoLinha = linhas[0].toLowerCase();
-          var ehRecarga = cabecalhoLinha.includes('carregador') || cabecalhoLinha.includes('energia na bateria');
-
+          var sep = linhas[0].includes('\t') ? '\t' : (linhas[0].includes(';') ? ';' : ',');
           var novosItens = [];
+          var ehRecarga = false;
+
+          // Varre as primeiras linhas para identificar se é Recarga ou Viagem
+          for (var r = 0; r < Math.min(linhas.length, 5); r++) {
+            var lBaixa = linhas[r].toLowerCase();
+            if (lBaixa.includes('carregador') || lBaixa.includes('energia na bateria')) {
+              ehRecarga = true;
+              break;
+            }
+          }
 
           for (var i = 1; i < linhas.length; i++) {
-            var cols = linhas[i].split('\t').map(function(c) { return c.trim().replace(/^"|"$/g, ''); });
+            var cols = linhas[i].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ''); });
             if (cols.length < 3) continue;
 
             if (ehRecarga) {
               var carro = cols[0] || 'MINI';
-              var inicio = cols[2] || '';
-              var local = cols[5] || 'Casa';
-              var energiaBat = parsePtBr(cols[11]);
-              var custoTotal = parsePtBr(cols[17]);
+              var inicio = cols[2] || cols[1] || '';
+              var local = cols[5] || cols[4] || 'Casa';
+              var energiaBat = parsePtBr(cols[11] || cols[10] || 0);
+              var custoTotal = parsePtBr(cols[17] || cols[16] || 0);
 
               if (inicio) {
                 novosItens.push({
@@ -541,10 +549,7 @@
                 });
               }
             } else {
-              // Índices exatos mapeados do seu arquivo de Viagens:
-              // 0: Carro, 1: VIN, 2: Início, 3: Fim, 4: Duração, 5: Distância, 6: Odômetro ini, 7: Odômetro fim
-              // 8: Bat ini, 9: Bat fim, 10: Energia usada, 17: Saída, 18: Lat Saída, 19: Lon Saída
-              // 20: Chegada, 21: Lat Chegada, 22: Lon Chegada, 26/27: Custo
+              // Leitura robusta baseada em índices flexíveis da linha tabulada do Carllog
               var carro = cols[0] || 'MINI';
               var inicio = cols[2] || '';
               var distancia = parsePtBr(cols[5]);
@@ -556,6 +561,17 @@
               var latChegada = cols[21] || '';
               var lonChegada = cols[22] || '';
               var custoTotal = parsePtBr(cols[26] || cols[27] || 0);
+
+              // Se a coluna 5 estiver vazia ou for 0, tenta buscar em outras colunas numéricas prováveis
+              if (distancia === 0 && cols.length > 5) {
+                for (var cIdx = 4; cIdx < Math.min(cols.length, 12); cIdx++) {
+                  var pVal = parsePtBr(cols[cIdx]);
+                  if (pVal > 0 && pVal < 1000 && cols[cIdx].indexOf('/') === -1 && cols[cIdx].indexOf(':') === -1) {
+                    distancia = pVal;
+                    break;
+                  }
+                }
+              }
 
               if (inicio) {
                 novosItens.push({
@@ -581,19 +597,18 @@
             if (ehRecarga) {
               if (!AppEstado.recargas) AppEstado.recargas = [];
               AppEstado.recargas = AppEstado.recargas.concat(novosItens);
-              alert('Sucesso absoluto! ' + novosItens.length + ' recarga(s) lida(s) e enviadas ao Firebase.');
+              alert('Sucesso! ' + novosItens.length + ' recarga(s) importada(s).');
             } else {
-              // Substitui as viagens para evitar duplicidade ao reimportar o arquivo completo
               AppEstado.viagens = novosItens;
-              alert('Sucesso absoluto! ' + novosItens.length + ' viagem(ns) lida(s) e enviadas ao Firebase.');
+              alert('Sucesso! ' + novosItens.length + ' viagem(ns) importada(s).');
             }
             persistirEstadoNuvem();
           } else {
-            alert('Nenhum registro válido detectado.');
+            alert('Nenhum registro válido detectado. Certifique-se de importar o arquivo de exportação em texto/CSV do Carllog.');
           }
 
         } catch (err) {
-          alert('Erro crítico ao processar o arquivo: ' + err.message);
+          alert('Erro ao processar o arquivo: ' + err.message);
         }
         event.target.value = '';
       };
@@ -601,7 +616,7 @@
     }
 
     function limparDadosNuvem() {
-      if (confirm('Deseja realmente limpar todas as viagens sincronizadas para reimportar limpo?')) {
+      if (confirm('Deseja realmente limpar todas as viagens sincronizadas?')) {
         AppEstado.viagens = [];
         persistirEstadoNuvem();
       }
@@ -812,15 +827,14 @@
           dolphinKm += dist; dolphinViagens++; dolphinRecargas += custo;
         }
 
-        var origem = v.origem || buscarCampoFlexivel(v, ['origem', 'de', 'start', 'saida']) || 'Origem';
-        var destino = v.destino || buscarCampoFlexivel(v, ['destino', 'para', 'end', 'chegada']) || 'Destino';
+        var origem = v.origem || 'Origem';
+        var destino = v.destino || 'Destino';
         
         if (origem && origem !== 'Origem') locaisMap[origem] = (locaisMap[origem] || 0) + 1;
         if (destino && destino !== 'Destino') locaisMap[destino] = (locaisMap[destino] || 0) + 1;
 
         var inicio = buscarCampoFlexivel(v, ['inicio', 'dataHora', 'data']) || '—';
         
-        // Reconstrói o link do mapa se houver coordenadas
         var lat = v.latChegada || v.latSaida;
         var lon = v.lonChegada || v.lonSaida;
         var trajetoHtml = '';
@@ -905,7 +919,6 @@
       var ctxConsumo = document.getElementById('chartConsumo').getContext('2d');
       if (chartConsumoInstancia) chartConsumoInstancia.destroy();
 
-      // Ordena as viagens cronologicamente para o gráfico de linha não ficar invertido ou duplicado
       var viagensOrdenadas = viagens.slice().sort(function(a, b) {
         var da = extrairDataRegistro(a) || '';
         var db = extrairDataRegistro(b) || '';
