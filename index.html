@@ -13,10 +13,6 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Firebase SDK Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
   <style>
     body { background-color: #060B18; color: #E2E8F0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
     .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -45,18 +41,24 @@
           BYD
         </div>
         <div>
-          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Nuvem</span>
+          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Gestão</span>
           <h1 class="text-xs sm:text-base font-bold text-white flex items-center gap-2">
             Dolphin Mini & Yuan Pro
-            <span id="badge-cloud-status" class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono border border-amber-500/30">
-              Conectando...
+            <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30">
+              100% Estável
             </span>
           </h1>
         </div>
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#142347] transition">
+        <button type="button" onclick="exportarDados()" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#142347] transition">
+          📥 Exportar JSON
+        </button>
+        <label class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-purple-400 font-semibold text-xs border border-[#142347] cursor-pointer transition">
+          📤 Importar JSON <input type="file" id="file-import" accept=".json" onchange="importarDados(event)" class="hidden">
+        </label>
+        <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs transition">
           ⚙️ Parâmetros
         </button>
       </div>
@@ -216,8 +218,8 @@
     <!-- TABELA DE VIAGENS -->
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
       <div class="p-3 border-b border-[#142347] flex items-center justify-between">
-        <span class="text-xs font-bold text-white">Viagens Sincronizadas da Nuvem (frota_ev / estado_global)</span>
-        <span id="txt-status-nuvem" class="text-[10px] text-cyan-400 font-mono">Carregando nuvem...</span>
+        <span class="text-xs font-bold text-white">Viagens Registradas</span>
+        <button onclick="carregarExemplo()" class="px-2.5 py-1 rounded bg-[#00E5FF] text-[#060B18] font-bold text-[10px]">＋ Carregar Exemplo</button>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
@@ -230,7 +232,7 @@
             </tr>
           </thead>
           <tbody id="lista-viagens" class="divide-y divide-[#142347] text-slate-300">
-            <tr><td colspan="4" class="p-4 text-center text-slate-500">Buscando dados no Firestore...</td></tr>
+            <tr><td colspan="4" class="p-4 text-center text-slate-500">Importe seu JSON ou clique em "Carregar Exemplo".</td></tr>
           </tbody>
         </table>
       </div>
@@ -263,7 +265,12 @@
   </div>
 
   <script>
-    var AppEstado = { viagens: [], recargas: [], extras: [], config: { gasolina: 6.96, tarifaKwh: 0.85 } };
+    var AppEstado = { 
+      viagens: [], 
+      recargas: [], 
+      extras: [], 
+      config: { gasolina: 6.96, tarifaKwh: 0.85 } 
+    };
     var chartConsumoInstancia = null;
     var chartGastosInstancia = null;
 
@@ -282,53 +289,40 @@
       return isNaN(p) ? 0 : p;
     }
 
-    // Inicialização automática imediata com a chave informada na imagem e timeout de segurança contra travamentos
     window.onload = function() {
-      renderizarPainelCompleto();
-      conectarNuvemDireta();
+      carregarDadosLocais();
     };
 
-    function conectarNuvemDireta() {
+    function carregarDadosLocais() {
       try {
-        if (!firebase.apps.length) {
-          firebase.initializeApp({
-            apiKey: "AIzaSyBssVxU2b2mM7m7nOahzvx35LRcV22si40",
-            projectId: "frota-byd-ev"
-          });
+        var dados = localStorage.getItem('ev_frota_dados_v3');
+        if (dados) {
+          var parsed = JSON.parse(dados);
+          AppEstado.viagens = parsed.viagens || [];
+          AppEstado.recargas = parsed.recargas || [];
+          AppEstado.extras = parsed.extras || [];
+          if (parsed.config) AppEstado.config = parsed.config;
         }
-        var db = firebase.firestore();
-        
-        // Timeout de segurança de 3 segundos para nunca travar a tela
-        var timeoutId = setTimeout(function() {
-          document.getElementById('badge-cloud-status').textContent = 'Modo Local / Offline';
-          document.getElementById('txt-status-nuvem').textContent = 'Tempo limite excedido';
-        }, 3000);
+      } catch (e) {}
+      renderizarPainelCompleto();
+    }
 
-        db.collection('frota_ev').doc('estado_global').get().then(function(doc) {
-          clearTimeout(timeoutId);
-          if (doc.exists) {
-            var dados = doc.data();
-            AppEstado.viagens = dados.viagens || [];
-            AppEstado.recargas = dados.recargas || [];
-            AppEstado.extras = dados.extras || [];
+    function salvarDadosLocais() {
+      try {
+        localStorage.setItem('ev_frota_dados_v3', JSON.stringify(AppEstado));
+      } catch (e) {}
+    }
 
-            document.getElementById('badge-cloud-status').textContent = 'Nuvem Conectada';
-            document.getElementById('badge-cloud-status').className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30';
-            document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
-            renderizarPainelCompleto();
-          } else {
-            document.getElementById('badge-cloud-status').textContent = 'Doc não existe';
-          }
-        }).catch(function(err) {
-          clearTimeout(timeoutId);
-          console.error(err);
-          document.getElementById('badge-cloud-status').textContent = 'Erro de Rede/CORS';
-          document.getElementById('txt-status-nuvem').textContent = 'Falha ao buscar nuvem';
-        });
-
-      } catch (e) {
-        console.error(e);
-      }
+    function carregarExemplo() {
+      AppEstado.viagens = [
+        { carro: 'MINI', inicio: '2026-10-01 17:45', dist: 9.0, kwh: 1.5, orig: 'COMPESA', dest: 'Casa' },
+        { carro: 'MINI', inicio: '2026-10-02 06:25', dist: 9.0, kwh: 1.1, orig: 'Casa', dest: 'COMPESA' }
+      ];
+      AppEstado.recargas = [
+        { carro: 'MINI', kwhTomada: 25.0, custoTotal: 21.25 }
+      ];
+      salvarDadosLocais();
+      renderizarPainelCompleto();
     }
 
     function salvarParametros() {
@@ -336,6 +330,7 @@
       var tar = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
       AppEstado.config.gasolina = gas;
       AppEstado.config.tarifaKwh = tar;
+      salvarDadosLocais();
       fecharModal('modal-parametros');
       renderizarPainelCompleto();
     }
@@ -398,4 +393,5 @@
       document.getElementById('card-yuan-viagens').textContent = vYuan.length;
       document.getElementById('card-yuan-recargas').textContent = 'R$ ' + fmtNum(cYuan, 2);
 
-      var litrosRef = distTotal >
+      var litrosRef = distTotal > 0 ? (distTotal / 15.3) : 0;
+      var totalTermico
