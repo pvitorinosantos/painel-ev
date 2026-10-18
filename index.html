@@ -61,7 +61,7 @@
           🚗 Veículo Combustível Ref.
         </button>
         <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#142347] transition">
-          ⚙️ Tarifas
+          ⚙️ Parâmetros Térmicos
         </button>
       </div>
     </div>
@@ -198,7 +198,7 @@
       <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
         <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
           <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🚗 Veículo a Combustão de Referência</h3>
-          <button onclick="abrirModal('modal-referencia')" class="text-[10px] text-cyan-400 hover:underline">Alterar Modelo</button>
+          <span class="text-[10px] px-2 py-0.5 bg-[#0F1A36] text-amber-400 rounded-full font-mono border border-[#1F3463]">Parâmetro Ativo</span>
         </div>
         <div class="grid grid-cols-2 gap-3 text-xs">
           <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
@@ -264,4 +264,159 @@
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
-        <button type="button" class="px-3 py-1.5 rounded
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-referencia')">Cancelar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarVeiculoRef()">Salvar Referência</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL PARÂMETROS ================= -->
+  <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 class="text-sm font-bold text-white">Parâmetros Térmicos & Tarifas</h3>
+        <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Preço Gasolina (R$/L):</label>
+          <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Tarifa Padrão kWh (R$):</label>
+          <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-parametros')">Cancelar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarParametros()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var AppEstado = { 
+      viagens: [], 
+      recargas: [], 
+      extras: [], 
+      config: { gasolina: 6.96, tarifaKwh: 0.85, refModelo: 'Renault Kwid / Hatch 1.0', refConsumo: 15.3 } 
+    };
+    var chartConsumoInstancia = null;
+    var chartGastosInstancia = null;
+
+    function fmtNum(n, d) {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
+
+    function parsePtBr(v) {
+      if (!v && v !== 0) return 0;
+      if (typeof v === 'number') return isNaN(v) ? 0 : v;
+      var s = String(v).replace(/[R$\s]/g, '');
+      if (s.indexOf(',') > -1 && s.indexOf('.') > -1) s = s.replace(/\./g, '').replace(',', '.');
+      else if (s.indexOf(',') > -1) s = s.replace(',', '.');
+      var p = parseFloat(s);
+      return isNaN(p) ? 0 : p;
+    }
+
+    window.onload = function() {
+      try {
+        var cfgSalva = localStorage.getItem('ev_config_ref');
+        if (cfgSalva) {
+          var parsed = JSON.parse(cfgSalva);
+          if (parsed.gasolina) AppEstado.config.gasolina = parsed.gasolina;
+          if (parsed.tarifaKwh) AppEstado.config.tarifaKwh = parsed.tarifaKwh;
+          if (parsed.refModelo) AppEstado.config.refModelo = parsed.refModelo;
+          if (parsed.refConsumo) AppEstado.config.refConsumo = parsed.refConsumo;
+        }
+      } catch (e) {}
+      iniciarFirebaseAutomatico();
+    };
+
+    function salvarPreferenciaLocal() {
+      try {
+        localStorage.setItem('ev_config_ref', JSON.stringify(AppEstado.config));
+      } catch (e) {}
+    }
+
+    function iniciarFirebaseAutomatico() {
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp({
+            apiKey: "AIzaSyBssVxU2b2mM7m7nOahzvx35LRcV22si40",
+            projectId: "frota-byd-ev"
+          });
+        }
+
+        var db = firebase.firestore();
+        db.collection('frota_ev').doc('estado_global').get().then(function(doc) {
+          if (!doc.exists) {
+            document.getElementById('txt-status-nuvem').textContent = 'Documento estado_global não encontrado.';
+            return;
+          }
+
+          var dados = doc.data();
+          AppEstado.viagens = dados.viagens || [];
+          AppEstado.recargas = dados.recargas || [];
+          AppEstado.extras = dados.extras || [];
+
+          document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
+          renderizarPainelCompleto();
+
+        }).catch(function(err) {
+          console.error(err);
+          document.getElementById('txt-status-nuvem').textContent = 'Erro ao conectar nuvem';
+        });
+
+      } catch (e) {
+        console.error(e);
+        document.getElementById('txt-status-nuvem').textContent = 'Erro de inicialização';
+      }
+    }
+
+    function salvarParametros() {
+      var gas = parseFloat(document.getElementById('input-gasolina').value) || 6.96;
+      var tar = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
+      AppEstado.config.gasolina = gas;
+      AppEstado.config.tarifaKwh = tar;
+      salvarPreferenciaLocal();
+      fecharModal('modal-parametros');
+      renderizarPainelCompleto();
+    }
+
+    function salvarVeiculoRef() {
+      var modelo = document.getElementById('input-modelo-ref').value || 'Veículo Combustão';
+      var consumo = parseFloat(document.getElementById('input-consumo-ref').value) || 12.0;
+      AppEstado.config.refModelo = modelo;
+      AppEstado.config.refConsumo = consumo;
+      salvarPreferenciaLocal();
+      fecharModal('modal-referencia');
+      renderizarPainelCompleto();
+    }
+
+    function renderizarPainelCompleto() {
+      var viagens = AppEstado.viagens;
+      var recargas = AppEstado.recargas;
+      var extras = AppEstado.extras;
+      var cfg = AppEstado.config;
+
+      document.getElementById('input-gasolina').value = cfg.gasolina;
+      document.getElementById('input-tarifa').value = cfg.tarifaKwh;
+      document.getElementById('input-modelo-ref').value = cfg.refModelo;
+      document.getElementById('input-consumo-ref').value = cfg.refConsumo;
+
+      var distTotal = 0, energiaTotal = 0, distComEnergia = 0;
+      for (var i = 0; i < viagens.length; i++) {
+        var d = parsePtBr(viagens[i].dist);
+        distTotal += d;
+        if (viagens[i].kwh > 0 && d > 0) {
+          energiaTotal += parsePtBr(viagens[i].kwh);
+          distComEnergia += d;
+        }
+      }
+
+      var custoRecargas = 0;
+      for (var j = 0; j < recargas.length; j++) {
+        var c = parsePtBr(recargas[j].custoTotal);
+        var t = parsePtBr(recargas[j].kwhTomada || recargas[j].kwh);
+        custoRecargas += (c === 0
