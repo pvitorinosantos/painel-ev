@@ -10,9 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   
-  <!-- Chart.js & Chart.js Plugin DataLabels -->
+  <!-- Chart.js (Versão Estável Nativa) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
   <!-- Firebase SDK Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -310,3 +309,132 @@
     }
 
     function parsePtBr(v) {
+      if (!v && v !== 0) return 0;
+      if (typeof v === 'number') return isNaN(v) ? 0 : v;
+      var s = String(v).replace(/[R$\s]/g, '');
+      if (s.indexOf(',') > -1 && s.indexOf('.') > -1) s = s.replace(/\./g, '').replace(',', '.');
+      else if (s.indexOf(',') > -1) s = s.replace(',', '.');
+      var p = parseFloat(s);
+      return isNaN(p) ? 0 : p;
+    }
+
+    window.onload = function() {
+      try {
+        var cfgSalva = localStorage.getItem('ev_config_ref');
+        if (cfgSalva) {
+          var parsed = JSON.parse(cfgSalva);
+          if (parsed.gasolina) AppEstado.config.gasolina = parsed.gasolina;
+          if (parsed.tarifaKwh) AppEstado.config.tarifaKwh = parsed.tarifaKwh;
+          if (parsed.refModelo) AppEstado.config.refModelo = parsed.refModelo;
+          if (parsed.refConsumo) AppEstado.config.refConsumo = parsed.refConsumo;
+        }
+      } catch (e) {}
+      iniciarFirebaseAutomatico();
+    };
+
+    function salvarPreferenciaLocal() {
+      try {
+        localStorage.setItem('ev_config_ref', JSON.stringify(AppEstado.config));
+      } catch (e) {}
+    }
+
+    function iniciarFirebaseAutomatico() {
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp({
+            apiKey: "AIzaSyBssVxU2b2mM7m7nOahzvx35LRcV22si40",
+            projectId: "frota-byd-ev"
+          });
+        }
+
+        var db = firebase.firestore();
+        db.collection('frota_ev').doc('estado_global').get().then(function(doc) {
+          if (!doc.exists) {
+            console.warn("Documento estado_global não encontrado no Firestore.");
+            document.getElementById('txt-status-nuvem').textContent = 'Documento estado_global não encontrado.';
+            return;
+          }
+
+          var dados = doc.data();
+          console.log("Dados brutos recebidos do Firestore:", dados);
+
+          AppEstado.viagens = dados.viagens || dados.viagensList || [];
+          AppEstado.recargas = dados.recargas || dados.recargasList || [];
+          AppEstado.extras = dados.extras || dados.extrasList || [];
+
+          document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
+          renderizarPainelCompleto();
+
+        }).catch(function(err) {
+          console.error("Erro ao ler Firestore:", err);
+          document.getElementById('txt-status-nuvem').textContent = 'Erro ao conectar nuvem';
+        });
+
+      } catch (e) {
+        console.error("Erro ao inicializar Firebase:", e);
+        document.getElementById('txt-status-nuvem').textContent = 'Erro de inicialização';
+      }
+    }
+
+    function salvarParametros() {
+      var gas = parseFloat(document.getElementById('input-gasolina').value) || 6.96;
+      var tar = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
+      AppEstado.config.gasolina = gas;
+      AppEstado.config.tarifaKwh = tar;
+      salvarPreferenciaLocal();
+      fecharModal('modal-parametros');
+      renderizarPainelCompleto();
+    }
+
+    function salvarVeiculoRef() {
+      var modelo = document.getElementById('input-modelo-ref').value || 'Veículo Combustão';
+      var consumo = parseFloat(document.getElementById('input-consumo-ref').value) || 12.0;
+      AppEstado.config.refModelo = modelo;
+      AppEstado.config.refConsumo = consumo;
+      salvarPreferenciaLocal();
+      fecharModal('modal-referencia');
+      renderizarPainelCompleto();
+    }
+
+    function renderizarPainelCompleto() {
+      var viagens = AppEstado.viagens;
+      var recargas = AppEstado.recargas;
+      var extras = AppEstado.extras;
+      var cfg = AppEstado.config;
+
+      document.getElementById('input-gasolina').value = cfg.gasolina;
+      document.getElementById('input-tarifa').value = cfg.tarifaKwh;
+      document.getElementById('input-modelo-ref').value = cfg.refModelo;
+      document.getElementById('input-consumo-ref').value = cfg.refConsumo;
+
+      var distTotal = 0, energiaTotal = 0, distComEnergia = 0;
+      for (var i = 0; i < viagens.length; i++) {
+        var d = parsePtBr(viagens[i].dist || viagens[i].distancia);
+        distTotal += d;
+        var kwhV = parsePtBr(viagens[i].kwh || viagens[i].energia);
+        if (kwhV > 0 && d > 0) {
+          energiaTotal += kwhV;
+          distComEnergia += d;
+        }
+      }
+
+      var custoRecargas = 0;
+      for (var j = 0; j < recargas.length; j++) {
+        var c = parsePtBr(recargas[j].custoTotal || recargas[j].custo);
+        var t = parsePtBr(recargas[j].kwhTomada || recargas[j].kwh);
+        custoRecargas += (c === 0 && t > 0 ? t * cfg.tarifaKwh : c);
+      }
+
+      var totalExtras = extras.reduce(function(a, b) { return a + parsePtBr(b.valor || b.custo); }, 0);
+
+      document.getElementById('kpi-distancia').textContent = fmtNum(distTotal, 1);
+      document.getElementById('kpi-recargas').textContent = fmtNum(custoRecargas, 2);
+
+      var custoKm = (distTotal > 0 && (custoRecargas + totalExtras) > 0) ? ((custoRecargas + totalExtras) / distTotal) : null;
+      document.getElementById('kpi-custo-km').textContent = custoKm !== null ? fmtNum(custoKm, 3) : '—';
+
+      var consumo100 = distComEnergia > 0 ? ((energiaTotal / distComEnergia) * 100) : null;
+      document.getElementById('kpi-consumo').textContent = consumo100 !== null ? fmtNum(consumo100, 1) : '—';
+
+      var co2PoupadoKg = distTotal * 0.130;
+      document.getElementById('kpi-co2').textContent = fmtNum(co2PoupadoKg,
