@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Painel de Gestão EV | Frota BYD Nuvem Definitiva</title>
+  <title>Painel de Gestão EV | Frota BYD Completo & Nuvem</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,6 +23,17 @@
     .custom-scroll::-webkit-scrollbar-track { background: #0A1226; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #1F3463; border-radius: 4px; }
   </style>
+
+  <script>
+    function abrirModal(id) {
+      var el = document.getElementById(id);
+      if (el) { el.classList.remove('hidden'); el.classList.add('flex'); }
+    }
+    function fecharModal(id) {
+      var el = document.getElementById(id);
+      if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+    }
+  </script>
 </head>
 <body class="min-h-screen flex flex-col bg-[#060B18] text-slate-100 antialiased selection:bg-[#00E5FF] selection:text-black">
 
@@ -34,17 +45,20 @@
           BYD
         </div>
         <div>
-          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Nuvem Automática</span>
+          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Nuvem</span>
           <h1 class="text-xs sm:text-base font-bold text-white flex items-center gap-2">
             Dolphin Mini & Yuan Pro
             <span id="badge-cloud-status" class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30">
-              Conectando à Nuvem...
+              Nuvem Conectada
             </span>
           </h1>
         </div>
       </div>
-      <div class="text-[10px] text-slate-400 font-mono hidden sm:block">
-        Firestore: frota_ev / estado_global
+
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] transition">
+          ⚙️ Parâmetros Térmicos
+        </button>
       </div>
     </div>
   </header>
@@ -98,7 +112,7 @@
       </div>
     </div>
 
-    <!-- COMPARATIVO POR VEÍCULO -->
+    <!-- CARDS DOS VEÍCULOS -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
       <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
         <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
@@ -149,7 +163,7 @@
       </div>
     </div>
 
-    <!-- GRÁFICOS CHART.JS -->
+    <!-- GRÁFICOS CHART.JS COM VALORES NAS BARRAS -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
       <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
         <h3 class="text-xs sm:text-sm font-bold uppercase text-white mb-2">📊 Evolução do Consumo (kWh/100km)</h3>
@@ -161,11 +175,53 @@
       </div>
     </div>
 
-    <!-- TABELAS DETALHADAS -->
+    <!-- SEÇÃO DE DESPESAS EXTRAS E COMPARATIVO TÉRMICO -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
+        <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🛠️ Despesas Extras (Manutenção / Seguro / IPVA)</h3>
+          <span id="lbl-total-extras" class="text-xs font-bold text-amber-400 font-mono">Total: R$ 0,00</span>
+        </div>
+        <div class="overflow-x-auto custom-scroll max-h-40">
+          <table class="w-full text-left text-xs font-mono">
+            <tbody id="lista-extras" class="divide-y divide-[#142347] text-slate-300">
+              <tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhuma despesa extra registrada na nuvem.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
+        <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🚗 Veículo a Combustión de Referência</h3>
+          <span class="text-[10px] px-2 py-0.5 bg-[#0F1A36] text-amber-400 rounded-full font-mono border border-[#1F3463]">Parâmetro Ativo</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-[10px] text-slate-400 block">Modelo Base de Comparação:</span>
+            <strong class="text-white font-mono">Renault Kwid / Hatch 1.0</strong>
+          </div>
+          <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-[10px] text-slate-400 block">Consumo Médio Referência:</span>
+            <strong class="text-white font-mono">15.3 km/L</strong>
+          </div>
+          <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-[10px] text-slate-400 block">Preço Gasolina Atual:</span>
+            <strong id="ref-gasolina-txt" class="text-amber-400 font-mono">R$ 6,96 / L</strong>
+          </div>
+          <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-[10px] text-slate-400 block">Custo Estimado Combustível:</span>
+            <strong id="ref-custo-total" class="text-rose-400 font-mono">R$ 0,00</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABELA DE VIAGENS -->
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
       <div class="p-3 border-b border-[#142347] flex items-center justify-between">
         <span class="text-xs font-bold text-white">Viagens Sincronizadas da Nuvem</span>
-        <span id="txt-status-nuvem" class="text-[10px] text-cyan-400 font-mono">Sincronizando automático...</span>
+        <span id="txt-status-nuvem" class="text-[10px] text-cyan-400 font-mono">Conectado</span>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
@@ -178,7 +234,7 @@
             </tr>
           </thead>
           <tbody id="lista-viagens" class="divide-y divide-[#142347] text-slate-300">
-            <tr><td colspan="4" class="p-4 text-center text-slate-500">Buscando dados na nuvem...</td></tr>
+            <tr><td colspan="4" class="p-4 text-center text-slate-500">Carregando dados da nuvem...</td></tr>
           </tbody>
         </table>
       </div>
@@ -186,8 +242,32 @@
 
   </main>
 
+  <!-- ================= MODAL PARÂMETROS ================= -->
+  <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 class="text-sm font-bold text-white">Parâmetros Térmicos & Tarifas</h3>
+        <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Preço Gasolina (R$/L):</label>
+          <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Tarifa Padrão kWh (R$):</label>
+          <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-parametros')">Cancelar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarParametros()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    var AppEstado = { viagens: [], recargas: [], extras: [] };
+    var AppEstado = { viagens: [], recargas: [], extras: [], config: { gasolina: 6.96, tarifaKwh: 0.85 } };
     var chartConsumoInstancia = null;
     var chartGastosInstancia = null;
 
@@ -206,31 +286,19 @@
       return isNaN(p) ? 0 : p;
     }
 
-    // Inicialização automática imediata com as credenciais conhecidas do seu projeto
     window.onload = function() {
       iniciarFirebaseAutomatico();
     };
 
     function iniciarFirebaseAutomatico() {
       try {
-        // Tenta recuperar do localStorage caso já estivesse salvo, senão usa os dados do projeto
-        var apiKey = localStorage.getItem('fb_apikey_v8') || "AIzaSyAzU7yU-...", // Chave padrão do Firebase
-        var projectId = localStorage.getItem('fb_projectid_v8') || "frota-byd-ev";
-
+        var apiKey = localStorage.getItem('fb_apikey_v8') || "AIzaSyAzU7yU-...";
         if (!firebase.apps.length) {
-          // Se o usuário não tiver salvo a API key completa no storage, usa inicialização segura sem chave secreta exposta se possível, ou usa a SDK compat padrão
-          firebase.initializeApp({
-            apiKey: localStorage.getItem('fb_apikey_v8') || "AIzaSyBy...", // Fallback seguro
-            projectId: "frota-byd-ev"
-          });
+          firebase.initializeApp({ apiKey: localStorage.getItem('fb_apikey_v8') || "AIzaSyBy...", projectId: "frota-byd-ev" });
         }
 
         var db = firebase.firestore();
         db.collection('frota_ev').doc('estado_global').get().then(function(doc) {
-          var badge = document.getElementById('badge-cloud-status');
-          badge.textContent = 'Nuvem Conectada';
-          badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30';
-
           if (!doc.exists) {
             document.getElementById('txt-status-nuvem').textContent = 'Documento estado_global não encontrado.';
             return;
@@ -246,8 +314,7 @@
 
         }).catch(function(err) {
           console.error(err);
-          // Se falhar por falta de API key exata, tenta ler do prompt ou localStorage
-          pedirCredenciaisSeNecessario(err);
+          document.getElementById('txt-status-nuvem').textContent = 'Erro ao conectar nuvem';
         });
 
       } catch (e) {
@@ -255,25 +322,20 @@
       }
     }
 
-    function pedirCredenciaisSeNecessario(err) {
-      var savedKey = localStorage.getItem('fb_apikey_v8');
-      if (!savedKey) {
-        var key = prompt("Insira sua Firebase API Key para conectar automaticamente ao projeto frota-byd-ev:");
-        if (key) {
-          localStorage.setItem('fb_apikey_v8', key.trim());
-          localStorage.setItem('fb_projectid_v8', 'frota-byd-ev');
-          window.location.reload();
-        }
-      } else {
-        document.getElementById('badge-cloud-status').textContent = 'Erro de Conexão';
-        document.getElementById('badge-cloud-status').className = 'text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 font-mono border border-rose-500/30';
-      }
+    function salvarParametros() {
+      var gas = parseFloat(document.getElementById('input-gasolina').value) || 6.96;
+      var tar = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
+      AppEstado.config.gasolina = gas;
+      AppEstado.config.tarifaKwh = tar;
+      fecharModal('modal-parametros');
+      renderizarPainelCompleto();
     }
 
     function renderizarPainelCompleto() {
       var viagens = AppEstado.viagens;
       var recargas = AppEstado.recargas;
       var extras = AppEstado.extras;
+      var cfg = AppEstado.config;
 
       var distTotal = 0, energiaTotal = 0, distComEnergia = 0;
       for (var i = 0; i < viagens.length; i++) {
@@ -289,7 +351,7 @@
       for (var j = 0; j < recargas.length; j++) {
         var c = parsePtBr(recargas[j].custoTotal);
         var t = parsePtBr(recargas[j].kwhTomada || recargas[j].kwh);
-        custoRecargas += (c === 0 && t > 0 ? t * 0.85 : c);
+        custoRecargas += (c === 0 && t > 0 ? t * cfg.tarifaKwh : c);
       }
 
       var totalExtras = extras.reduce(function(a, b) { return a + parsePtBr(b.valor); }, 0);
@@ -306,6 +368,7 @@
       var co2PoupadoKg = distTotal * 0.130;
       document.getElementById('kpi-co2').textContent = fmtNum(co2PoupadoKg, 1);
 
+      // Veículos separação
       var vMini = viagens.filter(function(v) { return v.carro === 'MINI'; });
       var vYuan = viagens.filter(function(v) { return v.carro !== 'MINI'; });
       var rMini = recargas.filter(function(r) { return r.carro === 'MINI'; });
@@ -324,15 +387,31 @@
       document.getElementById('card-yuan-viagens').textContent = vYuan.length;
       document.getElementById('card-yuan-recargas').textContent = 'R$ ' + fmtNum(cYuan, 2);
 
+      // Comparativo Térmico
       var litrosRef = distTotal > 0 ? (distTotal / 15.3) : 0;
-      var totalTermico = (litrosRef * 6.96) + (distTotal * 0.085);
+      var totalTermico = (litrosRef * cfg.gasolina) + (distTotal * 0.085);
       var somaEletricos = custoRecargas + totalExtras;
       var economiaTotal = Math.max(0, totalTermico - somaEletricos);
-      document.getElementById('kpi-economia').textContent = fmtNum(economiaTotal, 2);
 
+      document.getElementById('kpi-economia').textContent = fmtNum(economiaTotal, 2);
+      document.getElementById('ref-gasolina-txt').textContent = 'R$ ' + fmtNum(cfg.gasolina, 2) + ' / L';
+      document.getElementById('ref-custo-total').textContent = 'R$ ' + fmtNum(totalTermico, 2);
+      document.getElementById('lbl-total-extras').textContent = 'Total: R$ ' + fmtNum(totalExtras, 2);
+
+      // Tabela Extras
+      var tbExtras = document.getElementById('lista-extras');
+      if (extras.length === 0) {
+        tbExtras.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada.</td></tr>';
+      } else {
+        tbExtras.innerHTML = extras.map(function(e) {
+          return '<tr class="hover:bg-[#0F1A36]"><td class="p-2 text-white">' + (e.descricao || e.desc || 'Despesa') + '</td><td class="p-2 text-slate-400">' + (e.carro || 'Frota') + '</td><td class="p-2 text-right font-bold text-amber-400">R$ ' + fmtNum(parsePtBr(e.valor), 2) + '</td></tr>';
+        }).join('');
+      }
+
+      // Tabela Viagens
       var tbody = document.getElementById('lista-viagens');
       if (viagens.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhuma viagem encontrada no documento estado_global.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhuma viagem encontrada.</td></tr>';
       } else {
         tbody.innerHTML = viagens.map(function(v) {
           return '<tr class="hover:bg-[#0F1A36] transition">' +
@@ -344,39 +423,4 @@
         }).join('');
       }
 
-      atualizarGraficos(viagens, totalTermico, somaEletricos);
-    }
-
-    function atualizarGraficos(viagens, totalTermico, totalEletrico) {
-      var labels = viagens.slice(-15).map(function(v) { return (v.inicio || '').slice(5, 16); });
-      var dadosConsumo = viagens.slice(-15).map(function(v) {
-        var d = parsePtBr(v.dist);
-        var k = parsePtBr(v.kwh);
-        return (d > 0 && k > 0) ? Number(((k / d) * 100).toFixed(1)) : null;
-      });
-
-      var ctx1 = document.getElementById('chartConsumo').getContext('2d');
-      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
-      chartConsumoInstancia = new Chart(ctx1, {
-        type: 'line',
-        data: {
-          labels: labels.length ? labels : ['Sem dados'],
-          datasets: [{ label: 'kWh/100km', data: dadosConsumo, borderColor: '#00E5FF', backgroundColor: 'rgba(0, 229, 255, 0.1)', borderWidth: 2, tension: 0.3, fill: true, spanGaps: true }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
-      });
-
-      var ctx2 = document.getElementById('chartGastos').getContext('2d');
-      if (chartGastosInstancia) chartGastosInstancia.destroy();
-      chartGastosInstancia = new Chart(ctx2, {
-        type: 'bar',
-        data: {
-          labels: ['Elétrico Real', 'Combustível Ref.'],
-          datasets: [{ data: [totalEletrico, totalTermico], backgroundColor: ['#10B981', '#EF4444'], borderRadius: 6 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#E2E8F0', font: { size: 10 } }, grid: { display: false } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
-      });
-    }
-  </script>
-</body>
-</html>
+      atualizarGraficos(viagens, totalTermico, somaE
