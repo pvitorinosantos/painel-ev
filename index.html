@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Painel de Gestão EV | Frota BYD Nuvem</title>
+  <title>Painel de Gestão EV | Frota BYD Completo</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -56,8 +56,11 @@
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2">
+        <button type="button" onclick="abrirModal('modal-config')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] transition">
+          ⚙️ Ajustes
+        </button>
         <button type="button" onclick="abrirModal('modal-cloud')" class="px-3 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs flex items-center gap-1 transition shadow-md">
-          ☁ Credenciais / Conectar
+          ☁ Credenciais
         </button>
       </div>
     </div>
@@ -66,14 +69,8 @@
   <!-- ================= PAINEL PRINCIPAL ================= -->
   <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 flex-1 w-full space-y-4">
 
-    <!-- AVISO DE CONEXÃO -->
-    <div id="banner-vazio" class="bg-blue-500/10 border border-[#00E5FF]/30 p-4 rounded-xl text-center space-y-2">
-      <p class="text-sm font-bold text-white">Painel pronto para sincronização com o Firestore</p>
-      <p class="text-xs text-slate-400">Clique em <strong>"☁ Credenciais / Conectar"</strong> no topo para inserir sua API Key e Project ID do Firebase.</p>
-    </div>
-
-    <!-- KPIS -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+    <!-- KPIS COMPLETOS -->
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
       <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Distância Total</span>
         <div class="mt-1 flex items-baseline gap-1">
@@ -82,29 +79,110 @@
         </div>
       </div>
       <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Viagens na Nuvem</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Custo Recargas</span>
         <div class="mt-1 flex items-baseline gap-1">
-          <span id="kpi-viagens" class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">0</span>
+          <span class="text-xs text-slate-400">R$</span>
+          <span id="kpi-recargas" class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">0,00</span>
         </div>
       </div>
       <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Recargas na Nuvem</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Custo Real / km</span>
         <div class="mt-1 flex items-baseline gap-1">
-          <span id="kpi-recargas" class="text-xl sm:text-2xl font-extrabold text-purple-400 font-mono">0</span>
+          <span id="kpi-custo-km" class="text-xl sm:text-2xl font-extrabold text-white font-mono">—</span>
+          <span class="text-xs text-slate-400">R$/km</span>
         </div>
       </div>
       <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Status da Nuvem</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Consumo Médio</span>
         <div class="mt-1 flex items-baseline gap-1">
-          <span id="txt-status-conexao" class="text-xs font-bold text-amber-400 font-mono">Aguardando</span>
+          <span id="kpi-consumo" class="text-xl sm:text-2xl font-extrabold text-purple-400 font-mono">—</span>
+          <span class="text-xs text-slate-400">kWh/100km</span>
+        </div>
+      </div>
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">CO₂ Evitado (ESG)</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span id="kpi-co2" class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">0,0</span>
+          <span class="text-xs text-slate-400">kg</span>
+        </div>
+      </div>
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Economia Líquida</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span class="text-xs text-slate-400">R$</span>
+          <span id="kpi-economia" class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">—</span>
         </div>
       </div>
     </div>
 
-    <!-- TABELA -->
+    <!-- COMPARATIVO POR VEÍCULO -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+          <div>
+            <span class="text-[9px] uppercase font-bold text-[#00E5FF]">Subcompacto EV</span>
+            <h2 class="text-sm sm:text-base font-bold text-white">BYD Dolphin Mini (MINI)</h2>
+          </div>
+          <span class="text-[9px] px-2 py-0.5 bg-[#0F1A36] text-[#00E5FF] rounded-full font-mono border border-[#1F3463]">LGXCE4CC8S0046239</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 my-2.5 text-center">
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Distância</span>
+            <strong id="card-dolphin-km" class="text-sm font-bold font-mono text-white">0,0 km</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Viagens</span>
+            <strong id="card-dolphin-viagens" class="text-sm font-bold font-mono text-white">0</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Gasto Total</span>
+            <strong id="card-dolphin-recargas" class="text-sm font-bold font-mono text-emerald-400">R$ 0,00</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+          <div>
+            <span class="text-[9px] uppercase font-bold text-purple-400">SUV Urbano EV</span>
+            <h2 class="text-sm sm:text-base font-bold text-white">BYD Yuan Pro</h2>
+          </div>
+          <span class="text-[9px] px-2 py-0.5 bg-[#0F1A36] text-purple-400 rounded-full font-mono border border-[#1F3463]">LC0CE4CB0S4003744</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 my-2.5 text-center">
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Distância</span>
+            <strong id="card-yuan-km" class="text-sm font-bold font-mono text-white">0,0 km</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Viagens</span>
+            <strong id="card-yuan-viagens" class="text-sm font-bold font-mono text-white">0</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[9px] text-slate-400 block uppercase">Gasto Total</span>
+            <strong id="card-yuan-recargas" class="text-sm font-bold font-mono text-emerald-400">R$ 0,00</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRÁFICOS CHART.JS -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <h3 class="text-xs sm:text-sm font-bold uppercase text-white mb-2">📊 Evolução do Consumo (kWh/100km)</h3>
+        <div class="relative h-48 w-full"><canvas id="chartConsumo"></canvas></div>
+      </div>
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <h3 class="text-xs sm:text-sm font-bold uppercase text-white mb-2">📊 Comparativo de Gastos: Elétrico vs. Térmico</h3>
+        <div class="relative h-48 w-full"><canvas id="chartGastos"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TABELAS DETALHADAS -->
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
       <div class="p-3 border-b border-[#142347] flex items-center justify-between">
-        <span class="text-xs font-bold text-white">Sincronização Automática com Firestore</span>
+        <span class="text-xs font-bold text-white">Viagens Sincronizadas da Nuvem</span>
+        <span id="txt-status-nuvem" class="text-[10px] text-cyan-400">Aguardando...</span>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
@@ -117,7 +195,7 @@
             </tr>
           </thead>
           <tbody id="lista-viagens" class="divide-y divide-[#142347] text-slate-300">
-            <tr><td colspan="4" class="p-4 text-center text-slate-500">Aguardando conexão com as credenciais da nuvem...</td></tr>
+            <tr><td colspan="4" class="p-4 text-center text-slate-500">Conecte-se à nuvem para carregar os dados.</td></tr>
           </tbody>
         </table>
       </div>
@@ -125,14 +203,13 @@
 
   </main>
 
-  <!-- ================= MODAL CREDENCIAIS FIREBASE ================= -->
+  <!-- ================= MODAL CREDENCIAIS ================= -->
   <div id="modal-cloud" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
     <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
       <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
         <h3 class="text-sm font-bold text-white">Configurar Credenciais Firebase</h3>
         <button type="button" onclick="fecharModal('modal-cloud')" class="text-slate-400 hover:text-white text-base">✕</button>
       </div>
-
       <div class="space-y-3 text-xs">
         <div>
           <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Firebase API Key:</label>
@@ -143,18 +220,17 @@
           <input type="text" id="fb-projectid" placeholder="Ex: frota-byd-ev" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
         </div>
       </div>
-
-      <div class="flex justify-between items-center pt-3 border-t border-[#142347]">
-        <button type="button" onclick="localStorage.clear(); window.location.reload();" class="text-rose-400 text-xs font-bold">Limpar Config</button>
-        <div class="flex gap-2">
-          <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-cloud')">Cancelar</button>
-          <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="conectarENuvem()">Salvar & Conectar</button>
-        </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-cloud')">Cancelar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="conectarENuvem()">Salvar & Conectar</button>
       </div>
     </div>
   </div>
 
   <script>
+    var AppEstado = { viagens: [], recargas: [], extras: [], config: { gasolina: 6.96, tarifaKwh: 0.85 } };
+    var chartConsumoInstancia = null;
+    var chartGastosInstancia = null;
     var dbFirestore = null;
 
     function fmtNum(n, d) {
@@ -172,10 +248,9 @@
       return isNaN(p) ? 0 : p;
     }
 
-    // Tenta conectar automaticamente se já houver credenciais salvas no navegador
     window.onload = function() {
-      var key = localStorage.getItem('fb_apikey_v7');
-      var proj = localStorage.getItem('fb_projectid_v7');
+      var key = localStorage.getItem('fb_apikey_v8');
+      var proj = localStorage.getItem('fb_projectid_v8');
       if (key && proj) {
         document.getElementById('fb-apikey').value = key;
         document.getElementById('fb-projectid').value = proj;
@@ -186,12 +261,9 @@
     function conectarENuvem() {
       var key = document.getElementById('fb-apikey').value.trim();
       var proj = document.getElementById('fb-projectid').value.trim();
-      if (!key || !proj) {
-        alert('Preencha a API Key e o Project ID.');
-        return;
-      }
-      localStorage.setItem('fb_apikey_v7', key);
-      localStorage.setItem('fb_projectid_v7', proj);
+      if (!key || !proj) { alert('Preencha a API Key e o Project ID.'); return; }
+      localStorage.setItem('fb_apikey_v8', key);
+      localStorage.setItem('fb_projectid_v8', proj);
       fecharModal('modal-cloud');
       iniciarFirebase(key, proj);
     }
@@ -199,68 +271,153 @@
     function iniciarFirebase(apiKey, projectId) {
       try {
         var badge = document.getElementById('badge-cloud-status');
-        var txtStatus = document.getElementById('txt-status-conexao');
-        
         badge.textContent = 'Conectando...';
         badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-mono border border-blue-500/30';
-        txtStatus.textContent = 'Sincronizando...';
 
         if (!firebase.apps.length) {
           firebase.initializeApp({ apiKey: apiKey, projectId: projectId });
         }
         dbFirestore = firebase.firestore();
 
-        // Leitura automática do documento global da frota no Firestore
         dbFirestore.collection('frota_ev').doc('estado_global').get().then(function(doc) {
           badge.textContent = 'Nuvem Conectada';
           badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30';
 
           if (!doc.exists) {
-            txtStatus.textContent = 'Documento ausente';
-            document.getElementById('lista-viagens').innerHTML = '<tr><td colspan="4" class="p-4 text-center text-amber-400">Conectado ao Firestore, mas o documento "frota_ev / estado_global" não foi encontrado.</td></tr>';
+            document.getElementById('txt-status-nuvem').textContent = 'Documento estado_global não encontrado.';
             return;
           }
 
           var dados = doc.data();
-          var viagens = dados.viagens || [];
-          var recargas = dados.recargas || [];
+          AppEstado.viagens = dados.viagens || [];
+          AppEstado.recargas = dados.recargas || [];
+          AppEstado.extras = dados.extras || [];
 
-          txtStatus.textContent = 'Online (' + viagens.length + ' viagens)';
-
-          var distTotal = 0;
-          var tbody = document.getElementById('lista-viagens');
-          
-          if (viagens.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-amber-400">Conectado com sucesso, mas a lista de viagens está vazia.</td></tr>';
-          } else {
-            tbody.innerHTML = viagens.map(function(v) {
-              distTotal += parsePtBr(v.dist);
-              return '<tr class="hover:bg-[#0F1A36] transition">' +
-                '<td class="p-2 text-cyan-300">' + (v.carro || 'MINI') + '<br><span class="text-[10px] text-slate-400">' + (v.inicio || '') + '</span></td>' +
-                '<td class="p-2 text-right font-bold text-white">' + fmtNum(v.dist, 1) + ' km</td>' +
-                '<td class="p-2 text-right text-purple-300">' + (v.kwh > 0 ? fmtNum(v.kwh, 2) + ' kWh' : '—') + '</td>' +
-                '<td class="p-2 text-slate-200">' + (v.orig || '—') + ' ➔ ' + (v.dest || '—') + '</td>' +
-              '</tr>';
-            }).join('');
-          }
-
-          document.getElementById('kpi-distancia').textContent = fmtNum(distTotal, 1);
-          document.getElementById('kpi-viagens').textContent = viagens.length;
-          document.getElementById('kpi-recargas').textContent = recargas.length;
-          document.getElementById('banner-vazio').classList.add('hidden');
+          document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
+          renderizarPainelCompleto();
 
         }).catch(function(err) {
           console.error(err);
           badge.textContent = 'Erro de Acesso';
           badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 font-mono border border-rose-500/30';
-          txtStatus.textContent = 'Falha ao ler';
-          alert('Erro ao ler do Firestore: ' + err.message);
+          alert('Erro ao ler Firestore: ' + err.message);
         });
 
       } catch (e) {
         console.error(e);
-        alert('Erro ao inicializar Firebase: ' + e.message);
+        alert('Erro ao iniciar Firebase: ' + e.message);
       }
+    }
+
+    function renderizarPainelCompleto() {
+      var viagens = AppEstado.viagens;
+      var recargas = AppEstado.recargas;
+      var extras = AppEstado.extras;
+
+      var distTotal = 0, energiaTotal = 0, distComEnergia = 0;
+      for (var i = 0; i < viagens.length; i++) {
+        var d = parsePtBr(viagens[i].dist);
+        distTotal += d;
+        if (viagens[i].kwh > 0 && d > 0) {
+          energiaTotal += parsePtBr(viagens[i].kwh);
+          distComEnergia += d;
+        }
+      }
+
+      var custoRecargas = 0;
+      for (var j = 0; j < recargas.length; j++) {
+        var c = parsePtBr(recargas[j].custoTotal);
+        var t = parsePtBr(recargas[j].kwhTomada || recargas[j].kwh);
+        custoRecargas += (c === 0 && t > 0 ? t * 0.85 : c);
+      }
+
+      var totalExtras = extras.reduce(function(a, b) { return a + parsePtBr(b.valor); }, 0);
+
+      document.getElementById('kpi-distancia').textContent = fmtNum(distTotal, 1);
+      document.getElementById('kpi-recargas').textContent = fmtNum(custoRecargas, 2);
+
+      var custoKm = (distTotal > 0 && (custoRecargas + totalExtras) > 0) ? ((custoRecargas + totalExtras) / distTotal) : null;
+      document.getElementById('kpi-custo-km').textContent = custoKm !== null ? fmtNum(custoKm, 3) : '—';
+
+      var consumo100 = distComEnergia > 0 ? ((energiaTotal / distComEnergia) * 100) : null;
+      document.getElementById('kpi-consumo').textContent = consumo100 !== null ? fmtNum(consumo100, 1) : '—';
+
+      var co2PoupadoKg = distTotal * 0.130;
+      document.getElementById('kpi-co2').textContent = fmtNum(co2PoupadoKg, 1);
+
+      // Veículos separação
+      var vMini = viagens.filter(function(v) { return v.carro === 'MINI'; });
+      var vYuan = viagens.filter(function(v) { return v.carro !== 'MINI'; });
+      var rMini = recargas.filter(function(r) { return r.carro === 'MINI'; });
+      var rYuan = recargas.filter(function(r) { return r.carro !== 'MINI'; });
+
+      var kmMini = vMini.reduce(function(a, b) { return a + parsePtBr(b.dist); }, 0);
+      var cMini = rMini.reduce(function(a, b) { return a + parsePtBr(b.custoTotal || 0); }, 0);
+      var kmYuan = vYuan.reduce(function(a, b) { return a + parsePtBr(b.dist); }, 0);
+      var cYuan = rYuan.reduce(function(a, b) { return a + parsePtBr(b.custoTotal || 0); }, 0);
+
+      document.getElementById('card-dolphin-km').textContent = fmtNum(kmMini, 1) + ' km';
+      document.getElementById('card-dolphin-viagens').textContent = vMini.length;
+      document.getElementById('card-dolphin-recargas').textContent = 'R$ ' + fmtNum(cMini, 2);
+
+      document.getElementById('card-yuan-km').textContent = fmtNum(kmYuan, 1) + ' km';
+      document.getElementById('card-yuan-viagens').textContent = vYuan.length;
+      document.getElementById('card-yuan-recargas').textContent = 'R$ ' + fmtNum(cYuan, 2);
+
+      // Comparativo Térmico (Ref Kwid 15.3 km/L, gasolina 6.96)
+      var litrosRef = distTotal > 0 ? (distTotal / 15.3) : 0;
+      var totalTermico = (litrosRef * 6.96) + (distTotal * 0.085);
+      var somaEletricos = custoRecargas + totalExtras;
+      var economiaTotal = Math.max(0, totalTermico - somaEletricos);
+      document.getElementById('kpi-economia').textContent = fmtNum(economiaTotal, 2);
+
+      // Tabela de viagens
+      var tbody = document.getElementById('lista-viagens');
+      if (viagens.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhuma viagem encontrada.</td></tr>';
+      } else {
+        tbody.innerHTML = viagens.map(function(v) {
+          return '<tr class="hover:bg-[#0F1A36] transition">' +
+            '<td class="p-2 text-cyan-300">' + (v.carro || 'MINI') + '<br><span class="text-[10px] text-slate-400">' + (v.inicio || '') + '</span></td>' +
+            '<td class="p-2 text-right font-bold text-white">' + fmtNum(v.dist, 1) + ' km</td>' +
+            '<td class="p-2 text-right text-purple-300">' + (v.kwh > 0 ? fmtNum(v.kwh, 2) + ' kWh' : '—') + '</td>' +
+            '<td class="p-2 text-slate-200">' + (v.orig || '—') + ' ➔ ' + (v.dest || '—') + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      atualizarGraficos(viagens, totalTermico, somaEletricos);
+    }
+
+    function atualizarGraficos(viagens, totalTermico, totalEletrico) {
+      var labels = viagens.slice(-15).map(function(v) { return (v.inicio || '').slice(5, 16); });
+      var dadosConsumo = viagens.slice(-15).map(function(v) {
+        var d = parsePtBr(v.dist);
+        var k = parsePtBr(v.kwh);
+        return (d > 0 && k > 0) ? Number(((k / d) * 100).toFixed(1)) : null;
+      });
+
+      var ctx1 = document.getElementById('chartConsumo').getContext('2d');
+      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
+      chartConsumoInstancia = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: labels.length ? labels : ['Sem dados'],
+          datasets: [{ label: 'kWh/100km', data: dadosConsumo, borderColor: '#00E5FF', backgroundColor: 'rgba(0, 229, 255, 0.1)', borderWidth: 2, tension: 0.3, fill: true, spanGaps: true }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
+      });
+
+      var ctx2 = document.getElementById('chartGastos').getContext('2d');
+      if (chartGastosInstancia) chartGastosInstancia.destroy();
+      chartGastosInstancia = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: ['Elétrico Real', 'Combustível Ref.'],
+          datasets: [{ data: [totalEletrico, totalTermico], backgroundColor: ['#10B981', '#EF4444'], borderRadius: 6 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#E2E8F0', font: { size: 10 } }, grid: { display: false } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
+      });
     }
   </script>
 </body>
