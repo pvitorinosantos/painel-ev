@@ -853,3 +853,20 @@
           labels: ['Elétrico Real', 'Combustível Ref.'],
           datasets: [{
             data: [custoEl, custoRef],
+            backgroundColor: ['#10B981', '#F43F5E']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#94A3B8', font: { size: 10 } } },
+            y: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
