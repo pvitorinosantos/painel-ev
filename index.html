@@ -451,6 +451,27 @@
 
       var ctx2 = document.getElementById('chartGastos').getContext('2d');
       if (chartGastosInstancia) chartGastosInstancia.destroy();
+      
+      // Plugin nativo seguro para desenhar os valores em reais diretamente nas barras
+      var pluginValoresNasBarras = {
+        id: 'pluginValoresNasBarras',
+        afterDatasetsDraw: function(chart) {
+          var ctx = chart.ctx;
+          chart.data.datasets.forEach(function(dataset, i) {
+            var meta = chart.getDatasetMeta(i);
+            meta.data.forEach(function(bar, index) {
+              var valor = dataset.data[index];
+              var texto = 'R$ ' + Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              ctx.fillStyle = '#FFFFFF';
+              ctx.font = 'bold 11px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'bottom';
+              ctx.fillText(texto, bar.x, bar.y - 6);
+            });
+          });
+        }
+      };
+
       chartGastosInstancia = new Chart(ctx2, {
         type: 'bar',
         data: {
@@ -466,9 +487,10 @@
           }, 
           scales: { 
             x: { ticks: { color: '#E2E8F0', font: { size: 10 } }, grid: { display: false } }, 
-            y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } 
+            y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' }, suggestMax: Math.max(totalEletrico, totalTermico) * 1.2 } 
           } 
-        }
+        },
+        plugins: [pluginValoresNasBarras]
       });
     }
   </script>
