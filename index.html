@@ -104,7 +104,7 @@
     <!-- TABELA -->
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
       <div class="p-3 border-b border-[#142347] flex items-center justify-between">
-        <span class="text-xs font-bold text-white">Viagens na Nuvem (Firestore)</span>
+        <span class="text-xs font-bold text-white">Viagens na Nuvem (frota_ev / estado_global)</span>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
@@ -173,8 +173,8 @@
     }
 
     window.onload = function() {
-      var key = localStorage.getItem('fb_apikey_v5');
-      var proj = localStorage.getItem('fb_projectid_v5');
+      var key = localStorage.getItem('fb_apikey_v6');
+      var proj = localStorage.getItem('fb_projectid_v6');
       if (key && proj) {
         document.getElementById('fb-apikey').value = key;
         document.getElementById('fb-projectid').value = proj;
@@ -189,8 +189,8 @@
         alert('Preencha a API Key e o Project ID.');
         return;
       }
-      localStorage.setItem('fb_apikey_v5', key);
-      localStorage.setItem('fb_projectid_v5', proj);
+      localStorage.setItem('fb_apikey_v6', key);
+      localStorage.setItem('fb_projectid_v6', proj);
       fecharModal('modal-cloud');
       iniciarFirebase(key, proj);
     }
@@ -202,18 +202,26 @@
         
         badge.textContent = 'Conectando...';
         badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-mono border border-blue-500/30';
-        txtStatus.textContent = 'Autenticando...';
+        txtStatus.textContent = 'Lendo estado_global...';
 
         if (!firebase.apps.length) {
           firebase.initializeApp({ apiKey: apiKey, projectId: projectId });
         }
         dbFirestore = firebase.firestore();
 
-        // Teste de leitura de viagens sem travar
-        dbFirestore.collection('viagens').get().then(function(snapshot) {
-          var viagens = [];
-          snapshot.forEach(function(doc) { viagens.push(doc.data()); });
-          
+        // Leitura direta do documento 'estado_global' dentro da coleção 'frota_ev'
+        dbFirestore.collection('frota_ev').doc('estado_global').get().then(function(doc) {
+          if (!doc.exists) {
+            badge.textContent = 'Aviso';
+            txtStatus.textContent = 'Documento não existe';
+            alert('O documento "estado_global" não foi encontrado na coleção "frota_ev".');
+            return;
+          }
+
+          var dados = doc.data();
+          var viagens = dados.viagens || [];
+          var recargas = dados.recargas || [];
+
           badge.textContent = 'Nuvem Conectada';
           badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30';
           txtStatus.textContent = 'Online (' + viagens.length + ' viagens)';
@@ -222,7 +230,7 @@
           var tbody = document.getElementById('lista-viagens');
           
           if (viagens.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-amber-400">Conectado com sucesso, mas a coleção "viagens" está vazia.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-amber-400">Documento carregado, mas a lista de viagens está vazia.</td></tr>';
           } else {
             tbody.innerHTML = viagens.map(function(v) {
               distTotal += parsePtBr(v.dist);
@@ -237,14 +245,15 @@
 
           document.getElementById('kpi-distancia').textContent = fmtNum(distTotal, 1);
           document.getElementById('kpi-viagens').textContent = viagens.length;
+          document.getElementById('kpi-recargas').textContent = recargas.length;
           document.getElementById('banner-vazio').classList.add('hidden');
 
         }).catch(function(err) {
           console.error(err);
           badge.textContent = 'Erro de Acesso';
           badge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 font-mono border border-rose-500/30';
-          txtStatus.textContent = 'Falha nas Regras/ID';
-          alert('Erro ao carregar do Firestore: ' + err.message + '\n\nVerifique se o Project ID está exato e se as regras de segurança permitem leitura.');
+          txtStatus.textContent = 'Falha na leitura';
+          alert('Erro ao ler o Firestore: ' + err.message);
         });
 
       } catch (e) {
