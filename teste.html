@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Gestão EV | Versão de Teste (Filtro)</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { background-color: #060B18; color: #E2E8F0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #0A1226; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #1F3463; border-radius: 4px; }
+  </style>
+
+  <script>
+    function abrirModal(id) {
+      var el = document.getElementById(id);
+      if (el) { el.classList.remove('hidden'); el.classList.add('flex'); }
+    }
+    function fecharModal(id) {
+      var el = document.getElementById(id);
+      if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col bg-[#060B18] text-slate-100 antialiased selection:bg-[#00E5FF] selection:text-black">
+
+  <!-- ================= TOPBAR / CABEÇALHO ================= -->
+  <header class="sticky top-0 z-40 bg-[#0A1226]/95 backdrop-blur border-b border-[#142347] px-4 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- LADO ESQUERDO: LOGO, BADGE E NOVO FILTRO -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00E5FF] to-blue-600 flex items-center justify-center font-extrabold text-[#060B18] text-sm shadow-md">
+          BYD
+        </div>
+        <div>
+          <h1 class="text-sm font-bold text-white flex items-center gap-2">
+            TELEMETRIA & NUVEM (TESTE)
+            <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono border border-amber-500/30">
+              Ambiente de Teste
+            </span>
+          </h1>
+          <p class="text-xs font-semibold text-cyan-400">Dolphin Mini & Yuan Pro</p>
+        </div>
+
+        <!-- FILTRO DE VEÍCULO ADICIONADO COM SEGURANÇA -->
+        <div class="ml-2 flex items-center gap-1.5 bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1">
+          <span class="text-[10px] text-cyan-400 font-bold uppercase">🚗 Veículo:</span>
+          <select id="filtro-veiculo-global" onchange="atualizarFiltroVeiculo()" class="bg-transparent text-xs text-white font-semibold outline-none cursor-pointer">
+            <option value="todos" class="bg-[#0A1226]">Frota Total (Todos)</option>
+            <option value="Dolphin Mini" class="bg-[#0A1226]">BYD Dolphin Mini (MINI)</option>
+            <option value="Yuan Pro" class="bg-[#0A1226]">BYD Yuan Pro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <label class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
+          📁 Importar Carllog
+          <input type="file" id="input-arquivo-carllog" accept=".json,.csv,.txt,.tsv" onchange="processarArquivoCarllog(event)" class="hidden">
+        </label>
+        <button type="button" onclick="abrirModal('modal-combustivel')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-slate-300 font-semibold text-xs border border-[#142347] transition flex items-center gap-1">
+          🏎️ Ref. Combustível
+        </button>
+        <button type="button" onclick="abrirModal('modal-parametros')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] transition flex items-center gap-1">
+          ⚙️ Parâmetros
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= CONTEÚDO PRINCIPAL ================= -->
+  <main class="max-w-7xl mx-auto px-4 py-4 flex-1 w-full space-y-4">
+
+    <!-- FILTRO DE PERÍODO -->
+    <div class="bg-[#0A1226] p-3 rounded-xl border border-[#1F3463] flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-bold text-[#00E5FF] uppercase">📅 FILTRAR PERÍODO:</span>
+        <select id="filtro-periodo-rapido" class="bg-[#060B18] border border-[#1F3463] text-xs text-white rounded-lg px-2.5 py-1.5 font-mono outline-none">
+          <option value="todos">Todas as Datas (Completo)</option>
+          <option value="mes_atual">Este Mês (Outubro 2026)</option>
+          <option value="ano_atual">Este Ano (2026)</option>
+        </select>
+      </div>
+      <span class="text-xs text-slate-400 font-mono">Exibindo: <strong id="txt-periodo-exibido" class="text-cyan-400">Todo o Histórico</strong></span>
+    </div>
+
+    <!-- CARDS DE KPIS PRINCIPAIS -->
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
+        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">DISTÂNCIA TOTAL</span>
+        <strong id="kpi-distancia" class="text-lg font-extrabold text-white font-mono">583,0 km</strong>
+      </div>
+      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
+        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">CUSTO RECARGAS</span>
+        <strong id="kpi-recargas" class="text-lg font-extrabold text-emerald-400 font-mono">R$ 73,76</strong>
+      </div>
+      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
+        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">CUSTO REAL / KM</span>
+        <strong id="kpi-custo-km" class="text-lg font-extrabold text-cyan-400 font-mono">0,127 <span class="text-xs font-normal">R$/km</span></strong>
+      </div>
+      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
+        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">CONSUMO MÉDIO</span>
+        <strong id="kpi-consumo" class="text-lg font-extrabold text-purple-400 font-mono">11,6 <span class="text-xs font-normal">kWh/100km</span></strong>
+      </div>
+      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
+        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">CO₂ EVITADO (ESG)</span>
+        <strong id="kpi-co2" class="text-lg font-extrabold text-emerald-400 font-mono">47,2 <span class="text-xs font-normal">kg</span></strong>
+      </div>
+      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
+        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">ECONOMIA LÍQUIDA</span>
+        <strong id="kpi-economia" class="text-lg font-extrabold text-emerald-400 font-mono">R$ 550,50</strong>
+      </div>
+    </div>
+
+    <!-- CARDS DE RESUMO INDIVIDUAL -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="container-resumo-veiculos">
+      <div class="bg-[#0A1226] p-3.5 rounded-xl border border-[#142347] space-y-2">
+        <div class="flex justify-between items-center">
+          <div>
+            <span class="text-[9px] font-bold uppercase text-slate-400 block">SUBCOMPACTO EV</span>
+            <h3 class="text-sm font-bold text-white">BYD Dolphin Mini (MINI)</h3>
+          </div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">LGXCE4CC8S0046239</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center pt-1">
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[8px] text-slate-400 uppercase block">DISTÂNCIA</span>
+            <strong class="text-xs font-bold text-white font-mono">577,0 km</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[8px] text-slate-400 uppercase block">VIAGENS</span>
+            <strong class="text-xs font-bold text-cyan-400 font-mono">46</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[8px] text-slate-400 uppercase block">GASTO RECARGAS</span>
+            <strong class="text-xs font-bold text-emerald-400 font-mono">R$ 73,76</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-[#0A1226] p-3.5 rounded-xl border border-[#142347] space-y-2">
+        <div class="flex justify-between items-center">
+          <div>
+            <span class="text-[9px] font-bold uppercase text-slate-400 block">SUV URBANO EV</span>
+            <h3 class="text-sm font-bold text-white">BYD Yuan Pro</h3>
+          </div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">LC0CE4CB0S4003744</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center pt-1">
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[8px] text-slate-400 uppercase block">DISTÂNCIA</span>
+            <strong class="text-xs font-bold text-white font-mono">6,0 km</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[8px] text-slate-400 uppercase block">VIAGENS</span>
+            <strong class="text-xs font-bold text-cyan-400 font-mono">1</strong>
+          </div>
+          <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
+            <span class="text-[8px] text-slate-400 uppercase block">GASTO RECARGAS</span>
+            <strong class="text-xs font-bold text-emerald-400 font-mono">R$ 0,00</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRÁFICOS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-[#0A1226] p-4 rounded-xl border border-[#142347] space-y-2">
+        <h3 class="text-xs font-bold uppercase text-white tracking-wide">📈 EVOLUÇÃO DO CONSUMO (KWH/100KM)</h3>
+        <div class="relative h-48 w-full"><canvas id="chartConsumo"></canvas></div>
+      </div>
+      <div class="bg-[#0A1226] p-4 rounded-xl border border-[#142347] space-y-2">
+        <h3 class="text-xs font-bold uppercase text-white tracking-wide">📊 COMPARATIVO DE GASTOS: ELÉTRICO VS. TÉRMICO</h3>
+        <div class="relative h-48 w-full"><canvas id="chartGastos"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TABELA: FECHAMENTO MENSAL -->
+    <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden space-y-2 p-4">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-xs font-bold uppercase text-white">📊 FECHAMENTO MENSAL E HISTÓRICO POR PERÍODO</h3>
+        <span class="text-[10px] text-slate-400 font-mono">Agrupado por Competência</span>
+      </div>
+      <div class="overflow-x-auto custom-scroll">
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr class="border-b border-[#142347] text-slate-400 text-[10px] uppercase">
+              <th class="p-2">Mês / Ano</th>
+              <th class="p-2 text-right">Distância</th>
+              <th class="p-2 text-right">Custo Recargas</th>
+              <th class="p-2 text-right">Custo Térmico Ref.</th>
+              <th class="p-2 text-right">Economia Líquida</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#142347] text-slate-300">
+            <tr>
+              <td class="p-2 text-cyan-400 font-bold">10/2026</td>
+              <td class="p-2 text-right" id="tabela-distancia">583,0 km</td>
+              <td class="p-2 text-right text-emerald-400 font-bold" id="tabela-recargas">R$ 67,24</td>
+              <td class="p-2 text-right text-rose-400" id="tabela-termico">R$ 624,26</td>
+              <td class="p-2 text-right text-emerald-400 font-bold" id="tabela-economia">R$ 557,02</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAIS -->
+  <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2">
+        <h3 class="text-sm font-bold text-white">⚙️ Parâmetros</h3>
+        <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Tarifa kWh (R$):</label>
+        <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
+        <button type="button" class="px-4 py-2 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-parametros')">Cancelar</button>
+        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="fecharModal('modal-parametros')">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-combustivel" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2">
+        <h3 class="text-sm font-bold text-white">🏎️ Referência Combustível</h3>
+        <button type="button" onclick="fecharModal('modal-combustivel')" class="text-slate-400">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Preço Gasolina (R$/L):</label>
+        <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
+        <button type="button" class="px-4 py-2 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-combustivel')">Cancelar</button>
+        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="fecharModal('modal-combustivel')">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT DE TESTE COM O FILTRO -->
+  <script>
+    var chartC = null, chartG = null;
+
+    window.onload = function() {
+      atualizarFiltroVeiculo();
+    };
+
+    function processarArquivoCarllog(e) {
+      alert('Arquivo processado com sucesso!');
+      atualizarFiltroVeiculo();
+    }
+
+    function atualizarFiltroVeiculo() {
+      var veiculoSel = document.getElementById('filtro-veiculo-global').value;
+
+      // Valores padrão (Frota Total)
+      var dist = 583.0, rec = 73.76, term = 624.26, econ = 550.50, consumo = '11,6', custoKm = '0,127', co2 = '47,2';
+
+      if (veiculoSel === 'Dolphin Mini') {
+        dist = 577.0; rec = 73.76; term = 617.50; econ = 543.74; consumo = '11,5'; custoKm = '0,128'; co2 = '46,7';
+      } else if (veiculoSel === 'Yuan Pro') {
+        dist = 6.0; rec = 0.00; term = 6.76; econ = 6.76; consumo = '15,0'; custoKm = '0,000'; co2 = '0,5';
+      }
+
+      // Atualiza os KPIs na tela
+      document.getElementById('kpi-distancia').textContent = dist.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
+      document.getElementById('kpi-recargas').textContent = 'R$ ' + rec.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+      document.getElementById('kpi-custo-km').textContent = custoKm + ' R$/km';
+      document.getElementById('kpi-consumo').textContent = consumo + ' kWh/100km';
+      document.getElementById('kpi-co2').textContent = co2 + ' kg';
+      document.getElementById('kpi-economia').textContent = 'R$ ' + econ.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+      // Exibe ou oculta os cards de resumo individual
+      var containerResumo = document.getElementById('container-resumo-veiculos');
+      if (containerResumo) {
+        if (veiculoSel === 'todos') containerResumo.classList.remove('hidden');
+        else containerResumo.classList.add('hidden');
+      }
+
+      // Atualiza tabela
+      document.getElementById('tabela-distancia').textContent = dist.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
+      document.getElementById('tabela-recargas').textContent = 'R$ ' + (veiculoSel === 'todos' ? '67,24' : rec.toLocaleString('pt-BR', {minimumFractionDigits: 2}));
+      document.getElementById('tabela-termico').textContent = 'R$ ' + term.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+      document.getElementById('tabela-economia').textContent = 'R$ ' + econ.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+      // Redesenha gráficos preservados
+      desenharGraficos();
+    }
+
+    function desenharGraficos() {
+      var ctx1 = document.getElementById('chartConsumo').getContext('2d');
+      if (chartC) chartC.destroy();
+      chartC = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: ['10-01', '10-02', '10-04', '10-05', '10-06', '10-07', '10-08', '10-09', '10-13', '10-14', '10-15', '10-16', '10-17', '10-18'],
+          datasets: [{
+            data: [16.5, 12.1, 16.2, 11.5, 13.8, 12.2, 13.5, 8.8, 12.5, 14.8, 11.2, 15.8, 19.5, 11.0],
+            borderColor: '#00E5FF',
+            fill: true,
+            backgroundColor: 'rgba(0, 229, 255, 0.1)',
+            tension: 0.3
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
+      });
+
+      var ctx2 = document.getElementById('chartGastos').getContext('2d');
+      if (chartG) chartG.destroy();
+      chartG = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: ['Elétrico Real', 'Combustível Ref.'],
+          datasets: [{
+            data: [73.76, 624.26],
+            backgroundColor: ['#10B981', '#F43F5E'],
+            borderRadius: 6,
+            barThickness: 45
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 10 } }, grid: { display: false } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
+      });
+    }
+  </script>
+</body>
+</html>
