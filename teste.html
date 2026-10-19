@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel EV | Teste v2.5.0</title>
+  <title>Painel EV | Teste v2.7.0</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -67,17 +67,17 @@
       <!-- LADO DIREITO: VERSÃO E BOTÕES -->
       <div class="flex items-center gap-2">
         <span class="text-[10px] px-2.5 py-1 rounded-md bg-[#142347] text-cyan-400 font-mono font-bold border border-cyan-500/30">
-          v2.5.0-TESTE
+          v2.7.0-TESTE
         </span>
 
         <label class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
           📁 Importar Carllog
           <input type="file" id="input-arquivo-carllog" accept=".json,.csv,.txt,.tsv" onchange="processarArquivoCarllog(event)" class="hidden">
         </label>
-        <button type="button" onclick="abrirModal('modal-combustivel')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-slate-300 font-semibold text-xs border border-[#1F3463] transition flex items-center gap-1">
+        <button type="button" onclick="abrirModal('modal-combustivel')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-slate-300 font-semibold text-xs border border-[#142347] transition flex items-center gap-1">
           🏎️ Ref. Combustível
         </button>
-        <button type="button" onclick="abrirModal('modal-parametros')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] transition flex items-center gap-1">
+        <button type="button" onclick="abrirModal('modal-parametros')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#142347] transition flex items-center gap-1">
           ⚙️ Parâmetros
         </button>
       </div>
@@ -336,173 +336,4 @@
         <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400">✕</button>
       </div>
       <div class="space-y-3 text-xs">
-        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Tarifa kWh (R$):</label>
-        <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
-        <button type="button" class="px-4 py-2 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-parametros')">Cancelar</button>
-        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="fecharModal('modal-parametros')">Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="modal-combustivel" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-5 space-y-4">
-      <div class="flex justify-between items-center border-b border-[#142347] pb-2">
-        <h3 class="text-sm font-bold text-white">🏎️ Referência Combustível</h3>
-        <button type="button" onclick="fecharModal('modal-combustivel')" class="text-slate-400">✕</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Preço Gasolina (R$/L):</label>
-        <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
-        <button type="button" class="px-4 py-2 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-combustivel')">Cancelar</button>
-        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="fecharModal('modal-combustivel')">Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SCRIPT SEGURO V2.5.0 -->
-  <script>
-    var chartC = null, chartG = null;
-
-    var listaViagensSincronizadas = [
-      { carro: 'MINI', inicio: '2026-10-01 17:45', dist: 9.0, kwh: 1.50, trajeto: '📍 COMPESA ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-02 06:25', dist: 9.0, kwh: 1.10, trajeto: '📍 Casa ➔ COMPESA' },
-      { carro: 'MINI', inicio: '2026-10-02 12:50', dist: 9.0, kwh: 1.10, trajeto: '📍 COMPESA ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-02 14:00', dist: 8.0, kwh: 0.80, trajeto: '📍 Casa ➔ COMPESA' },
-      { carro: 'MINI', inicio: '2026-10-02 17:30', dist: 9.0, kwh: 1.10, trajeto: '📍 Estrada da Batalha ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-03 09:45', dist: 14.0, kwh: 2.30, trajeto: '📍 Casa ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-04 09:15', dist: 12.0, kwh: 1.10, trajeto: '📍 Casa ➔ Correios' },
-      { carro: 'YUAN', inicio: '2026-10-15 11:20', dist: 6.0, kwh: 0.90, trajeto: '📍 Casa ➔ Shopping Guararapes' }
-    ];
-
-    window.onload = function() {
-      atualizarPainel();
-    };
-
-    function processarArquivoCarllog(e) {
-      alert('Arquivo processado com sucesso!');
-      atualizarPainel();
-    }
-
-    function atualizarPainel() {
-      var veiculoSel = document.getElementById('filtro-veiculo-global').value;
-
-      var dist = 583.0, rec = 73.76, term = 624.26, econ = 550.50;
-      var consumo = '11,6', custoKm = '0,127', co2 = '47,2';
-
-      if (veiculoSel === 'Dolphin Mini') {
-        dist = 577.0; rec = 73.76; term = 617.50; econ = 543.74; consumo = '11,5'; custoKm = '0,128'; co2 = '46,7';
-      } else if (veiculoSel === 'Yuan Pro') {
-        dist = 6.0; rec = 0.00; term = 6.76; econ = 6.76; consumo = '15,0'; custoKm = '0,000'; co2 = '0,5';
-      }
-
-      // Atualiza KPIs
-      document.getElementById('kpi-distancia').textContent = dist.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
-      document.getElementById('kpi-recargas').textContent = 'R$ ' + rec.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-      document.getElementById('kpi-custo-km').textContent = custoKm + ' R$/km';
-      document.getElementById('kpi-consumo').textContent = consumo + ' kWh/100km';
-      document.getElementById('kpi-co2').textContent = co2 + ' kg';
-      document.getElementById('kpi-economia').textContent = 'R$ ' + econ.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-
-      // Mostra ou oculta cards dos carros
-      var containerResumo = document.getElementById('container-resumo-veiculos');
-      if (containerResumo) {
-        if (veiculoSel === 'todos') containerResumo.classList.remove('hidden');
-        else containerResumo.classList.add('hidden');
-      }
-
-      // Atualiza Fechamento Mensal
-      document.getElementById('tabela-distancia').textContent = dist.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
-      document.getElementById('tabela-recargas').textContent = 'R$ ' + (veiculoSel === 'todos' ? '67,24' : rec.toLocaleString('pt-BR', {minimumFractionDigits: 2}));
-      document.getElementById('tabela-termico').textContent = 'R$ ' + term.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-      document.getElementById('tabela-economia').textContent = 'R$ ' + econ.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-      document.getElementById('ref-custo-combustivel').textContent = 'R$ ' + term.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-
-      // Renderiza Tabela de Viagens Sincronizadas
-      renderizarViagensSincronizadas(veiculoSel);
-
-      // Renderiza Gráficos com segurança total
-      try {
-        desenharGraficos(rec > 0 ? rec : 73.76, term);
-      } catch (err) {
-        console.error('Erro ao renderizar gráficos:', err);
-      }
-    }
-
-    function renderizarViagensSincronizadas(veiculoSel) {
-      var tbody = document.getElementById('tabela-viagens-sincronizadas');
-      if (!tbody) return;
-      tbody.innerHTML = '';
-
-      var viagensFiltradas = listaViagensSincronizadas.filter(function(v) {
-        if (veiculoSel === 'todos') return true;
-        if (veiculoSel === 'Dolphin Mini') return v.carro === 'MINI';
-        if (veiculoSel === 'Yuan Pro') return v.carro === 'YUAN';
-        return true;
-      });
-
-      viagensFiltradas.forEach(function(v) {
-        var tr = document.createElement('tr');
-        tr.className = 'hover:bg-[#0F1A36]/50 transition';
-        tr.innerHTML = `
-          <td class="p-2">
-            <span class="font-bold text-cyan-400 block">${v.carro}</span>
-            <span class="text-[10px] text-slate-400 block">${v.inicio}</span>
-          </td>
-          <td class="p-2 text-right font-bold">${v.dist.toFixed(1).replace('.', ',')} km</td>
-          <td class="p-2 text-right text-purple-400 font-bold">${v.kwh.toFixed(2).replace('.', ',')} kWh</td>
-          <td class="p-2 text-slate-200 font-mono">${v.trajeto}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      var txtOnline = document.getElementById('txt-status-online');
-      if (txtOnline) {
-        txtOnline.textContent = 'Online (' + (veiculoSel === 'todos' ? '47' : viagensFiltradas.length) + ' viagens)';
-      }
-    }
-
-    function desenharGraficos(custoEV, custoTermico) {
-      var ctx1 = document.getElementById('chartConsumo');
-      if (ctx1) {
-        if (chartC) chartC.destroy();
-        chartC = new Chart(ctx1.getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: ['10-01', '10-02', '10-04', '10-05', '10-06', '10-07', '10-08', '10-09', '10-13', '10-14', '10-15', '10-16', '10-17', '10-18'],
-            datasets: [{
-              data: [16.5, 12.1, 16.2, 11.5, 13.8, 12.2, 13.5, 8.8, 12.5, 14.8, 11.2, 15.8, 19.5, 11.0],
-              borderColor: '#00E5FF',
-              fill: true,
-              backgroundColor: 'rgba(0, 229, 255, 0.1)',
-              tension: 0.3
-            }]
-          },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
-        });
-      }
-
-      var ctx2 = document.getElementById('chartGastos');
-      if (ctx2) {
-        if (chartG) chartG.destroy();
-        chartG = new Chart(ctx2.getContext('2d'), {
-          type: 'bar',
-          data: {
-            labels: ['Elétrico Real', 'Combustível Ref.'],
-            datasets: [{
-              data: [custoEV, custoTermico],
-              backgroundColor: ['#10B981', '#F43F5E'],
-              borderRadius: 6,
-              barThickness: 45
-            }]
-          },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 10 } }, grid: { display: false } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
-        });
-      }
-    }
-  </script>
-</body>
-</html>
+        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Tarifa kWh (R
