@@ -287,3 +287,58 @@
 
       // Variáveis exibidas baseadas na seleção
       var dist = 583.0, rec = 73.76, term = 624.26, econ = 550.50;
+
+      if (veiculoSel === 'Dolphin Mini') {
+        dist = 577.0; rec = 73.76; term = 617.50; econ = 543.74;
+      } else if (veiculoSel === 'Yuan Pro') {
+        dist = 6.0; rec = 0.00; term = 6.76; econ = 6.76;
+      }
+
+      // Atualiza KPIs principais
+      document.getElementById('kpi-distancia').textContent = dist.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
+      document.getElementById('kpi-recargas').textContent = 'R$ ' + rec.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+      document.getElementById('kpi-economia').textContent = 'R$ ' + econ.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+      // Mostra/Oculta cards individuais dos carros
+      var container = document.getElementById('container-resumo-veiculos');
+      if (container) {
+        if (veiculoSel === 'todos') container.classList.remove('hidden');
+        else container.classList.add('hidden');
+      }
+
+      // Atualiza Tabela de Fechamento
+      document.getElementById('tabela-distancia').textContent = dist.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
+      document.getElementById('tabela-recargas').textContent = 'R$ ' + (veiculoSel === 'todos' ? '67,24' : rec.toLocaleString('pt-BR', {minimumFractionDigits: 2}));
+      document.getElementById('tabela-termico').textContent = 'R$ ' + term.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+      document.getElementById('tabela-economia').textContent = 'R$ ' + econ.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+      // Renderiza Gráficos originais
+      desenharGraficos();
+    }
+
+    function desenharGraficos() {
+      var ctx1 = document.getElementById('chartConsumo').getContext('2d');
+      if (chartC) chartC.destroy();
+      chartC = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: ['10-01', '10-02', '10-04', '10-05', '10-06', '10-07', '10-08', '10-09', '10-13', '10-14', '10-15', '10-16', '10-17', '10-18'],
+          datasets: [{ data: [16.5, 12.1, 16.2, 11.5, 13.8, 12.2, 13.5, 8.8, 12.5, 14.8, 11.2, 15.8, 19.5, 11.0], borderColor: '#00E5FF', fill: true, backgroundColor: 'rgba(0, 229, 255, 0.1)', tension: 0.3 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
+      });
+
+      var ctx2 = document.getElementById('chartGastos').getContext('2d');
+      if (chartG) chartG.destroy();
+      chartG = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: ['Elétrico Real', 'Combustível Ref.'],
+          datasets: [{ data: [73.76, 624.26], backgroundColor: ['#10B981', '#F43F5E'], borderRadius: 6, barThickness: 45 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 10 } }, grid: { display: false } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
+      });
+    }
+  </script>
+</body>
+</html>
