@@ -293,7 +293,7 @@
     </div>
   </div>
 
-  <!-- SCRIPT DE PROCESSAMENTO E ATUALIZAÇÃO DINÂMICA DE KPIS E TABELA -->
+  <!-- SCRIPT DE PROCESSAMENTO ROBUSTO DE COLUNAS DO CARLLOG -->
   <script>
     var chartC = null, chartG = null;
     var viagensCsvGlobais = [];
@@ -349,16 +349,28 @@
             viagensCsvGlobais.push(obj);
           }
 
-          // Recalcula KPIs e atualiza tela inteira com base nos dados reais importados
           recalcularKpisEAtualizarTela(viagensCsvGlobais);
           document.getElementById('txt-status-online').textContent = 'Online (' + viagensCsvGlobais.length + ' viagens)';
-          alert('Carllog importado com sucesso! ' + viagensCsvGlobais.length + ' viagens carregadas e KPIs atualizados.');
+          alert('Carllog importado com sucesso! ' + viagensCsvGlobais.length + ' viagens carregadas.');
         } catch (err) {
           console.error("Erro ao processar CSV:", err);
-          alert('Erro ao processar o arquivo CSV. Verifique o formato.');
+          alert('Erro ao processar o arquivo CSV.');
         }
       };
       leitor.readAsText(arquivo, 'UTF-8');
+    }
+
+    // Função auxiliar para buscar valor em colunas com variações de nome no CSV
+    function extrairCampo(obj, chavesPossiveis) {
+      for (var k = 0; k < chavesPossiveis.length; k++) {
+        var chave = chavesPossiveis[k];
+        for (var prop in obj) {
+          if (prop.toLowerCase().includes(chave.toLowerCase())) {
+            return obj[prop];
+          }
+        }
+      }
+      return '';
     }
 
     function recalcularKpisEAtualizarTela(viagens) {
@@ -372,28 +384,27 @@
       var distYuan = 0;
 
       viagens.forEach(function(v) {
-        var carro = (v['Carro'] || v['car'] || '').toUpperCase();
-        var rawDist = v['D(Distância)'] || v['Distância'] || v['Distancia'] || '0';
+        var carro = extrairCampo(v, ['carro', 'car']).toUpperCase();
+        var rawDist = extrairCampo(v, ['dist', 'd(distância)']);
         var dist = parseFloat(rawDist.replace(',', '.')) || 0;
 
         distTotal += dist;
         if (carro.includes('MINI')) {
           countMini++;
           distMini += dist;
-        } else if (carro.includes('YUN')) {
+        } else if (carro.includes('YUN') || carro.includes('YUAN')) {
           countYuan++;
           distYuan += dist;
         }
       });
 
-      // Atualiza os KPIs principais na tela
+      // Atualiza os KPIs principais
       var elDist = document.getElementById('kpi-distancia');
       if (elDist) elDist.textContent = distTotal.toFixed(1).replace('.', ',') + ' km';
 
       var elFechamento = document.getElementById('tabela-fechamento-dist');
       if (elFechamento) elFechamento.textContent = distTotal.toFixed(1).replace('.', ',') + ' km';
 
-      // Atualiza os cards individuais por veículo se existirem
       var elMiniDist = document.getElementById('resumo-mini-dist');
       if (elMiniDist) elMiniDist.textContent = distMini.toFixed(1).replace('.', ',') + ' km';
       var elMiniViagens = document.getElementById('resumo-mini-viagens');
@@ -422,26 +433,27 @@
 
       var filtradas = viagens.filter(function(v) {
         if (filtroCarro === 'todos') return true;
-        var carroStr = (v['Carro'] || v['car'] || '').toUpperCase();
+        var carroStr = extrairCampo(v, ['carro', 'car']).toUpperCase();
         return carroStr.includes(filtroCarro.toUpperCase());
       });
 
       if (filtradas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">Nenhuma viagem para o veículo selecionado neste filtro.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">Nenhuma viagem para o veículo selecionado.</td></tr>';
         return;
       }
 
       filtradas.forEach(function(v) {
-        var carro = v['Carro'] || 'MINI';
-        var corTexto = carro.toUpperCase().includes('YUN') ? 'text-purple-400' : 'text-cyan-400';
-        var inicio = v['Início'] || v['Inicio'] || '-';
-        var distancia = (v['D(Distância)'] || v['Distância'] || v['Distancia'] || '0') + ' km';
-        var duracao = (v['Duração (min)'] || v['Duração'] || '0') + ' min';
-        var saida = v['Saída'] || v['Saida'] || 'Origem';
-        var chegada = v['Chegada'] || 'Destino';
+        var carro = extrairCampo(v, ['carro', 'car']) || 'MINI';
+        var corTexto = carro.toUpperCase().includes('YUN') || carro.toUpperCase().includes('YUAN') ? 'text-purple-400' : 'text-cyan-400';
+        var inicio = extrairCampo(v, ['início', 'inicio', 'date']) || '-';
+        var rawDist = extrairCampo(v, ['dist', 'd(distância)']) || '0';
+        var distancia = rawDist + ' km';
+        var duracao = (extrairCampo(v, ['duração', 'duracao']) || '0') + ' min';
+        var saida = extrairCampo(v, ['saída', 'saida']) || 'Origem';
+        var chegada = extrairCampo(v, ['chegada']) || 'Destino';
         var trajeto = saida + ' ➔ ' + chegada;
 
-        html += '<tr class="hover:bg-slate-800/40 transition" data-carro="' + carro + '">' +
+        html += '<tr class="hover:bg-slate-800/40 transition">' +
                   '<td class="p-2">' +
                     '<span class="font-bold ' + corTexto + ' block">' + carro + '</span>' +
                     '<span class="text-[10px] text-slate-400 block">' + inicio + '</span>' +
