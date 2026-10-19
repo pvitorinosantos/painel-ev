@@ -485,7 +485,7 @@
       return true;
     }
 
-    // ================= PARSER COM POSIÇÕES FIXAS ESTÁVEIS (CARLLOG) =================
+    // ================= PARSER COM POSIÇÕES FIXAS OFICIAIS (CARLLOG) =================
     function processarArquivoCarllog(event) {
       var arquivo = event.target.files[0];
       if (!arquivo) return;
@@ -501,7 +501,8 @@
           }
 
           var sep = linhas[0].includes('\t') ? '\t' : (linhas[0].includes(';') ? ';' : ',');
-          var ehRecarga = linhas[0].toLowerCase().includes('carregador') || linhas[0].toLowerCase().includes('bateria');
+          var cabecalho = linhas[0].toLowerCase();
+          var ehRecarga = cabecalho.includes('carregador') || cabecalho.includes('bateria inicial');
           var novosItens = [];
 
           for (var i = 1; i < linhas.length; i++) {
@@ -509,12 +510,12 @@
             if (cols.length < 3) continue;
 
             if (ehRecarga) {
-              // Posições fixas para arquivo de recarga
+              // POSIÇÕES FIXAS DE RECARGAS (conforme imagem de recargas)
               var carro = cols[0] || 'MINI';
-              var inicio = cols[2] || cols[1] || '';
-              var local = cols[5] || cols[4] || 'Casa';
-              var energiaBat = parsePtBr(cols[11] || cols[10] || 0);
-              var custoTotal = parsePtBr(cols[17] || cols[16] || 0);
+              var inicio = cols[2] || '';
+              var local = cols[6] || 'Casa';
+              var energiaBat = parsePtBr(cols[11] || 0);
+              var custoTotal = parsePtBr(cols[16] || 0);
 
               if (inicio) {
                 novosItens.push({
@@ -527,11 +528,13 @@
                 });
               }
             } else {
-              // Posições fixas oficiais validadas para arquivo de viagens do Carllog
+              // POSIÇÕES FIXAS DE VIAGENS (conforme imagem de viagens)
               var carro = cols[0] || 'MINI';
               var inicio = cols[2] || '';
-              var distancia = parsePtBr(cols[6] || cols[5] || 0);
-              var energiaUsada = parsePtBr(cols[11] || cols[10] || 0);
+              var distancia = parsePtBr(cols[7] || 0);
+              var energiaUsada = parsePtBr(cols[8] || 0);
+              
+              // Localizando colunas dinâmicas de texto de endereço/coordenadas baseado nas imagens
               var saida = cols[17] || 'Origem';
               var latSaida = cols[18] || '';
               var lonSaida = cols[19] || '';
@@ -563,10 +566,10 @@
             if (ehRecarga) {
               if (!AppEstado.recargas) AppEstado.recargas = [];
               AppEstado.recargas = AppEstado.recargas.concat(novosItens);
-              alert('Sucesso! ' + novosItens.length + ' recarga(s) importada(s).');
+              alert('Sucesso! ' + novosItens.length + ' recarga(s) importada(s) pelas posições fixas.');
             } else {
               AppEstado.viagens = novosItens;
-              alert('Sucesso absoluto! ' + novosItens.length + ' viagem(ns) importadas com posições fixas.');
+              alert('Sucesso absoluto! ' + novosItens.length + ' viagem(ns) importadas pelas posições fixas.');
             }
             persistirEstadoNuvem();
           } else {
@@ -883,4 +886,40 @@
     }
 
     function atualizarGraficos(viagens, custoRef, custoEl) {
-      var ctxConsumo = document.getElementById('chart
+      var ctxConsumo = document.getElementById('chartConsumo').getContext('2d');
+      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
+
+      var viagensOrdenadas = viagens.slice().sort(function(a, b) {
+        var da = extrairDataRegistro(a) || '';
+        var db = extrairDataRegistro(b) || '';
+        return da.localeCompare(db);
+      });
+
+      var labelsConsumo = viagensOrdenadas.map(function(v) { return (extrairDataRegistro(v) || '').substring(5); });
+      var dataConsumo = viagensOrdenadas.map(function(v) {
+        var d = parsePtBr(v.distancia || 0);
+        var k = parsePtBr(v.energia || 0);
+        return d > 0 ? (k / (d / 100)) : 0;
+      });
+
+      chartConsumoInstancia = new Chart(ctxConsumo, {
+        type: 'line',
+        data: {
+          labels: labelsConsumo.length ? labelsConsumo : ['Início'],
+          datasets: [{ label: 'kWh/100km', data: dataConsumo.length ? dataConsumo : [0], borderColor: '#00E5FF', backgroundColor: 'rgba(0, 229, 255, 0.1)', fill: true, tension: 0.3 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } }, y: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } } } }
+      });
+
+      var ctxGastos = document.getElementById('chartGastos').getContext('2d');
+      if (chartGastosInstancia) chartGastosInstancia.destroy();
+
+      chartGastosInstancia = new Chart(ctxGastos, {
+        type: 'bar',
+        data: { labels: ['Elétrico Real', 'Combustível Ref.'], datasets: [{ data: [custoEl, custoRef], backgroundColor: ['#10B981', '#F43F5E'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#94A3B8', font: { size: 10 } } }, y: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } } } }
+      });
+    }
+  </script>
+</body>
+</html>
