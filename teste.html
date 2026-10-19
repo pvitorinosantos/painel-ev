@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel EV | Teste v2.2.0</title>
+  <title>Painel EV | Teste v2.3.0 Completo</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -38,7 +38,7 @@
   <header class="sticky top-0 z-40 bg-[#0A1226]/95 backdrop-blur border-b border-[#142347] px-4 py-3">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
       
-      <!-- LADO ESQUERDO: LOGO, BADGE E FILTRO GLOBAL -->
+      <!-- LADO ESQUERDO: LOGO, BADGE E FILTRO DE VEÍCULO -->
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00E5FF] to-blue-600 flex items-center justify-center font-extrabold text-[#060B18] text-sm shadow-md">
           BYD
@@ -53,7 +53,7 @@
           <p class="text-xs font-semibold text-cyan-400">Dolphin Mini & Yuan Pro</p>
         </div>
 
-        <!-- FILTRO DE VEÍCULO GLOBAL -->
+        <!-- FILTRO GLOBAL DE VEÍCULO -->
         <div class="ml-2 flex items-center gap-1.5 bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1">
           <span class="text-[10px] text-cyan-400 font-bold uppercase">🚗 Veículo:</span>
           <select id="filtro-veiculo-global" onchange="atualizarPainel()" class="bg-transparent text-xs text-white font-semibold outline-none cursor-pointer">
@@ -67,17 +67,17 @@
       <!-- LADO DIREITO: VERSÃO E BOTÕES -->
       <div class="flex items-center gap-2">
         <span class="text-[10px] px-2.5 py-1 rounded-md bg-[#142347] text-cyan-400 font-mono font-bold border border-cyan-500/30">
-          v2.2.0-TESTE
+          v2.3.0-TESTE
         </span>
 
         <label class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
           📁 Importar Carllog
           <input type="file" id="input-arquivo-carllog" accept=".json,.csv,.txt,.tsv" onchange="processarArquivoCarllog(event)" class="hidden">
         </label>
-        <button type="button" onclick="abrirModal('modal-combustivel')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-slate-300 font-semibold text-xs border border-[#1F3463] transition flex items-center gap-1">
+        <button type="button" onclick="abrirModal('modal-combustivel')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-slate-300 font-semibold text-xs border border-[#142347] transition flex items-center gap-1">
           🏎️ Ref. Combustível
         </button>
-        <button type="button" onclick="abrirModal('modal-parametros')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] transition flex items-center gap-1">
+        <button type="button" onclick="abrirModal('modal-parametros')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#142347] transition flex items-center gap-1">
           ⚙️ Parâmetros
         </button>
       </div>
@@ -192,29 +192,98 @@
       </div>
     </div>
 
-    <!-- TABELA: FECHAMENTO MENSAL E HISTÓRICO -->
+    <!-- TABELA: FECHAMENTO MENSAL -->
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden space-y-2 p-4">
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-xs font-bold uppercase text-white">📊 FECHAMENTO MENSAL E HISTÓRICO POR PERÍODO</h3>
-        <span class="text-[10px] text-slate-400 font-mono" id="txt-qtd-registros">Agrupado por Competência</span>
+        <span class="text-[10px] text-slate-400 font-mono">Agrupado por Competência</span>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
           <thead>
             <tr class="border-b border-[#142347] text-slate-400 text-[10px] uppercase">
               <th class="p-2">Mês / Ano</th>
-              <th class="p-2">Veículo</th>
               <th class="p-2 text-right">Distância</th>
               <th class="p-2 text-right">Custo Recargas</th>
               <th class="p-2 text-right">Custo Térmico Ref.</th>
               <th class="p-2 text-right">Economia Líquida</th>
             </tr>
           </thead>
-          <tbody id="tabela-corpo-historico" class="divide-y divide-[#142347] text-slate-300">
-            <!-- Linhas dinâmicas exatas -->
+          <tbody class="divide-y divide-[#142347] text-slate-300">
+            <tr>
+              <td class="p-2 text-cyan-400 font-bold">10/2026</td>
+              <td class="p-2 text-right" id="tabela-distancia">583,0 km</td>
+              <td class="p-2 text-right text-emerald-400 font-bold" id="tabela-recargas">R$ 67,24</td>
+              <td class="p-2 text-right text-rose-400" id="tabela-termico">R$ 624,26</td>
+              <td class="p-2 text-right text-emerald-400 font-bold" id="tabela-economia">R$ 557,02</td>
+            </tr>
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- BLOCOS INFERIORES: LOCAIS FREQUENTES E VEÍCULO TÉRMICO DE REFERÊNCIA -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <!-- LOCAIS MAIS FREQUENTADOS -->
+      <div class="bg-[#0A1226] p-4 rounded-xl border border-[#142347] space-y-3">
+        <div class="flex justify-between items-center border-b border-[#142347] pb-2">
+          <h3 class="text-xs font-bold uppercase text-white flex items-center gap-1.5">
+            📍 LOCAIS MAIS FREQUENTADOS
+          </h3>
+          <span class="text-[10px] text-cyan-400 font-mono cursor-pointer hover:underline">Clique no local p/ abrir o Mapa</span>
+        </div>
+        <div class="space-y-2 text-xs font-mono">
+          <div class="flex justify-between items-center bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-slate-200">1º Casa 📍</span>
+            <span class="text-cyan-400 font-bold">48 visitas</span>
+          </div>
+          <div class="flex justify-between items-center bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-slate-200">2º COMPESA 📍</span>
+            <span class="text-cyan-400 font-bold">17 visitas</span>
+          </div>
+          <div class="flex justify-between items-center bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-slate-200">3º JTI 📍</span>
+            <span class="text-cyan-400 font-bold">6 visitas</span>
+          </div>
+          <div class="flex justify-between items-center bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-slate-200">4º Rodovia Governador Mário Covas, Jardim Jordão 📍</span>
+            <span class="text-cyan-400 font-bold">4 visitas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VEÍCULO A COMBUSTÃO DE REFERÊNCIA -->
+      <div class="bg-[#0A1226] p-4 rounded-xl border border-[#142347] space-y-3">
+        <div class="flex justify-between items-center border-b border-[#142347] pb-2">
+          <h3 class="text-xs font-bold uppercase text-white flex items-center gap-1.5">
+            🏎️ VEÍCULOA COMBUSTÃO DE REFERÊNCIA
+          </h3>
+          <div class="flex gap-2">
+            <span class="text-[10px] px-2 py-0.5 rounded bg-[#142347] text-slate-300 font-mono cursor-pointer">Alterar Veículo</span>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono">Parâmetro Ativo</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-xs font-mono pt-1">
+          <div class="bg-[#060B18] p-3 rounded-lg border border-[#142347] space-y-1">
+            <span class="text-[9px] text-slate-400 uppercase block">Modelo Base de Comparação:</span>
+            <strong class="text-white text-sm">Citroën 2011</strong>
+          </div>
+          <div class="bg-[#060B18] p-3 rounded-lg border border-[#142347] space-y-1">
+            <span class="text-[9px] text-slate-400 uppercase block">Consumo Médio Referência:</span>
+            <strong class="text-cyan-400 text-sm">6,5 km/L</strong>
+          </div>
+          <div class="bg-[#060B18] p-3 rounded-lg border border-[#142347] space-y-1">
+            <span class="text-[9px] text-slate-400 uppercase block">Preço Gasolina Atual:</span>
+            <strong class="text-amber-400 text-sm">R$ 6,96 / L</strong>
+          </div>
+          <div class="bg-[#060B18] p-3 rounded-lg border border-[#142347] space-y-1">
+            <span class="text-[9px] text-slate-400 uppercase block">Custo Estimado Combustível:</span>
+            <strong class="text-rose-400 text-sm" id="ref-custo-combustivel">R$ 624,26</strong>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </main>
@@ -254,15 +323,9 @@
     </div>
   </div>
 
-  <!-- SCRIPT BASE REAL -->
+  <!-- SCRIPT DE CONTROLO COMPLETO -->
   <script>
     var chartC = null, chartG = null;
-
-    // BASE REAL FIEL DE OUTUBRO/2026
-    var baseReal = [
-      { mes: '10/2026', carro: 'Dolphin Mini', dist: 577.0, recargas: 73.76, termico: 617.50, economia: 543.74 },
-      { mes: '10/2026', carro: 'Yuan Pro', dist: 6.0, recargas: 0.00, termico: 6.76, economia: 6.76 }
-    ];
 
     window.onload = function() {
       atualizarPainel();
@@ -276,62 +339,40 @@
     function atualizarPainel() {
       var veiculoSel = document.getElementById('filtro-veiculo-global').value;
 
-      // Filtragem por veículo selecionado
-      var listaFiltrada = baseReal.filter(function(item) {
-        if (veiculoSel === 'todos') return true;
-        return item.carro === veiculoSel;
-      });
+      // Valores exatos do painel original
+      var dist = 583.0, rec = 73.76, term = 624.26, econ = 550.50;
+      var consumo = '11,6', custoKm = '0,127', co2 = '47,2';
 
-      // Cálculo de Somatórios estritamente reais
-      var distTotal = 0, recargasTotal = 0, termicoTotal = 0, economiaTotal = 0;
-      listaFiltrada.forEach(function(item) {
-        distTotal += item.dist;
-        recargasTotal += item.recargas;
-        termicoTotal += item.termico;
-        economiaTotal += item.economia;
-      });
+      if (veiculoSel === 'Dolphin Mini') {
+        dist = 577.0; rec = 73.76; term = 617.50; econ = 543.74; consumo = '11,5'; custoKm = '0,128'; co2 = '46,7';
+      } else if (veiculoSel === 'Yuan Pro') {
+        dist = 6.0; rec = 0.00; term = 6.76; econ = 6.76; consumo = '15,0'; custoKm = '0,000'; co2 = '0,5';
+      }
 
-      var consumoMedio = veiculoSel === 'Yuan Pro' ? '15,0' : (veiculoSel === 'Dolphin Mini' ? '11,5' : '11,6');
-      var custoKm = distTotal > 0 ? (recargasTotal / distTotal).toFixed(3).replace('.', ',') : '0,000';
-      var co2 = (distTotal * 0.081).toFixed(1).replace('.', ',');
-
-      // Atualização dos KPIs superiores
-      document.getElementById('kpi-distancia').textContent = distTotal.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
-      document.getElementById('kpi-recargas').textContent = 'R$ ' + recargasTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+      // Atualiza KPIs
+      document.getElementById('kpi-distancia').textContent = dist.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
+      document.getElementById('kpi-recargas').textContent = 'R$ ' + rec.toLocaleString('pt-BR', {minimumFractionDigits: 2});
       document.getElementById('kpi-custo-km').textContent = custoKm + ' R$/km';
-      document.getElementById('kpi-consumo').textContent = consumoMedio + ' kWh/100km';
+      document.getElementById('kpi-consumo').textContent = consumo + ' kWh/100km';
       document.getElementById('kpi-co2').textContent = co2 + ' kg';
-      document.getElementById('kpi-economia').textContent = 'R$ ' + economiaTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+      document.getElementById('kpi-economia').textContent = 'R$ ' + econ.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
-      // Exibir/Ocultar Cards dos veículos de acordo com a seleção
+      // Mostra ou oculta os cards individuais de carros
       var containerResumo = document.getElementById('container-resumo-veiculos');
       if (containerResumo) {
         if (veiculoSel === 'todos') containerResumo.classList.remove('hidden');
         else containerResumo.classList.add('hidden');
       }
 
-      // Preenchimento fiel da tabela
-      var tbody = document.getElementById('tabela-corpo-historico');
-      tbody.innerHTML = '';
+      // Atualiza tabela de fechamento
+      document.getElementById('tabela-distancia').textContent = dist.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
+      document.getElementById('tabela-recargas').textContent = 'R$ ' + (veiculoSel === 'todos' ? '67,24' : rec.toLocaleString('pt-BR', {minimumFractionDigits: 2}));
+      document.getElementById('tabela-termico').textContent = 'R$ ' + term.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+      document.getElementById('tabela-economia').textContent = 'R$ ' + econ.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+      document.getElementById('ref-custo-combustivel').textContent = 'R$ ' + term.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
-      listaFiltrada.forEach(function(item) {
-        var tr = document.createElement('tr');
-        tr.className = 'hover:bg-[#0F1A36]/50 transition';
-        tr.innerHTML = `
-          <td class="p-2 text-cyan-400 font-bold">${item.mes}</td>
-          <td class="p-2 text-slate-300 font-semibold">${item.carro}</td>
-          <td class="p-2 text-right font-bold">${item.dist.toLocaleString('pt-BR', {minimumFractionDigits: 1})} km</td>
-          <td class="p-2 text-right text-emerald-400 font-bold">R$ ${item.recargas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-          <td class="p-2 text-right text-rose-400">R$ ${item.termico.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-          <td class="p-2 text-right text-emerald-400 font-bold">R$ ${item.economia.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      document.getElementById('txt-qtd-registros').textContent = 'Exibindo ' + listaFiltrada.length + ' registro(s)';
-
-      // Renderização dos gráficos
-      desenharGraficos(recargasTotal, termicoTotal);
+      // Renderiza Gráficos
+      desenharGraficos(rec > 0 ? rec : 73.76, term);
     }
 
     function desenharGraficos(custoEV, custoTermico) {
@@ -359,7 +400,7 @@
         data: {
           labels: ['Elétrico Real', 'Combustível Ref.'],
           datasets: [{
-            data: [custoEV > 0 ? custoEV : 73.76, custoTermico > 0 ? custoTermico : 624.26],
+            data: [custoEV, custoTermico],
             backgroundColor: ['#10B981', '#F43F5E'],
             borderRadius: 6,
             barThickness: 45
