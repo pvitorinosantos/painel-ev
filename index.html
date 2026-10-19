@@ -485,7 +485,7 @@
       return true;
     }
 
-    // ================= PARSER INTELIGENTE BASEADO EM CABEÇALHO (À PROVA DE FUTURO) =================
+    // ================= PARSER COM POSIÇÕES FIXAS ESTÁVEIS (CARLLOG) =================
     function processarArquivoCarllog(event) {
       var arquivo = event.target.files[0];
       if (!arquivo) return;
@@ -501,50 +501,20 @@
           }
 
           var sep = linhas[0].includes('\t') ? '\t' : (linhas[0].includes(';') ? ';' : ',');
-          var cabecalhoCols = linhas[0].split(sep).map(function(c) { 
-            return c.trim().replace(/^"|"$/g, '').toLowerCase(); 
-          });
-
-          // Função auxiliar para encontrar o índice da coluna pelo nome do cabeçalho (tolerante a variações)
-          function acharIndice(termos) {
-            for (var t = 0; t < termos.length; t++) {
-              var termo = termos[t].toLowerCase();
-              for (var c = 0; c < cabecalhoCols.length; c++) {
-                if (cabecalhoCols[c].includes(termo)) return c;
-              }
-            }
-            return -1;
-          }
-
-          var idxCarro = acharIndice(['carro', 'veículo', 'vehicle', 'name']);
-          var idxInicio = acharIndice(['início', 'inicio', 'data', 'start', 'date']);
-          var idxDistancia = acharIndice(['distância', 'distancia', 'km', 'distance']);
-          var idxEnergia = acharIndice(['energia', 'kwh', 'consumo']);
-          var idxOrigem = acharIndice(['saída', 'saida', 'origem', 'start place']);
-          var idxDestino = acharIndice(['chegada', 'destino', 'end place']);
-          var idxLatSaida = acharIndice(['lat saída', 'lat saida', 'latitude start']);
-          var idxLonSaida = acharIndice(['lon saída', 'lon saida', 'longitude start']);
-          var idxLatChegada = acharIndice(['lat chegada', 'latitude end']);
-          var idxLonChegada = acharIndice(['lon chegada', 'longitude end']);
-          var idxCusto = acharIndice(['custo', 'cost', 'preço', 'preco']);
-
-          var ehRecarga = cabecalhoCols.join(' ').includes('carregador') || cabecalhoCols.join(' ').includes('bateria');
+          var ehRecarga = linhas[0].toLowerCase().includes('carregador') || linhas[0].toLowerCase().includes('bateria');
           var novosItens = [];
 
           for (var i = 1; i < linhas.length; i++) {
             var cols = linhas[i].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ''); });
-            if (cols.length < 2) continue;
-
-            var valCol = function(idx, padrao) {
-              return (idx > -1 && cols[idx] !== undefined) ? cols[idx] : padrao;
-            };
+            if (cols.length < 3) continue;
 
             if (ehRecarga) {
-              var carro = valCol(idxCarro, 'MINI');
-              var inicio = valCol(idxInicio, '');
-              var local = valCol(idxOrigem, 'Casa');
-              var energiaBat = parsePtBr(valCol(idxEnergia, 0));
-              var custoTotal = parsePtBr(valCol(idxCusto, 0));
+              // Posições fixas para arquivo de recarga
+              var carro = cols[0] || 'MINI';
+              var inicio = cols[2] || cols[1] || '';
+              var local = cols[5] || cols[4] || 'Casa';
+              var energiaBat = parsePtBr(cols[11] || cols[10] || 0);
+              var custoTotal = parsePtBr(cols[17] || cols[16] || 0);
 
               if (inicio) {
                 novosItens.push({
@@ -557,29 +527,18 @@
                 });
               }
             } else {
-              var carro = valCol(idxCarro, 'MINI');
-              var inicio = valCol(idxInicio, '');
-              var distancia = parsePtBr(valCol(idxDistancia, 0));
-              
-              // Se a distância veio zerada pelo nome da coluna, faz uma varredura de segurança por números válidos
-              if (distancia === 0) {
-                for (var sc = 0; sc < cols.length; sc++) {
-                  var pNum = parsePtBr(cols[sc]);
-                  if (pNum > 0 && pNum < 2000 && cols[sc].indexOf('/') === -1 && cols[sc].indexOf(':') === -1) {
-                    distancia = pNum;
-                    break;
-                  }
-                }
-              }
-
-              var energiaUsada = parsePtBr(valCol(idxEnergia, 0));
-              var origem = valCol(idxOrigem, 'Origem');
-              var destino = valCol(idxDestino, 'Destino');
-              var latS = valCol(idxLatSaida, '');
-              var lonS = valCol(idxLonSaida, '');
-              var latC = valCol(idxLatChegada, '');
-              var lonC = valCol(idxLonChegada, '');
-              var custoTotal = parsePtBr(valCol(idxCusto, 0));
+              // Posições fixas oficiais validadas para arquivo de viagens do Carllog
+              var carro = cols[0] || 'MINI';
+              var inicio = cols[2] || '';
+              var distancia = parsePtBr(cols[6] || cols[5] || 0);
+              var energiaUsada = parsePtBr(cols[11] || cols[10] || 0);
+              var saida = cols[17] || 'Origem';
+              var latSaida = cols[18] || '';
+              var lonSaida = cols[19] || '';
+              var chegada = cols[20] || 'Destino';
+              var latChegada = cols[21] || '';
+              var lonChegada = cols[22] || '';
+              var custoTotal = parsePtBr(cols[26] || 0);
 
               if (inicio) {
                 novosItens.push({
@@ -588,13 +547,13 @@
                   distancia: distancia,
                   energia: energiaUsada > 0 ? energiaUsada : (distancia * 0.12),
                   custo: custoTotal,
-                  origem: origem,
-                  destino: destino,
-                  latSaida: latS,
-                  lonSaida: lonS,
-                  latChegada: latC,
-                  lonChegada: lonC,
-                  trajeto: origem + ' → ' + destino
+                  origem: saida,
+                  destino: chegada,
+                  latSaida: latSaida,
+                  lonSaida: lonSaida,
+                  latChegada: latChegada,
+                  lonChegada: lonChegada,
+                  trajeto: saida + ' → ' + chegada
                 });
               }
             }
@@ -607,7 +566,7 @@
               alert('Sucesso! ' + novosItens.length + ' recarga(s) importada(s).');
             } else {
               AppEstado.viagens = novosItens;
-              alert('Sucesso absoluto! ' + novosItens.length + ' viagem(ns) mapeadas por cabeçalho e importadas.');
+              alert('Sucesso absoluto! ' + novosItens.length + ' viagem(ns) importadas com posições fixas.');
             }
             persistirEstadoNuvem();
           } else {
@@ -924,40 +883,4 @@
     }
 
     function atualizarGraficos(viagens, custoRef, custoEl) {
-      var ctxConsumo = document.getElementById('chartConsumo').getContext('2d');
-      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
-
-      var viagensOrdenadas = viagens.slice().sort(function(a, b) {
-        var da = extrairDataRegistro(a) || '';
-        var db = extrairDataRegistro(b) || '';
-        return da.localeCompare(db);
-      });
-
-      var labelsConsumo = viagensOrdenadas.map(function(v) { return (extrairDataRegistro(v) || '').substring(5); });
-      var dataConsumo = viagensOrdenadas.map(function(v) {
-        var d = parsePtBr(v.distancia || 0);
-        var k = parsePtBr(v.energia || 0);
-        return d > 0 ? (k / (d / 100)) : 0;
-      });
-
-      chartConsumoInstancia = new Chart(ctxConsumo, {
-        type: 'line',
-        data: {
-          labels: labelsConsumo.length ? labelsConsumo : ['Início'],
-          datasets: [{ label: 'kWh/100km', data: dataConsumo.length ? dataConsumo : [0], borderColor: '#00E5FF', backgroundColor: 'rgba(0, 229, 255, 0.1)', fill: true, tension: 0.3 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } }, y: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } } } }
-      });
-
-      var ctxGastos = document.getElementById('chartGastos').getContext('2d');
-      if (chartGastosInstancia) chartGastosInstancia.destroy();
-
-      chartGastosInstancia = new Chart(ctxGastos, {
-        type: 'bar',
-        data: { labels: ['Elétrico Real', 'Combustível Ref.'], datasets: [{ data: [custoEl, custoRef], backgroundColor: ['#10B981', '#F43F5E'] }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#94A3B8', font: { size: 10 } } }, y: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } } } }
-      });
-    }
-  </script>
-</body>
-</html>
+      var ctxConsumo = document.getElementById('chart
