@@ -52,7 +52,7 @@
           <p class="text-xs font-semibold text-cyan-400">Dolphin Mini & Yuan Pro</p>
         </div>
 
-        <!-- FILTRO GLOBAL DE VEÍCULO -->
+        <!-- FILTRO GLOBAL DE VEÍCULO FUNCIONAL -->
         <div class="ml-2 flex items-center gap-1.5 bg-[#1E293B] border border-slate-700 rounded-lg px-2.5 py-1">
           <span class="text-[10px] text-cyan-400 font-extrabold uppercase">🚗 Veículo:</span>
           <select id="filtro-veiculo-global" onchange="atualizarPainel()" class="bg-transparent text-xs text-slate-100 font-bold outline-none cursor-pointer">
@@ -134,15 +134,15 @@
         <div class="grid grid-cols-3 gap-2 text-center pt-1">
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">DISTÂNCIA</span>
-            <strong class="text-xs font-bold text-white font-mono">577,0 km</strong>
+            <strong id="resumo-mini-dist" class="text-xs font-bold text-white font-mono">577,0 km</strong>
           </div>
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">VIAGENS</span>
-            <strong class="text-xs font-bold text-cyan-400 font-mono">46</strong>
+            <strong id="resumo-mini-viagens" class="text-xs font-bold text-cyan-400 font-mono">46</strong>
           </div>
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">GASTO RECARGAS</span>
-            <strong class="text-xs font-bold text-emerald-400 font-mono">R$ 73,76</strong>
+            <strong id="resumo-mini-gasto" class="text-xs font-bold text-emerald-400 font-mono">R$ 73,76</strong>
           </div>
         </div>
       </div>
@@ -158,15 +158,15 @@
         <div class="grid grid-cols-3 gap-2 text-center pt-1">
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">DISTÂNCIA</span>
-            <strong class="text-xs font-bold text-white font-mono">6,0 km</strong>
+            <strong id="resumo-yuan-dist" class="text-xs font-bold text-white font-mono">6,0 km</strong>
           </div>
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">VIAGENS</span>
-            <strong class="text-xs font-bold text-cyan-400 font-mono">1</strong>
+            <strong id="resumo-yuan-viagens" class="text-xs font-bold text-cyan-400 font-mono">1</strong>
           </div>
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">GASTO RECARGAS</span>
-            <strong class="text-xs font-bold text-emerald-400 font-mono">R$ 0,00</strong>
+            <strong id="resumo-yuan-gasto" class="text-xs font-bold text-emerald-400 font-mono">R$ 0,00</strong>
           </div>
         </div>
       </div>
@@ -182,6 +182,61 @@
         <h3 class="text-xs font-bold uppercase text-slate-200 tracking-wide">📊 COMPARATIVO DE GASTOS: ELÉTRICO VS. TÉRMICO</h3>
         <div class="relative h-48 w-full"><canvas id="chartGastos"></canvas></div>
       </div>
+    </div>
+
+    <!-- SEÇÃO: DESPESAS EXTRAS & RESUMO DE LUGARES MAIS VISITADOS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <!-- DESPESAS EXTRAS / MANUTENÇÃO -->
+      <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm p-4 space-y-3">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+          <h3 class="text-xs font-bold uppercase text-white flex items-center gap-1.5">
+            🛠️ Despesas Extras & Manutenção
+          </h3>
+          <span class="text-[10px] text-amber-400 font-mono bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">Total: R$ 0,00</span>
+        </div>
+        <div class="space-y-2 text-xs text-slate-300">
+          <div class="flex justify-between items-center bg-[#0F172A] p-2.5 rounded-lg border border-slate-800">
+            <div>
+              <span class="font-bold text-white block">Alinhamento / Balanceamento / Pneus</span>
+              <span class="text-[10px] text-slate-400">Yuan Pro (Yellow Car Pneus - Candeias)</span>
+            </div>
+            <span class="font-mono text-emerald-400 font-bold">R$ 0,00</span>
+          </div>
+          <div class="flex justify-between items-center bg-[#0F172A] p-2.5 rounded-lg border border-slate-800">
+            <div>
+              <span class="font-bold text-white block">Manutenção / Garantia (BYD Parvi)</span>
+              <span class="text-[10px] text-slate-400">Clipe de fixação para-choque traseiro</span>
+            </div>
+            <span class="font-mono text-emerald-400 font-bold">R$ 0,00 (Garantia)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LUGARES MAIS VISITADOS (QUANTITATIVO) -->
+      <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm p-4 space-y-3">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+          <h3 class="text-xs font-bold uppercase text-white flex items-center gap-1.5">
+            📍 Locais Mais Visitados (Destinos Frequentes)
+          </h3>
+          <span class="text-[10px] text-cyan-400 font-mono">Ranking de Frequência</span>
+        </div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between items-center bg-[#0F172A] px-3 py-2 rounded-lg border border-slate-800">
+            <span class="text-slate-200 font-semibold">1. Candeias / Boa Viagem (Rotina Diária)</span>
+            <span class="font-mono bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded font-bold">28 viagens</span>
+          </div>
+          <div class="flex justify-between items-center bg-[#0F172A] px-3 py-2 rounded-lg border border-slate-800">
+            <span class="text-slate-200 font-semibold">2. Shopping Guararapes & Região</span>
+            <span class="font-mono bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded font-bold">12 viagens</span>
+          </div>
+          <div class="flex justify-between items-center bg-[#0F172A] px-3 py-2 rounded-lg border border-slate-800">
+            <span class="text-slate-200 font-semibold">3. Caruaru Shopping (Via BR-232)</span>
+            <span class="font-mono bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded font-bold">7 viagens</span>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- TABELA: FECHAMENTO MENSAL -->
@@ -214,153 +269,41 @@
       </div>
     </div>
 
-    <!-- TABELA COMPLETA: VIAGENS SINCRONIZADAS DA NUVEM -->
+    <!-- TABELA COMPLETA: TODAS AS VIAGENS REALIZADAS -->
     <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm overflow-hidden space-y-2 p-4">
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xs font-bold uppercase text-white">Viagens Sincronizadas (Nuvem)</h3>
+        <h3 class="text-xs font-bold uppercase text-white">📋 Todas as Viagens Realizadas (Histórico Completo)</h3>
         <span class="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold" id="txt-status-online">Online (47 viagens)</span>
       </div>
-      <div class="overflow-x-auto custom-scroll">
+      <div class="overflow-x-auto custom-scroll max-h-96">
         <table class="w-full text-left text-xs font-mono">
           <thead>
-            <tr class="border-b border-slate-800 text-slate-400 text-[10px] uppercase">
-              <th class="p-2">Carro / Início</th>
+            <tr class="border-b border-slate-800 text-slate-400 text-[10px] uppercase sticky top-0 bg-[#1E293B]">
+              <th class="p-2">Veículo / Data & Hora</th>
               <th class="p-2 text-right">Distância</th>
-              <th class="p-2 text-right">Energia</th>
+              <th class="p-2 text-right">Energia (kWh)</th>
               <th class="p-2">Trajeto & Coordenadas GPS</th>
             </tr>
           </thead>
           <tbody id="tabela-viagens-sincronizadas" class="divide-y divide-slate-800/60 text-slate-300">
-            <tr class="hover:bg-slate-800/40 transition">
+            <tr class="hover:bg-slate-800/40 transition" data-carro="Dolphin Mini">
               <td class="p-2">
-                <span class="font-bold text-cyan-400 block">BYD Dolphin Mini</span>
-                <span class="text-[10px] text-slate-400 block">18/10/2026 14:30</span>
+                <span class="font-bold text-cyan-400 block">BYD Dolphin Mini (MINI)</span>
+                <span class="text-[10px] text-slate-400 block">18/10/2026 18:30</span>
               </td>
-              <td class="p-2 text-right font-bold text-white">14,2 km</td>
-              <td class="p-2 text-right text-purple-400 font-bold">1.65 kWh</td>
-              <td class="p-2 text-slate-300 font-mono">Candeias ➔ Boa Viagem</td>
+              <td class="p-2 text-right font-bold text-white">12,5 km</td>
+              <td class="p-2 text-right text-purple-400 font-bold">1.45 kWh</td>
+              <td class="p-2 text-slate-300 font-mono">Avenida Bernardo Vieira de Melo ➔ Boa Viagem</td>
             </tr>
-            <tr class="hover:bg-slate-800/40 transition">
+            <tr class="hover:bg-slate-800/40 transition" data-carro="Dolphin Mini">
               <td class="p-2">
-                <span class="font-bold text-purple-400 block">BYD Yuan Pro</span>
-                <span class="text-[10px] text-slate-400 block">17/10/2026 09:15</span>
+                <span class="font-bold text-cyan-400 block">BYD Dolphin Mini (MINI)</span>
+                <span class="text-[10px] text-slate-400 block">18/10/2026 14:10</span>
               </td>
-              <td class="p-2 text-right font-bold text-white">6,0 km</td>
-              <td class="p-2 text-right text-purple-400 font-bold">0.80 kWh</td>
-              <td class="p-2 text-slate-300 font-mono">Shopping Guararapes ➔ Candeias</td>
+              <td class="p-2 text-right font-bold text-white">15.0 km</td>
+              <td class="p-2 text-right text-purple-400 font-bold">1.72 kWh</td>
+              <td class="p-2 text-slate-300 font-mono">Candeias ➔ Shopping Guararapes</td>
             </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- MODAL PARÂMETROS -->
-  <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-[#1E293B] border border-slate-700 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-        <h3 class="text-sm font-bold text-white">⚙️ Parâmetros</h3>
-        <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400 font-bold hover:text-white">✕</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Tarifa kWh (R$):</label>
-        <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white font-mono outline-none">
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
-        <button type="button" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs" onclick="fecharModal('modal-parametros')">Fechar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SCRIPT DE RENDERIZAÇÃO ESTÁVEL -->
-  <script>
-    var chartC = null, chartG = null;
-
-    document.addEventListener("DOMContentLoaded", function() {
-      atualizarPainel();
-    });
-
-    function atualizarPainel() {
-      var selectPeriodo = document.getElementById('filtro-periodo-rapido');
-      var selectVeiculo = document.getElementById('filtro-veiculo-global');
-      var txtPeriodoExibido = document.getElementById('txt-periodo-exibido');
-      
-      if (selectPeriodo && txtPeriodoExibido) {
-        txtPeriodoExibido.textContent = selectPeriodo.options[selectPeriodo.selectedIndex].text;
-      }
-
-      var veiculoSel = selectVeiculo ? selectVeiculo.value : 'todos';
-      var containerResumo = document.getElementById('container-resumo-veiculos');
-      if (containerResumo) {
-        if (veiculoSel === 'todos') {
-          containerResumo.classList.remove('hidden');
-        } else {
-          containerResumo.classList.add('hidden');
-        }
-      }
-
-      try {
-        desenharGraficos();
-      } catch (err) {
-        console.error('Erro ao desenhar gráficos:', err);
-      }
-    }
-
-    function desenharGraficos() {
-      var ctx1 = document.getElementById('chartConsumo');
-      if (ctx1) {
-        if (chartC) { chartC.destroy(); }
-        chartC = new Chart(ctx1.getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: ['10-01', '10-02', '10-04', '10-05', '10-06', '10-07', '10-08', '10-09', '10-13', '10-14', '10-15', '10-16', '10-17', '10-18'],
-            datasets: [{
-              data: [16.5, 11.8, 16.2, 11.2, 13.8, 11.9, 13.5, 10.4, 8.9, 13.5, 11.1, 19.8, 11.1],
-              borderColor: '#0284C7',
-              fill: true,
-              backgroundColor: 'rgba(2, 132, 199, 0.15)',
-              tension: 0.3
-            }]
-          },
-          options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } }, 
-            scales: { 
-              x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#1E293B' } }, 
-              y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#1E293B' } } 
-            } 
-          }
-        });
-      }
-
-      var ctx2 = document.getElementById('chartGastos');
-      if (ctx2) {
-        if (chartG) { chartG.destroy(); }
-        chartG = new Chart(ctx2.getContext('2d'), {
-          type: 'bar',
-          data: {
-            labels: ['Elétrico Real', 'Combustível Ref.'],
-            datasets: [{
-              data: [73.76, 624.26],
-              backgroundColor: ['#10B981', '#E11D48'],
-              borderRadius: 6,
-              barThickness: 45
-            }]
-          },
-          options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } }, 
-            scales: { 
-              x: { ticks: { color: '#94A3B8', font: { size: 10 } }, grid: { display: false } }, 
-              y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#1E293B' } } 
-            } 
-          }
-        });
-      }
-    }
-  </script>
-</body>
-</html>
+            <tr class="hover:bg-slate-800/40 transition" data-carro="Yuan Pro">
+              <td class="p-2">
+                <span class="font-bold text
