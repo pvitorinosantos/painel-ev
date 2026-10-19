@@ -189,20 +189,25 @@
     <!-- SEÇÃO: DESPESAS EXTRAS & LUGARES MAIS VISITADOS -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       
-      <!-- DESPESAS EXTRAS / MANUTENÇÃO -->
+      <!-- DESPESAS EXTRAS & MANUTENÇÃO -->
       <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm p-4 space-y-3">
         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
           <h3 class="text-xs font-bold uppercase text-white flex items-center gap-1.5">
             🛠️ Despesas Extras & Manutenção
           </h3>
-          <span class="text-[10px] text-slate-400 font-mono bg-slate-800 px-2 py-0.5 rounded border border-slate-700 font-bold">Total: R$ 0,00</span>
+          <div class="flex items-center gap-2">
+            <span id="total-despesas-txt" class="text-[10px] text-slate-400 font-mono bg-slate-800 px-2 py-0.5 rounded border border-slate-700 font-bold">Total: R$ 0,00</span>
+            <button type="button" onclick="abrirModal('modal-nova-despesa')" class="px-2.5 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] transition shadow">
+              ➕ Nova Despesa
+            </button>
+          </div>
         </div>
-        <div class="space-y-2 text-xs text-slate-400 text-center py-4 font-mono">
+        <div id="lista-despesas-extras" class="space-y-2 text-xs text-slate-400 text-center py-4 font-mono">
           Nenhuma despesa extra cadastrada no período.
         </div>
       </div>
 
-      <!-- LUGARES MAIS VISITADOS -->
+      <!-- LUGARES MAIS VISITADOS (RANKING DINÂMICO) -->
       <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm p-4 space-y-3">
         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
           <h3 class="text-xs font-bold uppercase text-white flex items-center gap-1.5">
@@ -276,6 +281,37 @@
 
   </main>
 
+  <!-- MODAL: NOVA DESPESA EXTRA -->
+  <div id="modal-nova-despesa" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-[#1E293B] border border-slate-700 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 class="text-sm font-bold text-white">➕ Adicionar Despesa / Manutenção</h3>
+        <button type="button" onclick="fecharModal('modal-nova-despesa')" class="text-slate-400 font-bold hover:text-white">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Veículo:</label>
+          <select id="nova-despesa-carro" class="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white font-mono outline-none">
+            <option value="Dolphin Mini">BYD Dolphin Mini</option>
+            <option value="Yuan Pro">BYD Yuan Pro</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Descrição do Serviço / Despesa:</label>
+          <input type="text" id="nova-despesa-desc" placeholder="Ex: Alinhamento, Pneu, Garantia..." class="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white font-mono outline-none">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Valor (R$):</label>
+          <input type="number" id="nova-despesa-valor" placeholder="0.00" step="0.01" class="w-full bg-[#0F172A] border border-slate-700 rounded-lg px-3 py-2 text-white font-mono outline-none">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" onclick="fecharModal('modal-nova-despesa')" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs">Cancelar</button>
+        <button type="button" onclick="adicionarDespesaExtra()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs">Salvar Despesa</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL PARÂMETROS -->
   <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-[#1E293B] border border-slate-700 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
@@ -293,10 +329,11 @@
     </div>
   </div>
 
-  <!-- SCRIPT DE PROCESSAMENTO ROBUSTO DE COLUNAS DO CARLLOG -->
+  <!-- SCRIPT COMPLETO E DEFINITIVO -->
   <script>
     var chartC = null, chartG = null;
     var viagensCsvGlobais = [];
+    var listaDespesasGlobais = [];
 
     document.addEventListener("DOMContentLoaded", function() {
       atualizarPainel();
@@ -360,7 +397,6 @@
       leitor.readAsText(arquivo, 'UTF-8');
     }
 
-    // Função auxiliar para buscar valor em colunas com variações de nome no CSV
     function extrairCampo(obj, chavesPossiveis) {
       for (var k = 0; k < chavesPossiveis.length; k++) {
         var chave = chavesPossiveis[k];
@@ -371,6 +407,87 @@
         }
       }
       return '';
+    }
+
+    function adicionarDespesaExtra() {
+      var carro = document.getElementById('nova-despesa-carro').value;
+      var desc = document.getElementById('nova-despesa-desc').value;
+      var valor = parseFloat(document.getElementById('nova-despesa-valor').value) || 0;
+
+      if (!desc || valor <= 0) {
+        alert('Preencha a descrição e um valor válido.');
+        return;
+      }
+
+      listaDespesasGlobais.push({ carro: carro, descricao: desc, valor: valor });
+      renderizarDespesas();
+      fecharModal('modal-nova-despesa');
+
+      document.getElementById('nova-despesa-desc').value = '';
+      document.getElementById('nova-despesa-valor').value = '';
+    }
+
+    function renderizarDespesas() {
+      var container = document.getElementById('lista-despesas-extras');
+      var txtTotal = document.getElementById('total-despesas-txt');
+      if (!container) return;
+
+      if (listaDespesasGlobais.length === 0) {
+        container.innerHTML = 'Nenhuma despesa extra cadastrada no período.';
+        if (txtTotal) txtTotal.textContent = 'Total: R$ 0,00';
+        return;
+      }
+
+      var html = '';
+      var totalGeral = 0;
+      listaDespesasGlobais.forEach(function(d) {
+        totalGeral += d.valor;
+        html += '<div class="bg-[#0F172A] p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">' +
+                  '<div>' +
+                    '<strong class="text-white block">' + d.descricao + '</strong>' +
+                    '<span class="text-[10px] text-cyan-400 font-mono">' + d.carro + '</span>' +
+                  '</div>' +
+                  '<span class="text-emerald-400 font-bold font-mono">R$ ' + d.valor.toFixed(2).replace('.', ',') + '</span>' +
+                '</div>';
+      });
+
+      container.innerHTML = html;
+      if (txtTotal) txtTotal.textContent = 'Total: R$ ' + totalGeral.toFixed(2).replace('.', ',');
+    }
+
+    function renderizarLocaisMaisVisitados(viagens) {
+      var container = document.getElementById('lista-locais-visitados');
+      if (!container) return;
+
+      var contagemLocais = {};
+      viagens.forEach(function(v) {
+        var destino = extrairCampo(v, ['chegada', 'destino']);
+        if (destino && destino !== '-' && destino !== 'Destino') {
+          contagemLocais[destino] = (contagemLocais[destino] || 0) + 1;
+        }
+      });
+
+      var arrayLocais = [];
+      for (var local in contagemLocais) {
+        arrayLocais.push({ local: local, qtd: contagemLocais[local] });
+      }
+
+      arrayLocais.sort(function(a, b) { return b.qtd - a.qtd; });
+
+      if (arrayLocais.length === 0) {
+        container.innerHTML = 'Aguardando importação do Carllog (CSV)...';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < Math.min(arrayLocais.length, 3); i++) {
+        var item = arrayLocais[i];
+        html += '<div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800 flex justify-between items-center">' +
+                  '<span class="text-slate-200 font-medium truncate max-w-[200px]">' + (i + 1) + '. ' + item.local + '</span>' +
+                  '<span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 font-bold font-mono">' + item.qtd + ' viagens</span>' +
+                '</div>';
+      }
+      container.innerHTML = html;
     }
 
     function recalcularKpisEAtualizarTela(viagens) {
@@ -398,7 +515,6 @@
         }
       });
 
-      // Atualiza os KPIs principais
       var elDist = document.getElementById('kpi-distancia');
       if (elDist) elDist.textContent = distTotal.toFixed(1).replace('.', ',') + ' km';
 
@@ -416,6 +532,7 @@
       if (elYuanViagens) elYuanViagens.textContent = countYuan;
 
       renderizarTabelaCsv(viagens);
+      renderizarLocaisMaisVisitados(viagens);
     }
 
     function renderizarTabelaCsv(viagens) {
