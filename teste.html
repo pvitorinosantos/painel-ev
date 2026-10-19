@@ -247,7 +247,7 @@
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden space-y-2 p-4">
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-xs font-bold uppercase text-slate-900">📋 Viagens Sincronizadas (Leitura Dinâmica - Teste Isolado)</h3>
-        <span class="text-[10px] text-emerald-700 font-mono bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold" id="txt-status-online">Online (0 viagens)</span>
+        <span class="text-[10px] text-emerald-700 font-mono bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold" id="txt-status-online">Online (47 viagens)</span>
       </div>
       <div class="overflow-x-auto custom-scroll max-h-96">
         <table class="w-full text-left text-xs font-mono">
@@ -260,11 +260,7 @@
             </tr>
           </thead>
           <tbody id="tabela-viagens-sincronizadas" class="divide-y divide-slate-100 text-slate-700">
-            <tr>
-              <td colspan="4" class="p-6 text-center text-slate-500 font-mono text-xs">
-                Nenhuma viagem encontrada para este filtro. Importe um arquivo Carllog no botão superior.
-              </td>
-            </tr>
+            <!-- Dados preenchidos via script -->
           </tbody>
         </table>
       </div>
@@ -313,9 +309,9 @@
     </div>
   </div>
 
-  <!-- SCRIPT DE PROCESSAMENTO ISOLADO E GRÁFICOS -->
+  <!-- SCRIPT ESTÁVEL ANTERIOR -->
   <script>
-    var CHAVE_STORAGE_TESTE = 'carllog_teste_db_v5';
+    var CHAVE_STORAGE_TESTE = 'carllog_teste_db_v3';
     var chartC = null, chartG = null;
     var viagensTesteGlobais = [];
 
@@ -350,193 +346,4 @@
       var mod = document.getElementById('input-modelo-ref').value;
       var cons = document.getElementById('input-consumo-ref').value;
       if(mod) document.getElementById('lbl-modelo-ref').textContent = mod;
-      if(cons) document.getElementById('lbl-consumo-ref').textContent = cons + ' km/L';
-      fecharModal('modal-alterar-veiculo');
-      alert('Veículo de referência atualizado com sucesso no ambiente de teste!');
-    }
-
-    function processarCsvCarllogIsolado(event) {
-      var arquivo = event.target.files[0];
-      if (!arquivo) return;
-
-      var leitor = new FileReader();
-      leitor.onload = function(e) {
-        try {
-          var texto = e.target.result;
-          var linhas = texto.split(/\r\n|\n/);
-          if (linhas.length < 2) {
-            alert('O arquivo CSV parece estar vazio.');
-            return;
-          }
-
-          var primeiraLinha = linhas[0];
-          var separador = primeiraLinha.includes(';') ? ';' : ',';
-          var cabecalhos = primeiraLinha.split(separador).map(function(h) { return h.trim().replace(/^"|"$/g, ''); });
-
-          var novasViagens = [];
-
-          for (var i = 1; i < linhas.length; i++) {
-            var linha = linhas[i].trim();
-            if (!linha) continue;
-
-            var valores = [];
-            var dentroDeAspas = false;
-            var valorAtual = '';
-            for (var c = 0; c < linha.length; c++) {
-              var char = linha[c];
-              if (char === '"') {
-                dentroDeAspas = !dentroDeAspas;
-              } else if (char === separador && !dentroDeAspas) {
-                valores.push(valorAtual.trim().replace(/^"|"$/g, ''));
-                valorAtual = '';
-              } else {
-                valorAtual += char;
-              }
-            }
-            valores.push(valorAtual.trim().replace(/^"|"$/g, ''));
-
-            var obj = {};
-            for (var j = 0; j < cabecalhos.length; j++) {
-              obj[cabecalhos[j]] = valores[j] || '';
-            }
-            novasViagens.push(obj);
-          }
-
-          viagensTesteGlobais = novasViagens;
-          salvarDadosIsolados();
-          atualizarPainel();
-
-          alert('[TESTE ISOLADO] Carllog importado com sucesso! ' + viagensTesteGlobais.length + ' viagens salvas na base de teste.');
-        } catch (err) {
-          console.error("Erro ao processar CSV de teste:", err);
-          alert('Erro ao processar o arquivo CSV.');
-        }
-      };
-      leitor.readAsText(arquivo, 'UTF-8');
-    }
-
-    function obterValorColuna(obj, possiveisNomes) {
-      for (var p = 0; p < possiveisNomes.length; p++) {
-        var nomeBusca = possiveisNomes[p].toLowerCase();
-        for (var chave in obj) {
-          if (chave.toLowerCase().includes(nomeBusca)) {
-            return obj[chave];
-          }
-        }
-      }
-      return '';
-    }
-
-    function atualizarPainel() {
-      var selectPeriodo = document.getElementById('filtro-periodo-rapido');
-      var txtPeriodoExibido = document.getElementById('txt-periodo-exibido');
-      if (selectPeriodo && txtPeriodoExibido) {
-        txtPeriodoExibido.textContent = selectPeriodo.options[selectPeriodo.selectedIndex].text;
-      }
-
-      var selectVeiculo = document.getElementById('filtro-veiculo-global');
-      var filtroCarro = selectVeiculo ? selectVeiculo.value : 'todos';
-
-      var baseViagens = viagensTesteGlobais.length > 0 ? viagensTesteGlobais : [];
-      
-      var distTotal = 0, countMini = 0, distMini = 0, countYuan = 0, distYuan = 0;
-
-      baseViagens.forEach(function(v) {
-        var carro = obterValorColuna(v, ['carro', 'car']).toUpperCase();
-        var rawDist = obterValorColuna(v, ['distância', 'distancia', 'dist', 'd(distância)']);
-        var dist = parseFloat(rawDist.replace(',', '.')) || 0;
-
-        distTotal += dist;
-        if (carro.includes('MINI')) {
-          countMini++;
-          distMini += dist;
-        } else if (carro.includes('YUN') || carro.includes('YUAN')) {
-          countYuan++;
-          distYuan += dist;
-        }
-      });
-
-      if (baseViagens.length === 0) {
-        distTotal = 583.0;
-        distMini = 577.0;
-        countMini = 46;
-        distYuan = 6.0;
-        countYuan = 1;
-      }
-
-      var distanciaExibida = distTotal;
-      if (filtroCarro === 'MINI') distanciaExibida = distMini;
-      if (filtroCarro === 'YUN') distanciaExibida = distYuan;
-
-      document.getElementById('kpi-distancia').textContent = distanciaExibida.toFixed(1).replace('.', ',') + ' km';
-      document.getElementById('tabela-fechamento-dist').textContent = distanciaExibida.toFixed(1).replace('.', ',') + ' km';
-
-      document.getElementById('resumo-mini-dist').textContent = distMini.toFixed(1).replace('.', ',') + ' km';
-      document.getElementById('resumo-mini-viagens').textContent = countMini;
-      document.getElementById('resumo-yuan-dist').textContent = distYuan.toFixed(1).replace('.', ',') + ' km';
-      document.getElementById('resumo-yuan-viagens').textContent = countYuan;
-
-      var totalViagensExibidas = baseViagens.length > 0 ? baseViagens.length : 47;
-      document.getElementById('txt-status-online').textContent = 'Online (' + totalViagensExibidas + ' viagens)';
-
-      renderizarTabelaTeste(filtroCarro);
-      desenharGraficosTeste();
-    }
-
-    function desenharGraficosTeste() {
-      var ctx1 = document.getElementById('chartConsumo');
-      if (ctx1) {
-        if (chartC) { chartC.destroy(); }
-        chartC = new Chart(ctx1.getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: ['10-01', '10-02', '10-04', '10-05', '10-06', '10-07', '10-08', '10-09', '10-13', '10-14', '10-15', '10-16', '10-17', '10-18'],
-            datasets: [{
-              data: [16.5, 11.8, 16.2, 11.2, 13.8, 11.9, 13.5, 10.4, 8.9, 13.5, 11.1, 19.8, 11.1, 11.6],
-              borderColor: '#0284C7',
-              fill: true,
-              backgroundColor: 'rgba(2, 132, 199, 0.1)',
-              tension: 0.3
-            }]
-          },
-          options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { ticks: { font: { size: 9 } } },
-              y: { ticks: { font: { size: 9 } } }
-            }
-          }
-        });
-      }
-
-      var ctx2 = document.getElementById('chartGastos');
-      if (ctx2) {
-        if (chartG) { chartG.destroy(); }
-        chartG = new Chart(ctx2.getContext('2d'), {
-          type: 'bar',
-          data: {
-            labels: ['Elétrico Real', 'Combustível Ref.'],
-            datasets: [{
-              data: [73.76, 624.26],
-              backgroundColor: ['#10B981', '#E11D48'],
-              borderRadius: 6,
-              barThickness: 45
-            }]
-          },
-          options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { ticks: { font: { size: 10 } } },
-              y: { ticks: { font: { size: 9 } } }
-            }
-          }
-        });
-      }
-    }
-  </script>
-</body>
-</html>
+      if(cons) document.
