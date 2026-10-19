@@ -64,7 +64,9 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <button type="button" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
+        <!-- Input oculto para importação de arquivo Carllog -->
+        <input type="file" id="input-arquivo-carllog" class="hidden" accept=".json,.csv" onchange="processarArquivoCarllog(event)">
+        <button type="button" onclick="document.getElementById('input-arquivo-carllog').click()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
           📁 Importar Carllog
         </button>
         <button type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold text-xs border border-slate-700 transition flex items-center gap-1">
@@ -187,53 +189,29 @@
     <!-- SEÇÃO: DESPESAS EXTRAS & LUGARES MAIS VISITADOS -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       
-      <!-- DESPESAS EXTRAS / MANUTENÇÃO -->
+      <!-- DESPESAS EXTRAS / MANUTENÇÃO (REAIS / ZERADAS ATÉ LANÇAMENTO) -->
       <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm p-4 space-y-3">
         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
           <h3 class="text-xs font-bold uppercase text-white flex items-center gap-1.5">
             🛠️ Despesas Extras & Manutenção
           </h3>
-          <span class="text-[10px] text-amber-400 font-mono bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">Histórico</span>
+          <span class="text-[10px] text-slate-400 font-mono bg-slate-800 px-2 py-0.5 rounded border border-slate-700 font-bold">Total: R$ 0,00</span>
         </div>
-        <div class="space-y-2 text-xs text-slate-300">
-          <div class="flex justify-between items-center bg-[#0F172A] p-2.5 rounded-lg border border-slate-800">
-            <div>
-              <span class="font-bold text-white block">Serviço de Pneu (Yellow Car Pneus - Candeias)</span>
-              <span class="text-[10px] text-slate-400">Yuan Pro</span>
-            </div>
-            <span class="font-mono text-emerald-400 font-bold">Registrado</span>
-          </div>
-          <div class="flex justify-between items-center bg-[#0F172A] p-2.5 rounded-lg border border-slate-800">
-            <div>
-              <span class="font-bold text-white block">Garantia / Fixação Para-choque (BYD Parvi)</span>
-              <span class="text-[10px] text-slate-400">Dolphin Mini</span>
-            </div>
-            <span class="font-mono text-cyan-400 font-bold">Garantia</span>
-          </div>
+        <div id="lista-despesas-extras" class="space-y-2 text-xs text-slate-400 text-center py-4 font-mono">
+          Nenhuma despesa extra cadastrada no período.
         </div>
       </div>
 
-      <!-- LUGARES MAIS VISITADOS (QUANTITATIVO) -->
+      <!-- LUGARES MAIS VISITADOS -->
       <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm p-4 space-y-3">
         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
           <h3 class="text-xs font-bold uppercase text-white flex items-center gap-1.5">
             📍 Locais Mais Visitados (Destinos Frequentes)
           </h3>
-          <span class="text-[10px] text-cyan-400 font-mono">Ranking</span>
+          <span class="text-[10px] text-cyan-400 font-mono">Ranking Dinâmico</span>
         </div>
-        <div class="space-y-2 text-xs">
-          <div class="flex justify-between items-center bg-[#0F172A] px-3 py-2 rounded-lg border border-slate-800">
-            <span class="text-slate-200 font-semibold">1. Candeias / Boa Viagem (Rotina Diária)</span>
-            <span class="font-mono bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded font-bold">Frequente</span>
-          </div>
-          <div class="flex justify-between items-center bg-[#0F172A] px-3 py-2 rounded-lg border border-slate-800">
-            <span class="text-slate-200 font-semibold">2. Shopping Guararapes & Região</span>
-            <span class="font-mono bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded font-bold">Ativo</span>
-          </div>
-          <div class="flex justify-between items-center bg-[#0F172A] px-3 py-2 rounded-lg border border-slate-800">
-            <span class="text-slate-200 font-semibold">3. Caruaru Shopping (Via BR-232)</span>
-            <span class="font-mono bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded font-bold">Rota EV</span>
-          </div>
+        <div id="lista-locais-visitados" class="space-y-2 text-xs text-slate-400 text-center py-4 font-mono">
+          Aguardando importação do Carllog...
         </div>
       </div>
 
@@ -269,11 +247,11 @@
       </div>
     </div>
 
-    <!-- TABELA COMPLETA: TODAS AS VIAGENS REALIZADAS -->
+    <!-- TABELA COMPLETA: TODAS AS VIAGENS (DADOS REAIS DO CARLLOG) -->
     <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm overflow-hidden space-y-2 p-4">
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xs font-bold uppercase text-white">📋 Todas as Viagens Realizadas (Histórico Completo)</h3>
-        <span class="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold" id="txt-status-online">Online (47 viagens)</span>
+        <h3 class="text-xs font-bold uppercase text-white">📋 Todas as Viagens Realizadas (Histórico Carllog)</h3>
+        <span class="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold" id="txt-status-online">Aguardando Importação</span>
       </div>
       <div class="overflow-x-auto custom-scroll max-h-96">
         <table class="w-full text-left text-xs font-mono">
@@ -286,23 +264,10 @@
             </tr>
           </thead>
           <tbody id="tabela-viagens-sincronizadas" class="divide-y divide-slate-800/60 text-slate-300">
-            <tr class="hover:bg-slate-800/40 transition" data-carro="Dolphin Mini">
-              <td class="p-2">
-                <span class="font-bold text-cyan-400 block">BYD Dolphin Mini (MINI)</span>
-                <span class="text-[10px] text-slate-400 block">18/10/2026 14:30</span>
+            <tr>
+              <td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">
+                Nenhum dado importado. Clique em <strong>"📁 Importar Carllog"</strong> para carregar o seu ficheiro de viagens.
               </td>
-              <td class="p-2 text-right font-bold text-white">14,2 km</td>
-              <td class="p-2 text-right text-purple-400 font-bold">1.65 kWh</td>
-              <td class="p-2 text-slate-300 font-mono">Candeias ➔ Boa Viagem</td>
-            </tr>
-            <tr class="hover:bg-slate-800/40 transition" data-carro="Yuan Pro">
-              <td class="p-2">
-                <span class="font-bold text-purple-400 block">BYD Yuan Pro</span>
-                <span class="text-[10px] text-slate-400 block">17/10/2026 09:15</span>
-              </td>
-              <td class="p-2 text-right font-bold text-white">6,0 km</td>
-              <td class="p-2 text-right text-purple-400 font-bold">0.80 kWh</td>
-              <td class="p-2 text-slate-300 font-mono">Shopping Guararapes ➔ Candeias</td>
             </tr>
           </tbody>
         </table>
@@ -328,50 +293,90 @@
     </div>
   </div>
 
-  <!-- SCRIPT INTEGRADO: FILTROS E GRÁFICOS -->
+  <!-- SCRIPT DE PROCESSAMENTO E IMPORTAÇÃO DO CARLLOG -->
   <script>
     var chartC = null, chartG = null;
+    var dadosViagensGlobais = [];
 
     document.addEventListener("DOMContentLoaded", function() {
       atualizarPainel();
     });
 
+    // Função para processar o arquivo exportado do Carllog
+    function processarArquivoCarllog(event) {
+      var arquivo = event.target.files[0];
+      if (!arquivo) return;
+
+      var leitor = new FileReader();
+      leitor.onload = function(e) {
+        try {
+          var conteudo = e.target.result;
+          // Tenta processar como JSON (padrão de exportação Carllog / Firebase)
+          var dados = JSON.parse(conteudo);
+          dadosViagensGlobais = Array.isArray(dados) ? dados : (dados.viagens || []);
+          
+          renderizarTabelaViagens(dadosViagensGlobais);
+          document.getElementById('txt-status-online').textContent = 'Online (' + dadosViagensGlobais.length + ' viagens)';
+          alert('Carllog importado com sucesso! ' + dadosViagensGlobais.length + ' viagens carregadas.');
+        } catch (err) {
+          console.error("Erro ao analisar ficheiro Carllog:", err);
+          alert('Erro ao processar o ficheiro. Certifique-se de que é um formato JSON válido do Carllog.');
+        }
+      };
+      leitor.readAsText(arquivo);
+    }
+
+    function renderizarTabelaViagens(viagens) {
+      var tbody = document.getElementById('tabela-viagens-sincronizadas');
+      if (!tbody) return;
+
+      if (viagens.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">Nenhuma viagem encontrada no ficheiro.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      var selectVeiculo = document.getElementById('filtro-veiculo-global');
+      var filtroCarro = selectVeiculo ? selectVeiculo.value : 'todos';
+
+      var filtradas = viagens.filter(function(v) {
+        if (filtroCarro === 'todos') return true;
+        var veiculoStr = (v.veiculo || v.car || '').toLowerCase();
+        return veiculoStr.includes(filtroCarro.toLowerCase());
+      });
+
+      filtradas.forEach(function(v) {
+        var veiculoNome = v.veiculo || v.car || 'Veículo EV';
+        var corTexto = veiculoNome.toLowerCase().includes('yuan') ? 'text-purple-400' : 'text-cyan-400';
+        var dataHora = v.dataHora || v.date || 'Data não informada';
+        var distancia = (v.distancia || v.distance || 0) + ' km';
+        var energia = (v.energia || v.kwh || 0) + ' kWh';
+        var trajeto = v.trajeto || v.route || 'Percurso não especificado';
+
+        html += '<tr class="hover:bg-slate-800/40 transition" data-carro="' + veiculoNome + '">' +
+                  '<td class="p-2">' +
+                    '<span class="font-bold ' + corTexto + ' block">' + veiculoNome + '</span>' +
+                    '<span class="text-[10px] text-slate-400 block">' + dataHora + '</span>' +
+                  '</td>' +
+                  '<td class="p-2 text-right font-bold text-white">' + distancia + '</td>' +
+                  '<td class="p-2 text-right text-purple-400 font-bold">' + energia + '</td>' +
+                  '<td class="p-2 text-slate-300 font-mono">' + trajeto + '</td>' +
+                '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
     function atualizarPainel() {
       var selectPeriodo = document.getElementById('filtro-periodo-rapido');
-      var selectVeiculo = document.getElementById('filtro-veiculo-global');
       var txtPeriodoExibido = document.getElementById('txt-periodo-exibido');
       
       if (selectPeriodo && txtPeriodoExibido) {
         txtPeriodoExibido.textContent = selectPeriodo.options[selectPeriodo.selectedIndex].text;
       }
 
-      var veiculoSel = selectVeiculo ? selectVeiculo.value : 'todos';
-      var containerResumo = document.getElementById('container-resumo-veiculos');
-      
-      if (containerResumo) {
-        if (veiculoSel === 'todos') {
-          containerResumo.classList.remove('hidden');
-        } else {
-          containerResumo.classList.add('hidden');
-        }
-      }
-
-      var linhasViagens = document.querySelectorAll('#tabela-viagens-sincronizadas tr');
-      var visiveisCount = 0;
-      
-      linhasViagens.forEach(function(tr) {
-        var carroTr = tr.getAttribute('data-carro') || '';
-        if (veiculoSel === 'todos' || carroTr.toLowerCase().includes(veiculoSel.toLowerCase())) {
-          tr.style.display = '';
-          visiveisCount++;
-        } else {
-          tr.style.display = 'none';
-        }
-      });
-
-      var txtStatus = document.getElementById('txt-status-online');
-      if (txtStatus) {
-        txtStatus.textContent = 'Online (' + visiveisCount + ' viagens)';
+      if (dadosViagensGlobais.length > 0) {
+        renderizarTabelaViagens(dadosViagensGlobais);
       }
 
       try {
