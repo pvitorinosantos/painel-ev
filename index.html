@@ -136,11 +136,11 @@
         <div class="grid grid-cols-3 gap-2 text-center pt-1">
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">DISTÂNCIA</span>
-            <strong class="text-xs font-bold text-white font-mono">577,0 km</strong>
+            <strong id="resumo-mini-dist" class="text-xs font-bold text-white font-mono">577,0 km</strong>
           </div>
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">VIAGENS</span>
-            <strong class="text-xs font-bold text-cyan-400 font-mono">46</strong>
+            <strong id="resumo-mini-viagens" class="text-xs font-bold text-cyan-400 font-mono">46</strong>
           </div>
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">GASTO RECARGAS</span>
@@ -160,11 +160,11 @@
         <div class="grid grid-cols-3 gap-2 text-center pt-1">
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">DISTÂNCIA</span>
-            <strong class="text-xs font-bold text-white font-mono">6,0 km</strong>
+            <strong id="resumo-yuan-dist" class="text-xs font-bold text-white font-mono">6,0 km</strong>
           </div>
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">VIAGENS</span>
-            <strong class="text-xs font-bold text-cyan-400 font-mono">1</strong>
+            <strong id="resumo-yuan-viagens" class="text-xs font-bold text-cyan-400 font-mono">1</strong>
           </div>
           <div class="bg-[#0F172A] p-2 rounded-lg border border-slate-800">
             <span class="text-[8px] text-slate-400 uppercase block">GASTO RECARGAS</span>
@@ -189,7 +189,7 @@
     <!-- SEÇÃO: DESPESAS EXTRAS & LUGARES MAIS VISITADOS -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       
-      <!-- DESPESAS EXTRAS / MANUTENÇÃO (ZERADAS REAIS) -->
+      <!-- DESPESAS EXTRAS / MANUTENÇÃO -->
       <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm p-4 space-y-3">
         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
           <h3 class="text-xs font-bold uppercase text-white flex items-center gap-1.5">
@@ -237,7 +237,7 @@
           <tbody class="divide-y divide-slate-800/60 text-slate-300">
             <tr>
               <td class="p-2 text-cyan-400 font-bold">10/2026</td>
-              <td class="p-2 text-right font-semibold">583,0 km</td>
+              <td id="tabela-fechamento-dist" class="p-2 text-right font-semibold">583,0 km</td>
               <td class="p-2 text-right text-emerald-400 font-bold">R$ 67,24</td>
               <td class="p-2 text-right text-rose-400 font-semibold">R$ 624,26</td>
               <td class="p-2 text-right text-emerald-400 font-bold">R$ 557,02</td>
@@ -293,7 +293,7 @@
     </div>
   </div>
 
-  <!-- SCRIPT DE PROCESSAMENTO CSV DO CARLLOG -->
+  <!-- SCRIPT DE PROCESSAMENTO E ATUALIZAÇÃO DINÂMICA DE KPIS E TABELA -->
   <script>
     var chartC = null, chartG = null;
     var viagensCsvGlobais = [];
@@ -316,7 +316,6 @@
             return;
           }
 
-          // Detecta o separador (vírgula ou ponto e vírgula)
           var primeiraLinha = linhas[0];
           var separador = primeiraLinha.includes(';') ? ';' : ',';
           var cabecalhos = primeiraLinha.split(separador).map(function(h) { return h.trim().replace(/^"|"$/g, ''); });
@@ -327,9 +326,8 @@
             var linha = linhas[i].trim();
             if (!linha) continue;
 
-            // Parser simples de CSV considerando possíveis aspas
             var valores = [];
-            var dentroDeAspas =ാതെ = false;
+            var dentroDeAspas = false;
             var valorAtual = '';
             for (var c = 0; c < linha.length; c++) {
               var char = linha[c];
@@ -351,15 +349,62 @@
             viagensCsvGlobais.push(obj);
           }
 
-          renderizarTabelaCsv(viagensCsvGlobais);
+          // Recalcula KPIs e atualiza tela inteira com base nos dados reais importados
+          recalcularKpisEAtualizarTela(viagensCsvGlobais);
           document.getElementById('txt-status-online').textContent = 'Online (' + viagensCsvGlobais.length + ' viagens)';
-          alert('Relatório Carllog importado com sucesso! ' + viagensCsvGlobais.length + ' viagens carregadas.');
+          alert('Carllog importado com sucesso! ' + viagensCsvGlobais.length + ' viagens carregadas e KPIs atualizados.');
         } catch (err) {
           console.error("Erro ao processar CSV:", err);
           alert('Erro ao processar o arquivo CSV. Verifique o formato.');
         }
       };
       leitor.readAsText(arquivo, 'UTF-8');
+    }
+
+    function recalcularKpisEAtualizarTela(viagens) {
+      var selectVeiculo = document.getElementById('filtro-veiculo-global');
+      var filtroCarro = selectVeiculo ? selectVeiculo.value : 'todos';
+
+      var distTotal = 0;
+      var countMini = 0;
+      var distMini = 0;
+      var countYuan = 0;
+      var distYuan = 0;
+
+      viagens.forEach(function(v) {
+        var carro = (v['Carro'] || v['car'] || '').toUpperCase();
+        var rawDist = v['D(Distância)'] || v['Distância'] || v['Distancia'] || '0';
+        var dist = parseFloat(rawDist.replace(',', '.')) || 0;
+
+        distTotal += dist;
+        if (carro.includes('MINI')) {
+          countMini++;
+          distMini += dist;
+        } else if (carro.includes('YUN')) {
+          countYuan++;
+          distYuan += dist;
+        }
+      });
+
+      // Atualiza os KPIs principais na tela
+      var elDist = document.getElementById('kpi-distancia');
+      if (elDist) elDist.textContent = distTotal.toFixed(1).replace('.', ',') + ' km';
+
+      var elFechamento = document.getElementById('tabela-fechamento-dist');
+      if (elFechamento) elFechamento.textContent = distTotal.toFixed(1).replace('.', ',') + ' km';
+
+      // Atualiza os cards individuais por veículo se existirem
+      var elMiniDist = document.getElementById('resumo-mini-dist');
+      if (elMiniDist) elMiniDist.textContent = distMini.toFixed(1).replace('.', ',') + ' km';
+      var elMiniViagens = document.getElementById('resumo-mini-viagens');
+      if (elMiniViagens) elMiniViagens.textContent = countMini;
+
+      var elYuanDist = document.getElementById('resumo-yuan-dist');
+      if (elYuanDist) elYuanDist.textContent = distYuan.toFixed(1).replace('.', ',') + ' km';
+      var elYuanViagens = document.getElementById('resumo-yuan-viagens');
+      if (elYuanViagens) elYuanViagens.textContent = countYuan;
+
+      renderizarTabelaCsv(viagens);
     }
 
     function renderizarTabelaCsv(viagens) {
@@ -382,7 +427,7 @@
       });
 
       if (filtradas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">Nenhuma viagem para o veículo selecionado neste arquivo.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">Nenhuma viagem para o veículo selecionado neste filtro.</td></tr>';
         return;
       }
 
@@ -419,7 +464,7 @@
       }
 
       if (viagensCsvGlobais.length > 0) {
-        renderizarTabelaCsv(viagensCsvGlobais);
+        recalcularKpisEAtualizarTela(viagensCsvGlobais);
       }
 
       try {
