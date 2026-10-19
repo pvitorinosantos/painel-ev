@@ -64,8 +64,8 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <!-- Input oculto para importação de arquivo Carllog -->
-        <input type="file" id="input-arquivo-carllog" class="hidden" accept=".json,.csv" onchange="processarArquivoCarllog(event)">
+        <!-- Input para importação Carllog -->
+        <input type="file" id="input-arquivo-carllog" class="hidden" accept=".json,.csv,.txt" onchange="processarArquivoCarllog(event)">
         <button type="button" onclick="document.getElementById('input-arquivo-carllog').click()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
           📁 Importar Carllog
         </button>
@@ -189,7 +189,7 @@
     <!-- SEÇÃO: DESPESAS EXTRAS & LUGARES MAIS VISITADOS -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       
-      <!-- DESPESAS EXTRAS / MANUTENÇÃO (REAIS / ZERADAS ATÉ LANÇAMENTO) -->
+      <!-- DESPESAS EXTRAS / MANUTENÇÃO (ZERADAS REAIS) -->
       <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm p-4 space-y-3">
         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
           <h3 class="text-xs font-bold uppercase text-white flex items-center gap-1.5">
@@ -197,7 +197,7 @@
           </h3>
           <span class="text-[10px] text-slate-400 font-mono bg-slate-800 px-2 py-0.5 rounded border border-slate-700 font-bold">Total: R$ 0,00</span>
         </div>
-        <div id="lista-despesas-extras" class="space-y-2 text-xs text-slate-400 text-center py-4 font-mono">
+        <div class="space-y-2 text-xs text-slate-400 text-center py-4 font-mono">
           Nenhuma despesa extra cadastrada no período.
         </div>
       </div>
@@ -247,7 +247,7 @@
       </div>
     </div>
 
-    <!-- TABELA COMPLETA: TODAS AS VIAGENS (DADOS REAIS DO CARLLOG) -->
+    <!-- TABELA COMPLETA: TODAS AS VIAGENS -->
     <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm overflow-hidden space-y-2 p-4">
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-xs font-bold uppercase text-white">📋 Todas as Viagens Realizadas (Histórico Carllog)</h3>
@@ -293,7 +293,7 @@
     </div>
   </div>
 
-  <!-- SCRIPT DE PROCESSAMENTO E IMPORTAÇÃO DO CARLLOG -->
+  <!-- SCRIPT DE PROCESSAMENTO ROBUSTO DO CARLLOG -->
   <script>
     var chartC = null, chartG = null;
     var dadosViagensGlobais = [];
@@ -302,7 +302,6 @@
       atualizarPainel();
     });
 
-    // Função para processar o arquivo exportado do Carllog
     function processarArquivoCarllog(event) {
       var arquivo = event.target.files[0];
       if (!arquivo) return;
@@ -311,16 +310,25 @@
       leitor.onload = function(e) {
         try {
           var conteudo = e.target.result;
-          // Tenta processar como JSON (padrão de exportação Carllog / Firebase)
-          var dados = JSON.parse(conteudo);
-          dadosViagensGlobais = Array.isArray(dados) ? dados : (dados.viagens || []);
+          var jsonParsed = JSON.parse(conteudo);
           
+          // Compatibilidade flexível com diferentes estruturas de exportação (Array direto, objeto com .viagens, .data, etc.)
+          if (Array.isArray(jsonParsed)) {
+            dadosViagensGlobais = jsonParsed;
+          } else if (jsonParsed.viagens && Array.isArray(jsonParsed.viagens)) {
+            dadosViagensGlobais = jsonParsed.viagens;
+          } else if (jsonParsed.data && Array.isArray(jsonParsed.data)) {
+            dadosViagensGlobais = jsonParsed.data;
+          } else {
+            // Se for um objeto único ou chaves do Firestore exportadas, converte em array
+            dadosViagensGlobais = Object.values(jsonParsed);
+          }
+
           renderizarTabelaViagens(dadosViagensGlobais);
           document.getElementById('txt-status-online').textContent = 'Online (' + dadosViagensGlobais.length + ' viagens)';
-          alert('Carllog importado com sucesso! ' + dadosViagensGlobais.length + ' viagens carregadas.');
         } catch (err) {
-          console.error("Erro ao analisar ficheiro Carllog:", err);
-          alert('Erro ao processar o ficheiro. Certifique-se de que é um formato JSON válido do Carllog.');
+          console.error("Erro ao analisar arquivo:", err);
+          alert('Não foi possível ler o arquivo como JSON. Verifique se o formato exportado pelo Carllog é válido.');
         }
       };
       leitor.readAsText(arquivo);
@@ -330,8 +338,8 @@
       var tbody = document.getElementById('tabela-viagens-sincronizadas');
       if (!tbody) return;
 
-      if (viagens.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">Nenhuma viagem encontrada no ficheiro.</td></tr>';
+      if (!viagens || viagens.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">Nenhuma viagem encontrada.</td></tr>';
         return;
       }
 
@@ -340,18 +348,24 @@
       var filtroCarro = selectVeiculo ? selectVeiculo.value : 'todos';
 
       var filtradas = viagens.filter(function(v) {
+        if (!v) return false;
         if (filtroCarro === 'todos') return true;
-        var veiculoStr = (v.veiculo || v.car || '').toLowerCase();
+        var veiculoStr = (v.veiculo || v.car || v.modelo || '').toLowerCase();
         return veiculoStr.includes(filtroCarro.toLowerCase());
       });
 
+      if (filtradas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">Nenhuma viagem para o veículo selecionado.</td></tr>';
+        return;
+      }
+
       filtradas.forEach(function(v) {
-        var veiculoNome = v.veiculo || v.car || 'Veículo EV';
+        var veiculoNome = v.veiculo || v.car || v.modelo || 'Veículo EV';
         var corTexto = veiculoNome.toLowerCase().includes('yuan') ? 'text-purple-400' : 'text-cyan-400';
-        var dataHora = v.dataHora || v.date || 'Data não informada';
+        var dataHora = v.dataHora || v.date || v.timestamp || 'Data não informada';
         var distancia = (v.distancia || v.distance || 0) + ' km';
-        var energia = (v.energia || v.kwh || 0) + ' kWh';
-        var trajeto = v.trajeto || v.route || 'Percurso não especificado';
+        var energia = (v.energia || v.kwh || v.consumoKwh || 0) + ' kWh';
+        var trajeto = v.trajeto || v.route || v.destino || v.percurso || 'Percurso não especificado';
 
         html += '<tr class="hover:bg-slate-800/40 transition" data-carro="' + veiculoNome + '">' +
                   '<td class="p-2">' +
