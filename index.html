@@ -2,10 +2,9 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Painel de Gestão EV | Frota BYD Nuvem</title>
   
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,9 +13,13 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- Firebase SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <style>
-    body { background-color: #060B18; color: #E2E8F0; font-family: 'Plus Jakarta Sans', sans-serif; }
-    .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+    body { background-color: #060B18; color: #E2E8F0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scroll::-webkit-scrollbar-track { background: #0A1226; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #1F3463; border-radius: 4px; }
   </style>
@@ -34,170 +37,189 @@
 </head>
 <body class="min-h-screen flex flex-col bg-[#060B18] text-slate-100 antialiased selection:bg-[#00E5FF] selection:text-black">
 
-  <!-- ================= TOPBAR / CABEÇALHO ================= -->
-  <header class="sticky top-0 z-40 bg-[#0A1226]/95 backdrop-blur border-b border-[#142347] px-4 py-3">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-      
-      <!-- LADO ESQUERDO: LOGO E FILTRO -->
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00E5FF] to-blue-600 flex items-center justify-center font-extrabold text-[#060B18] text-sm shadow-md">
+  <!-- ================= TOPBAR ================= -->
+  <header class="sticky top-0 z-40 bg-[#0A1226]/95 backdrop-blur border-b border-[#142347] px-3 sm:px-6 py-2.5">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00E5FF] to-blue-600 flex items-center justify-center font-extrabold text-[#060B18] text-sm shadow-md shadow-[#00E5FF]/20">
           BYD
         </div>
         <div>
-          <h1 class="text-sm font-bold text-white flex items-center gap-2">
-            TELEMETRIA & NUVEM
-            <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30">
+          <span class="text-[9px] font-bold tracking-widest text-[#00E5FF] uppercase block">Telemetria & Nuvem</span>
+          <h1 class="text-xs sm:text-base font-bold text-white flex items-center gap-2">
+            Dolphin Mini & Yuan Pro
+            <span id="badge-cloud-status" class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono border border-emerald-500/30">
               Nuvem Conectada
             </span>
           </h1>
-          <p class="text-xs font-semibold text-cyan-400">Dolphin Mini & Yuan Pro</p>
-        </div>
-
-        <!-- FILTRO DE VEÍCULO ADICIONADO AQUI -->
-        <div class="ml-2 flex items-center gap-1.5 bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1">
-          <span class="text-[10px] text-cyan-400 font-bold uppercase">🚗 Veículo:</span>
-          <select id="filtro-veiculo-global" onchange="renderizarTudo()" class="bg-transparent text-xs text-white font-semibold outline-none cursor-pointer">
-            <option value="todos" class="bg-[#0A1226]">Frota Total (Todos)</option>
-            <option value="Dolphin Mini" class="bg-[#0A1226]">BYD Dolphin Mini (MINI)</option>
-            <option value="Yuan Pro" class="bg-[#0A1226]">BYD Yuan Pro</option>
-          </select>
         </div>
       </div>
 
-      <!-- LADO DIREITO: BOTÕES -->
-      <div class="flex items-center gap-2">
-        <label class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <label class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs cursor-pointer transition shadow-md flex items-center gap-1">
           📁 Importar Carllog
           <input type="file" id="input-arquivo-carllog" accept=".json,.csv,.txt,.tsv" onchange="processarArquivoCarllog(event)" class="hidden">
         </label>
-        <button type="button" onclick="abrirModal('modal-combustivel')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-slate-300 font-semibold text-xs border border-[#1F3463] transition flex items-center gap-1">
-          🏎️ Ref. Combustível
+        <button type="button" onclick="abrirModal('modal-referencia')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-amber-400 font-semibold text-xs border border-[#142347] transition">
+          🚗 Ref. Combustível
         </button>
-        <button type="button" onclick="abrirModal('modal-parametros')" class="px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#1F3463] transition flex items-center gap-1">
+        <button type="button" onclick="abrirModal('modal-parametros')" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#142347] hover:bg-[#1F3463] text-cyan-400 font-semibold text-xs border border-[#142347] transition">
           ⚙️ Parâmetros
         </button>
       </div>
-
     </div>
   </header>
 
-  <!-- ================= CONTEÚDO PRINCIPAL ================= -->
-  <main class="max-w-7xl mx-auto px-4 py-4 flex-1 w-full space-y-4">
+  <!-- ================= PAINEL PRINCIPAL ================= -->
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 flex-1 w-full space-y-4">
 
-    <!-- FILTRO DE PERÍODO -->
-    <div class="bg-[#0A1226] p-3 rounded-xl border border-[#1F3463] flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-bold text-[#00E5FF] uppercase">📅 FILTRAR PERÍODO:</span>
-        <select id="filtro-periodo-rapido" onchange="renderizarTudo()" class="bg-[#060B18] border border-[#1F3463] text-xs text-white rounded-lg px-2.5 py-1.5 font-mono outline-none">
+    <!-- BARRA DE FILTRO DE DATAS -->
+    <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#1F3463] shadow-lg flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <span class="text-xs font-bold text-[#00E5FF] uppercase">📅 Filtrar Período:</span>
+        <select id="filtro-periodo-rapido" onchange="mudarFiltroRapido()" class="bg-[#060B18] border border-[#1F3463] text-xs text-white rounded-lg px-3 py-2 font-mono outline-none focus:border-[#00E5FF]">
           <option value="todos">Todas as Datas (Completo)</option>
-          <option value="mes_atual">Este Mês (Outubro 2026)</option>
+          <option value="mes_atual">Este Mês</option>
           <option value="ano_atual">Este Ano (2026)</option>
+          <option value="personalizado">Personalizado (Intervalo)</option>
         </select>
       </div>
-      <span class="text-xs text-slate-400 font-mono">Exibindo: <strong id="txt-periodo-exibido" class="text-cyan-400">Todo o Histórico</strong></span>
-    </div>
 
-    <!-- CARDS DE KPIS PRINCIPAIS -->
-    <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
-      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
-        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">DISTÂNCIA TOTAL</span>
-        <strong id="kpi-distancia" class="text-lg font-extrabold text-white font-mono">583,0 km</strong>
+      <div id="container-datas-custom" class="hidden flex items-center gap-2 text-xs">
+        <div class="flex items-center gap-1">
+          <span class="text-slate-400 text-[10px]">De:</span>
+          <input type="date" id="filtro-data-inicio" onchange="aplicarFiltroDatas()" class="bg-[#060B18] border border-[#1F3463] text-white rounded-lg px-2.5 py-1.5 font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div class="flex items-center gap-1">
+          <span class="text-slate-400 text-[10px]">Até:</span>
+          <input type="date" id="filtro-data-fim" onchange="aplicarFiltroDatas()" class="bg-[#060B18] border border-[#1F3463] text-white rounded-lg px-2.5 py-1.5 font-mono outline-none focus:border-[#00E5FF]">
+        </div>
       </div>
-      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
-        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">CUSTO RECARGAS</span>
-        <strong id="kpi-recargas" class="text-lg font-extrabold text-emerald-400 font-mono">R$ 73,76</strong>
-      </div>
-      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
-        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">CUSTO REAL / KM</span>
-        <strong id="kpi-custo-km" class="text-lg font-extrabold text-cyan-400 font-mono">0,127 <span class="text-xs font-normal">R$/km</span></strong>
-      </div>
-      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
-        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">CONSUMO MÉDIO</span>
-        <strong id="kpi-consumo" class="text-lg font-extrabold text-purple-400 font-mono">11,6 <span class="text-xs font-normal">kWh/100km</span></strong>
-      </div>
-      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
-        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">CO₂ EVITADO (ESG)</span>
-        <strong id="kpi-co2" class="text-lg font-extrabold text-emerald-400 font-mono">47,2 <span class="text-xs font-normal">kg</span></strong>
-      </div>
-      <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
-        <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">ECONOMIA LÍQUIDA</span>
-        <strong id="kpi-economia" class="text-lg font-extrabold text-emerald-400 font-mono">R$ 550,50</strong>
+      
+      <div class="text-xs text-slate-300 font-mono bg-[#060B18] px-3 py-1.5 rounded-lg border border-[#142347]" id="txt-status-filtro">
+        Exibindo: <strong class="text-cyan-400">Todo o Histórico</strong>
       </div>
     </div>
 
-    <!-- CARDS DE RESUMO INDIVIDUAL -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="container-resumo-veiculos">
-      <div class="bg-[#0A1226] p-3.5 rounded-xl border border-[#142347] space-y-2">
-        <div class="flex justify-between items-center">
+    <!-- KPIS COMPLETOS -->
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Distância Total</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span id="kpi-distancia" class="text-xl sm:text-2xl font-extrabold text-white font-mono">0,0</span>
+          <span class="text-xs text-slate-400">km</span>
+        </div>
+      </div>
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Custo Recargas</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span class="text-xs text-slate-400">R$</span>
+          <span id="kpi-recargas" class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">0,00</span>
+        </div>
+      </div>
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Custo Real / km</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span id="kpi-custo-km" class="text-xl sm:text-2xl font-extrabold text-white font-mono">—</span>
+          <span class="text-xs text-slate-400">R$/km</span>
+        </div>
+      </div>
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Consumo Médio</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span id="kpi-consumo" class="text-xl sm:text-2xl font-extrabold text-purple-400 font-mono">—</span>
+          <span class="text-xs text-slate-400">kWh/100km</span>
+        </div>
+      </div>
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">CO₂ Evitado (ESG)</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span id="kpi-co2" class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">0,0</span>
+          <span class="text-xs text-slate-400">kg</span>
+        </div>
+      </div>
+      <div class="bg-[#0A1226] p-3 sm:p-4 rounded-xl border border-[#142347]">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Economia Líquida</span>
+        <div class="mt-1 flex items-baseline gap-1">
+          <span class="text-xs text-slate-400">R$</span>
+          <span id="kpi-economia" class="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARDS DOS VEÍCULOS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
           <div>
-            <span class="text-[9px] font-bold uppercase text-slate-400 block">SUBCOMPACTO EV</span>
-            <h3 class="text-sm font-bold text-white">BYD Dolphin Mini (MINI)</h3>
+            <span class="text-[9px] uppercase font-bold text-[#00E5FF]">Subcompacto EV</span>
+            <h2 class="text-sm sm:text-base font-bold text-white">BYD Dolphin Mini (MINI)</h2>
           </div>
-          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">LGXCE4CC8S0046239</span>
+          <span class="text-[9px] px-2 py-0.5 bg-[#0F1A36] text-[#00E5FF] rounded-full font-mono border border-[#1F3463]">LGXCE4CC8S0046239</span>
         </div>
-        <div class="grid grid-cols-3 gap-2 text-center pt-1">
+        <div class="grid grid-cols-3 gap-2 my-2.5 text-center">
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
-            <span class="text-[8px] text-slate-400 uppercase block">DISTÂNCIA</span>
-            <strong class="text-xs font-bold text-white font-mono">577,0 km</strong>
+            <span class="text-[9px] text-slate-400 block uppercase">Distância</span>
+            <strong id="card-dolphin-km" class="text-sm font-bold font-mono text-white">0,0 km</strong>
           </div>
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
-            <span class="text-[8px] text-slate-400 uppercase block">VIAGENS</span>
-            <strong class="text-xs font-bold text-cyan-400 font-mono">46</strong>
+            <span class="text-[9px] text-slate-400 block uppercase">Viagens</span>
+            <strong id="card-dolphin-viagens" class="text-sm font-bold font-mono text-white">0</strong>
           </div>
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
-            <span class="text-[8px] text-slate-400 uppercase block">GASTO RECARGAS</span>
-            <strong class="text-xs font-bold text-emerald-400 font-mono">R$ 73,76</strong>
+            <span class="text-[9px] text-slate-400 block uppercase">Gasto Recargas</span>
+            <strong id="card-dolphin-recargas" class="text-sm font-bold font-mono text-emerald-400">R$ 0,00</strong>
           </div>
         </div>
       </div>
 
-      <div class="bg-[#0A1226] p-3.5 rounded-xl border border-[#142347] space-y-2">
-        <div class="flex justify-between items-center">
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
           <div>
-            <span class="text-[9px] font-bold uppercase text-slate-400 block">SUV URBANO EV</span>
-            <h3 class="text-sm font-bold text-white">BYD Yuan Pro</h3>
+            <span class="text-[9px] uppercase font-bold text-purple-400">SUV Urbano EV</span>
+            <h2 class="text-sm sm:text-base font-bold text-white">BYD Yuan Pro</h2>
           </div>
-          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">LC0CE4CB0S4003744</span>
+          <span class="text-[9px] px-2 py-0.5 bg-[#0F1A36] text-purple-400 rounded-full font-mono border border-[#1F3463]">LC0CE4CB0S4003744</span>
         </div>
-        <div class="grid grid-cols-3 gap-2 text-center pt-1">
+        <div class="grid grid-cols-3 gap-2 my-2.5 text-center">
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
-            <span class="text-[8px] text-slate-400 uppercase block">DISTÂNCIA</span>
-            <strong class="text-xs font-bold text-white font-mono">6,0 km</strong>
+            <span class="text-[9px] text-slate-400 block uppercase">Distância</span>
+            <strong id="card-yuan-km" class="text-sm font-bold font-mono text-white">0,0 km</strong>
           </div>
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
-            <span class="text-[8px] text-slate-400 uppercase block">VIAGENS</span>
-            <strong class="text-xs font-bold text-cyan-400 font-mono">1</strong>
+            <span class="text-[9px] text-slate-400 block uppercase">Viagens</span>
+            <strong id="card-yuan-viagens" class="text-sm font-bold font-mono text-white">0</strong>
           </div>
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
-            <span class="text-[8px] text-slate-400 uppercase block">GASTO RECARGAS</span>
-            <strong class="text-xs font-bold text-emerald-400 font-mono">R$ 0,00</strong>
+            <span class="text-[9px] text-slate-400 block uppercase">Gasto Recargas</span>
+            <strong id="card-yuan-recargas" class="text-sm font-bold font-mono text-emerald-400">R$ 0,00</strong>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- GRÁFICOS -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="bg-[#0A1226] p-4 rounded-xl border border-[#142347] space-y-2">
-        <h3 class="text-xs font-bold uppercase text-white tracking-wide">📈 EVOLUÇÃO DO CONSUMO (KWH/100KM)</h3>
+    <!-- GRÁFICOS CHART.JS -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <h3 class="text-xs sm:text-sm font-bold uppercase text-white mb-2">📊 Evolução do Consumo (kWh/100km)</h3>
         <div class="relative h-48 w-full"><canvas id="chartConsumo"></canvas></div>
       </div>
-      <div class="bg-[#0A1226] p-4 rounded-xl border border-[#142347] space-y-2">
-        <h3 class="text-xs font-bold uppercase text-white tracking-wide">📊 COMPARATIVO DE GASTOS: ELÉTRICO VS. TÉRMICO</h3>
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347]">
+        <h3 class="text-xs sm:text-sm font-bold uppercase text-white mb-2">📊 Comparativo de Gastos: Elétrico vs. Térmico</h3>
         <div class="relative h-48 w-full"><canvas id="chartGastos"></canvas></div>
       </div>
     </div>
 
-    <!-- TABELA: FECHAMENTO MENSAL -->
-    <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden space-y-2 p-4">
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xs font-bold uppercase text-white">📊 FECHAMENTO MENSAL E HISTÓRICO POR PERÍODO</h3>
-        <span class="text-[10px] text-slate-400 font-mono">Agrupado por Competência</span>
+    <!-- SEÇÃO DE FECHAMENTO MENSAL E HISTÓRICO POR PERÍODO -->
+    <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+        <h3 class="text-xs sm:text-sm font-bold uppercase text-white">📅 Fechamento Mensal e Histórico por Período</h3>
+        <span class="text-[10px] text-cyan-400 font-mono">Agrupado por Competência</span>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
           <thead>
-            <tr class="border-b border-[#142347] text-slate-400 text-[10px] uppercase">
+            <tr class="bg-[#0F1A36] text-slate-400 uppercase text-[9px] border-b border-[#142347]">
               <th class="p-2">Mês / Ano</th>
               <th class="p-2 text-right">Distância</th>
               <th class="p-2 text-right">Custo Recargas</th>
@@ -205,14 +227,103 @@
               <th class="p-2 text-right">Economia Líquida</th>
             </tr>
           </thead>
-          <tbody id="lista-fechamento-mensal" class="divide-y divide-[#142347] text-slate-300">
-            <tr>
-              <td class="p-2 text-cyan-400 font-bold">10/2026</td>
-              <td class="p-2 text-right" id="tabela-distancia">583,0 km</td>
-              <td class="p-2 text-right text-emerald-400 font-bold" id="tabela-recargas">R$ 67,24</td>
-              <td class="p-2 text-right text-rose-400" id="tabela-termico">R$ 624,26</td>
-              <td class="p-2 text-right text-emerald-400 font-bold" id="tabela-economia">R$ 557,02</td>
+          <tbody id="tabela-fechamento-mensal" class="divide-y divide-[#142347] text-slate-300">
+            <tr><td colspan="5" class="p-3 text-center text-slate-500">Calculando histórico mensal...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SEÇÃO DE LOCAIS MAIS FREQUENTADOS E COMPARATIVO TÉRMICO -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
+        <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">📍 Locais Mais Frequentados</h3>
+          <span class="text-[10px] text-cyan-400 font-mono">Clique no local p/ abrir o Mapa</span>
+        </div>
+        <div class="overflow-x-auto custom-scroll max-h-48">
+          <table class="w-full text-left text-xs font-mono">
+            <thead>
+              <tr class="bg-[#0F1A36] text-slate-400 uppercase text-[9px] border-b border-[#142347]">
+                <th class="p-2">Local</th>
+                <th class="p-2 text-right">Visitas (Total)</th>
+              </tr>
+            </thead>
+            <tbody id="lista-locais-calor" class="divide-y divide-[#142347] text-slate-300">
+              <tr><td colspan="2" class="p-3 text-center text-slate-500">Calculando locais...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
+        <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+          <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🚗 Veículo a Combustão de Referência</h3>
+          <div class="flex items-center gap-2">
+            <button onclick="abrirModal('modal-referencia')" class="text-[10px] px-2 py-0.5 bg-[#0F1A36] text-amber-400 rounded-full font-mono border border-[#1F3463] hover:bg-[#142347] transition">Alterar Veículo</button>
+            <span class="text-[10px] px-2 py-0.5 bg-[#0F1A36] text-amber-400 rounded-full font-mono border border-[#1F3463]">Parâmetro Ativo</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-[10px] text-slate-400 block">Modelo Base de Comparação:</span>
+            <strong id="ref-modelo-txt" class="text-white font-mono">Citroën 2011</strong>
+          </div>
+          <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-[10px] text-slate-400 block">Consumo Médio Referência:</span>
+            <strong id="ref-consumo-txt" class="text-white font-mono">6.5 km/L</strong>
+          </div>
+          <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-[10px] text-slate-400 block">Preço Gasolina Atual:</span>
+            <strong id="ref-gasolina-txt" class="text-amber-400 font-mono">R$ 6,96 / L</strong>
+          </div>
+          <div class="bg-[#060B18] p-2.5 rounded-lg border border-[#142347]">
+            <span class="text-[10px] text-slate-400 block">Custo Estimado Combustível:</span>
+            <strong id="ref-custo-total" class="text-rose-400 font-mono">R$ 0,00</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO DE DESPESAS EXTRAS -->
+    <div class="bg-[#0A1226] p-3.5 sm:p-4 rounded-xl border border-[#142347] space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-[#142347]">
+        <h3 class="text-xs sm:text-sm font-bold uppercase text-white">🛠️ Despesas Extras (Manutenção / Seguro / IPVA)</h3>
+        <div class="flex items-center gap-2">
+          <span id="lbl-total-extras" class="text-xs font-bold text-amber-400 font-mono">Total: R$ 0,00</span>
+          <button type="button" onclick="abrirModalAddExtra()" class="px-2 py-1 rounded bg-[#142347] hover:bg-[#1F3463] text-emerald-400 font-bold text-[10px] border border-[#142347] transition">+ Incluir</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto custom-scroll max-h-40">
+        <table class="w-full text-left text-xs font-mono">
+          <tbody id="lista-extras" class="divide-y divide-[#142347] text-slate-300">
+            <tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABELA DE VIAGENS -->
+    <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden">
+      <div class="p-3 border-b border-[#142347] flex items-center justify-between">
+        <span class="text-xs font-bold text-white">Viagens Sincronizadas da Nuvem</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="limparDadosNuvem()" class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold text-[10px] hover:bg-rose-500/30 transition">🗑️ Limpar Viagens</button>
+          <span id="txt-status-nuvem" class="text-[10px] text-cyan-400 font-mono">Conectando...</span>
+        </div>
+      </div>
+      <div class="overflow-x-auto custom-scroll">
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr class="bg-[#0F1A36] text-slate-400 uppercase text-[10px] border-b border-[#142347]">
+              <th class="p-2">Carro / Início</th>
+              <th class="p-2 text-right">Distância</th>
+              <th class="p-2 text-right">Energia</th>
+              <th class="p-2">Trajeto & Coordenadas GPS</th>
             </tr>
+          </thead>
+          <tbody id="lista-viagens" class="divide-y divide-[#142347] text-slate-300">
+            <tr><td colspan="4" class="p-4 text-center text-slate-500">Carregando dados da nuvem...</td></tr>
           </tbody>
         </table>
       </div>
@@ -220,123 +331,603 @@
 
   </main>
 
-  <!-- MODAIS -->
-  <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-5 space-y-4">
-      <div class="flex justify-between items-center border-b border-[#142347] pb-2">
-        <h3 class="text-sm font-bold text-white">⚙️ Parâmetros</h3>
-        <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400">✕</button>
+  <!-- ================= MODAL INCLUIR/EDITAR DESPESA EXTRA ================= -->
+  <div id="modal-add-extra" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 id="modal-extra-titulo" class="text-sm font-bold text-white">Cadastrar Nova Despesa Extra</h3>
+        <button type="button" onclick="fecharModal('modal-add-extra')" class="text-slate-400 hover:text-white text-base">✕</button>
       </div>
+      <input type="hidden" id="input-extra-index" value="-1">
       <div class="space-y-3 text-xs">
-        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Tarifa kWh (R$):</label>
-        <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Data da Despesa:</label>
+          <input type="date" id="input-extra-data" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Descrição (ex: Seguro, IPVA, Manutenção):</label>
+          <input type="text" id="input-extra-desc" placeholder="Ex: Troca de Pneu / Revisão" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Veículo:</label>
+          <input type="text" id="input-extra-carro" value="BYD Dolphin Mini" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Valor (R$):</label>
+          <input type="number" id="input-extra-valor" placeholder="0.00" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
-        <button type="button" class="px-4 py-2 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-parametros')">Cancelar</button>
-        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarConfiguracoes()">Salvar</button>
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-add-extra')">Cancelar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-emerald-500 text-black font-bold text-xs" onclick="salvarDespesaExtraNuvem()">Salvar na Nuvem</button>
       </div>
     </div>
   </div>
 
-  <div id="modal-combustivel" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-5 space-y-4">
-      <div class="flex justify-between items-center border-b border-[#142347] pb-2">
-        <h3 class="text-sm font-bold text-white">🏎️ Referência Combustível</h3>
-        <button type="button" onclick="fecharModal('modal-combustivel')" class="text-slate-400">✕</button>
+  <!-- ================= MODAL VEÍCULO REFERÊNCIA ================= -->
+  <div id="modal-referencia" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 class="text-sm font-bold text-white">Cadastrar Veículo de Referência (Térmico)</h3>
+        <button type="button" onclick="fecharModal('modal-referencia')" class="text-slate-400 hover:text-white text-base">✕</button>
       </div>
       <div class="space-y-3 text-xs">
-        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Preço Gasolina (R$/L):</label>
-        <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Nome / Modelo do Veículo:</label>
+          <input type="text" id="input-modelo-ref" value="Citroën 2011" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Consumo Médio (km/L):</label>
+          <input type="number" id="input-consumo-ref" value="6.5" step="0.1" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
-        <button type="button" class="px-4 py-2 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-combustivel')">Cancelar</button>
-        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarConfiguracoes()">Salvar</button>
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-referencia')">Cancelar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarConfigNuvem()">Salvar Referência</button>
       </div>
     </div>
   </div>
 
-  <!-- SCRIPT -->
+  <!-- ================= MODAL PARÂMETROS ================= -->
+  <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-4 sm:p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2.5">
+        <h3 class="text-sm font-bold text-white">Parâmetros Térmicos & Tarifas</h3>
+        <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400 hover:text-white text-base">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Preço Gasolina (R$/L):</label>
+          <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Tarifa Padrão kWh (R$):</label>
+          <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-2 text-white font-mono outline-none focus:border-[#00E5FF]">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
+        <button type="button" class="px-3 py-1.5 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-parametros')">Cancelar</button>
+        <button type="button" class="px-4 py-1.5 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarConfigNuvem()">Salvar na Nuvem</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    var AppEstado = {
-      viagens: [
-        { carro: 'Dolphin Mini', distancia: 577.0, energia: 65.0 },
-        { carro: 'Yuan Pro', distancia: 6.0, energia: 0.9 }
-      ],
-      recargas: [
-        { carro: 'Dolphin Mini', custo: 73.76 }
-      ]
+    var AppEstado = { 
+      viagens: [], 
+      recargas: [], 
+      extras: [], 
+      config: { gasolina: 6.96, tarifaKwh: 0.85, refModelo: 'Citroën 2011', refConsumo: 6.5 } 
+    };
+    var chartConsumoInstancia = null;
+    var chartGastosInstancia = null;
+    var dbFirestore = null;
+
+    function fmtNum(n, d) {
+      if (n === null || n === undefined || isNaN(n)) return '—';
+      return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
+
+    function parsePtBr(v) {
+      if (!v && v !== 0) return 0;
+      if (typeof v === 'number') return isNaN(v) ? 0 : v;
+      var s = String(v).replace(/[R$\s]/g, '').trim();
+      if (!s) return 0;
+      if (s.indexOf(',') > -1 && s.indexOf('.') > -1) s = s.replace(/\./g, '').replace(',', '.');
+      else if (s.indexOf(',') > -1) s = s.replace(',', '.');
+      var p = parseFloat(s);
+      return isNaN(p) ? 0 : p;
+    }
+
+    window.onload = function() {
+      try { localStorage.removeItem('ev_extras_locais'); } catch (e) {}
+      renderizarPainelCompleto();
+      iniciarFirebaseAutomatico();
     };
 
-    var chartC = null, chartG = null;
-
-    window.onload = function() { renderizarTudo(); };
-
-    function processarArquivoCarllog(e) {
-      alert('Arquivo processado!');
-      renderizarTudo();
+    function mudarFiltroRapido() {
+      var tipo = document.getElementById('filtro-periodo-rapido').value;
+      var containerCustom = document.getElementById('container-datas-custom');
+      if (tipo === 'personalizado') {
+        containerCustom.classList.remove('hidden'); containerCustom.classList.add('flex');
+      } else {
+        containerCustom.classList.add('hidden'); containerCustom.classList.remove('flex');
+        renderizarPainelCompleto();
+      }
     }
 
-    function salvarConfiguracoes() {
+    function aplicarFiltroDatas() { renderizarPainelCompleto(); }
+
+    function extrairDataRegistro(item) {
+      var dStr = item.inicio || item.data || item.dataHora || '';
+      if (!dStr) return null;
+      return String(dStr).substring(0, 10);
+    }
+
+    function itemNoIntervalo(item, dataIni, dataFim, tipoFiltro) {
+      if (tipoFiltro === 'todos') return true;
+      var dItem = extrairDataRegistro(item);
+      if (!dItem) return true;
+      var hoje = new Date();
+      if (tipoFiltro === 'mes_atual') {
+        var anoAtual = hoje.getFullYear();
+        var mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+        return dItem.startsWith(anoAtual + '-' + mesAtual);
+      }
+      if (tipoFiltro === 'ano_atual') {
+        return dItem.startsWith(String(hoje.getFullYear()));
+      }
+      if (tipoFiltro === 'personalizado') {
+        if (dataIni && dItem < dataIni) return false;
+        if (dataFim && dItem > dataFim) return false;
+        return true;
+      }
+      return true;
+    }
+
+    // ================= PARSER ROBUSTO DIRETO DOS SEUS ARQUIVOS CSV =================
+    function processarArquivoCarllog(event) {
+      var arquivo = event.target.files[0];
+      if (!arquivo) return;
+
+      var leitor = new FileReader();
+      leitor.onload = function(e) {
+        var conteudo = e.target.result;
+        try {
+          var linhas = conteudo.split(/\r?\n/).filter(function(l) { return l && l.trim() !== ''; });
+          if (linhas.length < 2) {
+            alert('Arquivo vazio ou inválido.');
+            return;
+          }
+
+          var sep = linhas[0].includes(';') ? ';' : (linhas[0].includes('\t') ? '\t' : ',');
+          var cabecalho = linhas[0].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, '').toLowerCase(); });
+          
+          var ehRecarga = cabecalho.some(function(h) { return h.includes('carregador') || h.includes('bateria na bateria') || h.includes('energia na bateria'); });
+          var novosItens = [];
+
+          for (var i = 1; i < linhas.length; i++) {
+            var cols = linhas[i].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ''); });
+            if (cols.length < 3) continue;
+
+            if (ehRecarga) {
+              var carro = cols[cabecalho.indexOf('carro')] || cols[0] || 'MINI';
+              var inicio = cols[cabecalho.indexOf('início')] !== undefined ? cols[cabecalho.indexOf('início')] : (cols[2] || '');
+              var local = cols[cabecalho.indexOf('local')] !== undefined ? cols[cabecalho.indexOf('local')] : (cols[5] || 'Casa');
+              var energiaBat = parsePtBr(cols[cabecalho.indexOf('energia na bateria (kwh)')] !== undefined ? cols[cabecalho.indexOf('energia na bateria (kwh)')] : cols[11]);
+              var custoTotal = parsePtBr(cols[cabecalho.indexOf('custo total (r$)')] !== undefined ? cols[cabecalho.indexOf('custo total (r$)')] : cols[17]);
+
+              if (inicio) {
+                novosItens.push({
+                  carro: carro,
+                  inicio: inicio,
+                  energia: energiaBat,
+                  custo: custoTotal > 0 ? custoTotal : (energiaBat * AppEstado.config.tarifaKwh),
+                  local: local,
+                  tipo: 'recarga'
+                });
+              }
+            } else {
+              var carro = cols[cabecalho.indexOf('carro')] || cols[0] || 'MINI';
+              var inicio = cols[cabecalho.indexOf('início')] !== undefined ? cols[cabecalho.indexOf('início')] : (cols[2] || '');
+              var distancia = parsePtBr(cols[cabecalho.indexOf('distância (km)')] !== undefined ? cols[cabecalho.indexOf('distância (km)')] : cols[5]);
+              var energiaUsada = parsePtBr(cols[cabecalho.indexOf('energia usada (kwh)')] !== undefined ? cols[cabecalho.indexOf('energia usada (kwh)')] : cols[10]);
+              
+              var saida = cols[cabecalho.indexOf('saída')] !== undefined ? cols[cabecalho.indexOf('saída')] : (cols[17] || 'Origem');
+              var latSaida = cols[cabecalho.indexOf('latitude de saída')] !== undefined ? cols[cabecalho.indexOf('latitude de saída')] : (cols[18] || '');
+              var lonSaida = cols[cabecalho.indexOf('longitude de saída')] !== undefined ? cols[cabecalho.indexOf('longitude de saída')] : (cols[19] || '');
+              var chegada = cols[cabecalho.indexOf('chegada')] !== undefined ? cols[cabecalho.indexOf('chegada')] : (cols[20] || 'Destino');
+              var latChegada = cols[cabecalho.indexOf('latitude de chegada')] !== undefined ? cols[cabecalho.indexOf('latitude de chegada')] : (cols[21] || '');
+              var lonChegada = cols[cabecalho.indexOf('longitude de chegada')] !== undefined ? cols[cabecalho.indexOf('longitude de chegada')] : (cols[22] || '');
+              var custoViagem = parsePtBr(cols[cabecalho.indexOf('custo total (r$)')] !== undefined ? cols[cabecalho.indexOf('custo total (r$)')] : cols[26]);
+
+              if (inicio) {
+                novosItens.push({
+                  carro: carro,
+                  inicio: inicio,
+                  distancia: distancia,
+                  energia: energiaUsada > 0 ? energiaUsada : (distancia * 0.12),
+                  custo: custoViagem,
+                  origem: saida,
+                  destino: chegada,
+                  latSaida: latSaida,
+                  lonSaida: lonSaida,
+                  latChegada: latChegada,
+                  lonChegada: lonChegada,
+                  trajeto: saida + ' → ' + chegada
+                });
+              }
+            }
+          }
+
+          if (novosItens.length > 0) {
+            if (ehRecarga) {
+              AppEstado.recargas = novosItens;
+              alert('Sucesso! ' + novosItens.length + ' recarga(s) processada(s).');
+            } else {
+              AppEstado.viagens = novosItens;
+              alert('Sucesso absoluto! ' + novosItens.length + ' viagem(ns) processada(s).');
+            }
+            persistirEstadoNuvem();
+          } else {
+            alert('Nenhum registro válido detectado no arquivo.');
+          }
+
+        } catch (err) {
+          alert('Erro crítico ao processar o arquivo: ' + err.message);
+        }
+        event.target.value = '';
+      };
+      leitor.readAsText(arquivo);
+    }
+
+    function limparDadosNuvem() {
+      if (confirm('Deseja realmente limpar todos os registros da nuvem?')) {
+        AppEstado.viagens = [];
+        AppEstado.recargas = [];
+        persistirEstadoNuvem();
+      }
+    }
+
+    function abrirModalAddExtra() {
+      document.getElementById('modal-extra-titulo').textContent = 'Cadastrar Nova Despesa Extra';
+      document.getElementById('input-extra-index').value = '-1';
+      document.getElementById('input-extra-data').value = new Date().toISOString().split('T')[0];
+      document.getElementById('input-extra-desc').value = '';
+      document.getElementById('input-extra-carro').value = 'BYD Dolphin Mini';
+      document.getElementById('input-extra-valor').value = '';
+      abrirModal('modal-add-extra');
+    }
+
+    function salvarDespesaExtraNuvem() {
+      var index = parseInt(document.getElementById('input-extra-index').value);
+      var data = document.getElementById('input-extra-data').value;
+      var desc = document.getElementById('input-extra-desc').value || 'Despesa Extra';
+      var carro = document.getElementById('input-extra-carro').value || 'Frota';
+      var valor = parseFloat(document.getElementById('input-extra-valor').value) || 0;
+
+      if (valor <= 0) { alert('Informe um valor válido.'); return; }
+      if (!AppEstado.extras) AppEstado.extras = [];
+
+      var obj = { data: data, descricao: desc, carro: carro, valor: valor };
+      if (index > -1) { AppEstado.extras[index] = obj; } else { AppEstado.extras.push(obj); }
+
+      fecharModal('modal-add-extra');
+      persistirEstadoNuvem();
+    }
+
+    function salvarConfigNuvem() {
+      AppEstado.config.refModelo = document.getElementById('input-modelo-ref').value;
+      AppEstado.config.refConsumo = parseFloat(document.getElementById('input-consumo-ref').value) || 6.5;
+      AppEstado.config.gasolina = parseFloat(document.getElementById('input-gasolina').value) || 6.96;
+      AppEstado.config.tarifaKwh = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
+
+      fecharModal('modal-referencia');
       fecharModal('modal-parametros');
-      fecharModal('modal-combustivel');
-      renderizarTudo();
+      persistirEstadoNuvem();
     }
 
-    function renderizarTudo() {
-      var veiculoSel = document.getElementById('filtro-veiculo-global') ? document.getElementById('filtro-veiculo-global').value : 'todos';
+    function iniciarFirebaseAutomatico() {
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp({
+            apiKey: "AIzaSyBssVxU2b2zM7m7nOahzvx35LRcV22si40",
+            authDomain: "frota-byd-ev.firebaseapp.com",
+            projectId: "frota-byd-ev",
+            storageBucket: "frota-byd-ev.firebasestorage.app",
+            messagingSenderId: "868970976462",
+            appId: "1:868970976462:web:a141a94c13c9d24b102c9f",
+            measurementId: "G-2PTG6GYQWQ"
+          });
+        }
 
-      // Variáveis exibidas baseadas na seleção
-      var dist = 583.0, rec = 73.76, term = 624.26, econ = 550.50;
+        dbFirestore = firebase.firestore();
+        dbFirestore.collection('frota_ev').doc('estado_global').get().then(function(doc) {
+          if (!doc.exists) {
+            document.getElementById('txt-status-nuvem').textContent = 'Documento estado_global vazio.';
+            renderizarPainelCompleto();
+            return;
+          }
 
-      if (veiculoSel === 'Dolphin Mini') {
-        dist = 577.0; rec = 73.76; term = 617.50; econ = 543.74;
-      } else if (veiculoSel === 'Yuan Pro') {
-        dist = 6.0; rec = 0.00; term = 6.76; econ = 6.76;
+          var dados = doc.data();
+          AppEstado.viagens = dados.viagens || [];
+          AppEstado.recargas = dados.recargas || [];
+          AppEstado.extras = dados.extras || [];
+          
+          if (dados.config) {
+            if (dados.config.gasolina !== undefined) AppEstado.config.gasolina = dados.config.gasolina;
+            if (dados.config.tarifaKwh !== undefined) AppEstado.config.tarifaKwh = dados.config.tarifaKwh;
+            if (dados.config.refModelo !== undefined) AppEstado.config.refModelo = dados.config.refModelo;
+            if (dados.config.refConsumo !== undefined) AppEstado.config.refConsumo = dados.config.refConsumo;
+          }
+
+          document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
+          renderizarPainelCompleto();
+
+        }).catch(function(err) {
+          document.getElementById('txt-status-nuvem').textContent = 'Modo Local (Offline)';
+          renderizarPainelCompleto();
+        });
+
+      } catch (e) {
+        document.getElementById('txt-status-nuvem').textContent = 'Modo Local (Offline)';
+        renderizarPainelCompleto();
       }
-
-      // Atualiza KPIs principais
-      document.getElementById('kpi-distancia').textContent = dist.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
-      document.getElementById('kpi-recargas').textContent = 'R$ ' + rec.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-      document.getElementById('kpi-economia').textContent = 'R$ ' + econ.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-
-      // Mostra/Oculta cards individuais dos carros
-      var container = document.getElementById('container-resumo-veiculos');
-      if (container) {
-        if (veiculoSel === 'todos') container.classList.remove('hidden');
-        else container.classList.add('hidden');
-      }
-
-      // Atualiza Tabela de Fechamento
-      document.getElementById('tabela-distancia').textContent = dist.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
-      document.getElementById('tabela-recargas').textContent = 'R$ ' + (veiculoSel === 'todos' ? '67,24' : rec.toLocaleString('pt-BR', {minimumFractionDigits: 2}));
-      document.getElementById('tabela-termico').textContent = 'R$ ' + term.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-      document.getElementById('tabela-economia').textContent = 'R$ ' + econ.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-
-      // Renderiza Gráficos originais
-      desenharGraficos();
     }
 
-    function desenharGraficos() {
-      var ctx1 = document.getElementById('chartConsumo').getContext('2d');
-      if (chartC) chartC.destroy();
-      chartC = new Chart(ctx1, {
-        type: 'line',
-        data: {
-          labels: ['10-01', '10-02', '10-04', '10-05', '10-06', '10-07', '10-08', '10-09', '10-13', '10-14', '10-15', '10-16', '10-17', '10-18'],
-          datasets: [{ data: [16.5, 12.1, 16.2, 11.5, 13.8, 12.2, 13.5, 8.8, 12.5, 14.8, 11.2, 15.8, 19.5, 11.0], borderColor: '#00E5FF', fill: true, backgroundColor: 'rgba(0, 229, 255, 0.1)', tension: 0.3 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
+    function persistirEstadoNuvem() {
+      if (!dbFirestore) {
+        alert('Banco de dados offline.');
+        renderizarPainelCompleto();
+        return;
+      }
+
+      document.getElementById('txt-status-nuvem').textContent = 'Salvando na nuvem...';
+      
+      dbFirestore.collection('frota_ev').doc('estado_global').set({
+        viagens: AppEstado.viagens,
+        recargas: AppEstado.recargas,
+        extras: AppEstado.extras,
+        config: AppEstado.config,
+        atualizadoEm: new Date().toISOString()
+      }, { merge: true }).then(function() {
+        document.getElementById('txt-status-nuvem').textContent = 'Online (' + AppEstado.viagens.length + ' viagens)';
+        renderizarPainelCompleto();
+      }).catch(function(err) {
+        alert('Erro ao salvar na nuvem: ' + err.message);
+        document.getElementById('txt-status-nuvem').textContent = 'Erro ao salvar';
+      });
+    }
+
+    function calcularFechamentoMensal() {
+      var tbody = document.getElementById('tabela-fechamento-mensal');
+      if (!tbody) return;
+
+      var mesesMap = {};
+      var viagensParaCalcular = AppEstado.viagens || [];
+
+      viagensParaCalcular.forEach(function(v) {
+        var dataStr = extrairDataRegistro(v);
+        if (!dataStr) return;
+        var mesAno = dataStr.substring(0, 7);
+
+        if (!mesesMap[mesAno]) {
+          mesesMap[mesAno] = { km: 0, kwhCost: 0, refCost: 0 };
+        }
+
+        var dist = parsePtBr(v.distancia || 0);
+        var kwh = parsePtBr(v.energia || 0);
+        var custoRecargaViagem = v.custo !== undefined && v.custo > 0 ? v.custo : (kwh * AppEstado.config.tarifaKwh);
+
+        mesesMap[mesAno].km += dist;
+        mesesMap[mesAno].kwhCost += custoRecargaViagem;
+
+        var consumoRef = AppEstado.config.refConsumo || 6.5;
+        var precoGasolina = AppEstado.config.gasolina || 6.96;
+        var litrosRef = consumoRef > 0 ? (dist / consumoRef) : 0;
+        mesesMap[mesAno].refCost += (litrosRef * precoGasolina);
       });
 
-      var ctx2 = document.getElementById('chartGastos').getContext('2d');
-      if (chartG) chartG.destroy();
-      chartG = new Chart(ctx2, {
-        type: 'bar',
+      var chaves = Object.keys(mesesMap).sort().reverse();
+      if (chaves.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-slate-500">Nenhum registro encontrado para o fechamento mensal.</td></tr>';
+        return;
+      }
+
+      var html = '';
+      chaves.forEach(function(mes) {
+        var item = mesesMap[mes];
+        var economia = item.refCost - item.kwhCost;
+        var partes = mes.split('-');
+        var mesAnoFormatado = partes.length === 2 ? partes[1] + '/' + partes[0] : mes;
+
+        html += `<tr class="hover:bg-[#0F1A36]/50 transition">
+          <td class="p-2 font-bold text-cyan-400">${mesAnoFormatado}</td>
+          <td class="p-2 text-right">${fmtNum(item.km, 1)} km</td>
+          <td class="p-2 text-right text-emerald-400">R$ ${fmtNum(item.kwhCost, 2)}</td>
+          <td class="p-2 text-right text-rose-400">R$ ${fmtNum(item.refCost, 2)}</td>
+          <td class="p-2 text-right font-bold text-emerald-400">R$ ${fmtNum(economia, 2)}</td>
+        </tr>`;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function renderizarPainelCompleto() {
+      document.getElementById('input-modelo-ref').value = AppEstado.config.refModelo || 'Citroën 2011';
+      document.getElementById('input-consumo-ref').value = AppEstado.config.refConsumo || 6.5;
+      document.getElementById('input-gasolina').value = AppEstado.config.gasolina || 6.96;
+      document.getElementById('input-tarifa').value = AppEstado.config.tarifaKwh || 0.85;
+
+      document.getElementById('ref-modelo-txt').textContent = AppEstado.config.refModelo;
+      document.getElementById('ref-consumo-txt').textContent = fmtNum(AppEstado.config.refConsumo, 1) + ' km/L';
+      document.getElementById('ref-gasolina-txt').textContent = 'R$ ' + fmtNum(AppEstado.config.gasolina, 2) + ' / L';
+
+      var tipoFiltro = document.getElementById('filtro-periodo-rapido').value;
+      var dataIni = document.getElementById('filtro-data-inicio').value;
+      var dataFim = document.getElementById('filtro-data-fim').value;
+
+      var viagensFiltradas = (AppEstado.viagens || []).filter(function(v) {
+        return itemNoIntervalo(v, dataIni, dataFim, tipoFiltro);
+      });
+
+      var custoRecargasTotal = 0;
+      var dolphinRecargas = 0, yuanRecargas = 0;
+
+      (AppEstado.recargas || []).forEach(function(r) {
+        var custoR = parsePtBr(r.custoTotal !== undefined ? r.custoTotal : r.custo);
+        custoRecargasTotal += custoR;
+        var carroR = String(r.carro || 'MINI');
+        if (carroR.toUpperCase().indexOf('YUAN') > -1) {
+          yuanRecargas += custoR;
+        } else {
+          dolphinRecargas += custoR;
+        }
+      });
+
+      var distanciaTotal = 0, kwhTotal = 0;
+      var dolphinKm = 0, dolphinViagens = 0;
+      var yuanKm = 0, yuanViagens = 0;
+
+      var listaViagensHtml = '';
+      var locaisMap = {};
+
+      viagensFiltradas.forEach(function(v) {
+        var dist = parsePtBr(v.distancia || 0);
+        var kwh = parsePtBr(v.energia || 0);
+
+        distanciaTotal += dist;
+        kwhTotal += kwh;
+
+        var carro = String(v.carro || 'MINI');
+        if (carro.toUpperCase().indexOf('YUAN') > -1) {
+          yuanKm += dist; yuanViagens++;
+        } else {
+          dolphinKm += dist; dolphinViagens++;
+        }
+
+        var origem = v.origem || 'Origem';
+        var destino = v.destino || 'Destino';
+        
+        if (origem && origem !== 'Origem') locaisMap[origem] = (locaisMap[origem] || 0) + 1;
+        if (destino && destino !== 'Destino') locaisMap[destino] = (locaisMap[destino] || 0) + 1;
+
+        var inicio = v.inicio || '—';
+        
+        var lat = v.latChegada || v.latSaida;
+        var lon = v.lonChegada || v.lonSaida;
+        var trajetoHtml = '';
+        if (lat && lon) {
+          var urlMapa = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+          trajetoHtml = `<a href="${urlMapa}" target="_blank" class="text-cyan-400 hover:underline flex items-center gap-1">📍 ${origem} → ${destino}</a>`;
+        } else {
+          var urlMapaLocal = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(origem + ' to ' + destino)}`;
+          trajetoHtml = `<a href="${urlMapaLocal}" target="_blank" class="text-cyan-400 hover:underline">📍 ${origem} → ${destino}</a>`;
+        }
+
+        listaViagensHtml += `<tr class="hover:bg-[#0F1A36]/50 transition">
+          <td class="p-2 font-bold text-cyan-400">${carro.toUpperCase().indexOf('YUAN') > -1 ? 'YUAN' : 'MINI'}<br><span class="text-[9px] text-slate-400 font-normal">${inicio}</span></td>
+          <td class="p-2 text-right">${fmtNum(dist, 1)} km</td>
+          <td class="p-2 text-right text-emerald-400">${fmtNum(kwh, 2)} kWh</td>
+          <td class="p-2 text-slate-300">${trajetoHtml}</td>
+        </tr>`;
+      });
+
+      if (viagensFiltradas.length === 0) {
+        listaViagensHtml = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhuma viagem encontrada para o período selecionado.</td></tr>';
+      }
+      document.getElementById('lista-viagens').innerHTML = listaViagensHtml;
+
+      document.getElementById('kpi-distancia').textContent = fmtNum(distanciaTotal, 1);
+      document.getElementById('kpi-recargas').textContent = fmtNum(custoRecargasTotal, 2);
+      document.getElementById('kpi-custo-km').textContent = fmtNum(distanciaTotal > 0 ? (custoRecargasTotal / distanciaTotal) : 0, 3);
+      document.getElementById('kpi-consumo').textContent = fmtNum(distanciaTotal > 0 ? (kwhTotal / (distanciaTotal / 100)) : 0, 1);
+      document.getElementById('kpi-co2').textContent = fmtNum(distanciaTotal * 0.081, 1);
+
+      var consumoRef = AppEstado.config.refConsumo || 6.5;
+      var litrosRef = consumoRef > 0 ? (distanciaTotal / consumoRef) : 0;
+      var custoRefTotal = litrosRef * AppEstado.config.gasolina;
+      document.getElementById('ref-custo-total').textContent = 'R$ ' + fmtNum(custoRefTotal, 2);
+      document.getElementById('kpi-economia').textContent = fmtNum(custoRefTotal - custoRecargasTotal, 2);
+
+      document.getElementById('card-dolphin-km').textContent = fmtNum(dolphinKm, 1) + ' km';
+      document.getElementById('card-dolphin-viagens').textContent = dolphinViagens;
+      document.getElementById('card-dolphin-recargas').textContent = 'R$ ' + fmtNum(dolphinRecargas, 2);
+
+      document.getElementById('card-yuan-km').textContent = fmtNum(yuanKm, 1) + ' km';
+      document.getElementById('card-yuan-viagens').textContent = yuanViagens;
+      document.getElementById('card-yuan-recargas').textContent = 'R$ ' + fmtNum(yuanRecargas, 2);
+
+      var totalExtras = 0, extrasHtml = '';
+      (AppEstado.extras || []).forEach(function(ex) {
+        totalExtras += ex.valor || 0;
+        extrasHtml += `<tr class="hover:bg-[#0F1A36]/50 transition">
+          <td class="p-2 text-cyan-400">${ex.data || '—'}</td>
+          <td class="p-2">${ex.descricao || 'Despesa'}</td>
+          <td class="p-2 text-slate-400">${ex.carro || 'Frota'}</td>
+          <td class="p-2 text-right text-amber-400">R$ ${fmtNum(ex.valor, 2)}</td>
+        </tr>`;
+      });
+      if (!AppEstado.extras || AppEstado.extras.length === 0) {
+        extrasHtml = '<tr><td colspan="4" class="p-3 text-center text-slate-500">Nenhuma despesa extra cadastrada.</td></tr>';
+      }
+      document.getElementById('lista-extras').innerHTML = extrasHtml;
+      document.getElementById('lbl-total-extras').textContent = 'Total: R$ ' + fmtNum(totalExtras, 2);
+
+      var locaisOrdenados = Object.keys(locaisMap).map(function(k) {
+        return { nome: k, count: locaisMap[k] };
+      }).sort(function(a, b) { return b.count - a.count; });
+
+      var locaisHtml = '';
+      locaisOrdenados.forEach(function(loc, idx) {
+        var urlMapaLocal = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.nome)}`;
+        locaisHtml += `<tr class="hover:bg-[#0F1A36]/50 transition">
+          <td class="p-2 text-white"><strong>${idx + 1}º</strong> <a href="${urlMapaLocal}" target="_blank" class="text-cyan-400 hover:underline">${loc.nome} 📍</a></td>
+          <td class="p-2 text-right text-cyan-400 font-bold">${loc.count} visitas</td>
+        </tr>`;
+      });
+      if (locaisOrdenados.length === 0) {
+        locaisHtml = '<tr><td colspan="2" class="p-3 text-center text-slate-500">Nenhum local registrado.</td></tr>';
+      }
+      document.getElementById('lista-locais-calor').innerHTML = locaisHtml;
+
+      calcularFechamentoMensal();
+      atualizarGraficos(viagensFiltradas, custoRefTotal, custoRecargasTotal);
+    }
+
+    function atualizarGraficos(viagens, custoRef, custoEl) {
+      var ctxConsumo = document.getElementById('chartConsumo').getContext('2d');
+      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
+
+      var viagensOrdenadas = viagens.slice().sort(function(a, b) {
+        var da = extrairDataRegistro(a) || '';
+        var db = extrairDataRegistro(b) || '';
+        return da.localeCompare(db);
+      });
+
+      var labelsConsumo = viagensOrdenadas.map(function(v) { return (extrairDataRegistro(v) || '').substring(5); });
+      var dataConsumo = viagensOrdenadas.map(function(v) {
+        var d = parsePtBr(v.distancia || 0);
+        var k = parsePtBr(v.energia || 0);
+        return d > 0 ? (k / (d / 100)) : 0;
+      });
+
+      chartConsumoInstancia = new Chart(ctxConsumo, {
+        type: 'line',
         data: {
-          labels: ['Elétrico Real', 'Combustível Ref.'],
-          datasets: [{ data: [73.76, 624.26], backgroundColor: ['#10B981', '#F43F5E'], borderRadius: 6, barThickness: 45 }]
+          labels: labelsConsumo.length ? labelsConsumo : ['Início'],
+          datasets: [{ label: 'kWh/100km', data: dataConsumo.length ? dataConsumo : [0], borderColor: '#00E5FF', backgroundColor: 'rgba(0, 229, 255, 0.1)', fill: true, tension: 0.3 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94A3B8', font: { size: 10 } }, grid: { display: false } }, y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } }, y: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } } } }
+      });
+
+      var ctxGastos = document.getElementById('chartGastos').getContext('2d');
+      if (chartGastosInstancia) chartGastosInstancia.destroy();
+
+      chartGastosInstancia = new Chart(ctxGastos, {
+        type: 'bar',
+        data: { labels: ['Elétrico Real', 'Combustível Ref.'], datasets: [{ data: [custoEl, custoRef], backgroundColor: ['#10B981', '#F43F5E'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#94A3B8', font: { size: 10 } } }, y: { grid: { color: '#142347' }, ticks: { color: '#94A3B8', font: { size: 9 } } } } }
       });
     }
   </script>
