@@ -57,17 +57,17 @@
           <span class="text-[10px] text-cyan-400 font-extrabold uppercase">🚗 Veículo:</span>
           <select id="filtro-veiculo-global" onchange="atualizarPainel()" class="bg-transparent text-xs text-slate-100 font-bold outline-none cursor-pointer">
             <option value="todos" class="bg-[#1E293B]">Frota Total (Todos)</option>
-            <option value="Dolphin Mini" class="bg-[#1E293B]">BYD Dolphin Mini (MINI)</option>
-            <option value="Yuan Pro" class="bg-[#1E293B]">BYD Yuan Pro</option>
+            <option value="MINI" class="bg-[#1E293B]">BYD Dolphin Mini (MINI)</option>
+            <option value="YUN" class="bg-[#1E293B]">BYD Yuan Pro</option>
           </select>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
-        <!-- Input para importação Carllog -->
-        <input type="file" id="input-arquivo-carllog" class="hidden" accept=".json,.csv,.txt" onchange="processarArquivoCarllog(event)">
+        <!-- Input para importação de CSV do Carllog -->
+        <input type="file" id="input-arquivo-carllog" class="hidden" accept=".csv,.txt" onchange="processarCsvCarllog(event)">
         <button type="button" onclick="document.getElementById('input-arquivo-carllog').click()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
-          📁 Importar Carllog
+          📁 Importar Carllog (CSV)
         </button>
         <button type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold text-xs border border-slate-700 transition flex items-center gap-1">
           📈 Ref. Combustível
@@ -211,7 +211,7 @@
           <span class="text-[10px] text-cyan-400 font-mono">Ranking Dinâmico</span>
         </div>
         <div id="lista-locais-visitados" class="space-y-2 text-xs text-slate-400 text-center py-4 font-mono">
-          Aguardando importação do Carllog...
+          Aguardando importação do Carllog (CSV)...
         </div>
       </div>
 
@@ -250,7 +250,7 @@
     <!-- TABELA COMPLETA: TODAS AS VIAGENS -->
     <div class="bg-[#1E293B] rounded-xl border border-slate-800 shadow-sm overflow-hidden space-y-2 p-4">
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xs font-bold uppercase text-white">📋 Todas as Viagens Realizadas (Histórico Carllog)</h3>
+        <h3 class="text-xs font-bold uppercase text-white">📋 Todas as Viagens Realizadas (Histórico Carllog CSV)</h3>
         <span class="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold" id="txt-status-online">Aguardando Importação</span>
       </div>
       <div class="overflow-x-auto custom-scroll max-h-96">
@@ -259,14 +259,14 @@
             <tr class="border-b border-slate-800 text-slate-400 text-[10px] uppercase sticky top-0 bg-[#1E293B]">
               <th class="p-2">Veículo / Data & Hora</th>
               <th class="p-2 text-right">Distância</th>
-              <th class="p-2 text-right">Energia (kWh)</th>
-              <th class="p-2">Trajeto & Coordenadas GPS</th>
+              <th class="p-2 text-right">Duração</th>
+              <th class="p-2">Trajeto (Saída ➔ Chegada)</th>
             </tr>
           </thead>
           <tbody id="tabela-viagens-sincronizadas" class="divide-y divide-slate-800/60 text-slate-300">
             <tr>
               <td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">
-                Nenhum dado importado. Clique em <strong>"📁 Importar Carllog"</strong> para carregar o seu ficheiro de viagens.
+                Nenhum arquivo importado. Clique em <strong>"📁 Importar Carllog (CSV)"</strong> e selecione o seu relatório CSV exportado.
               </td>
             </tr>
           </tbody>
@@ -293,48 +293,76 @@
     </div>
   </div>
 
-  <!-- SCRIPT DE PROCESSAMENTO ROBUSTO DO CARLLOG -->
+  <!-- SCRIPT DE PROCESSAMENTO CSV DO CARLLOG -->
   <script>
     var chartC = null, chartG = null;
-    var dadosViagensGlobais = [];
+    var viagensCsvGlobais = [];
 
     document.addEventListener("DOMContentLoaded", function() {
       atualizarPainel();
     });
 
-    function processarArquivoCarllog(event) {
+    function processarCsvCarllog(event) {
       var arquivo = event.target.files[0];
       if (!arquivo) return;
 
       var leitor = new FileReader();
       leitor.onload = function(e) {
         try {
-          var conteudo = e.target.result;
-          var jsonParsed = JSON.parse(conteudo);
-          
-          // Compatibilidade flexível com diferentes estruturas de exportação (Array direto, objeto com .viagens, .data, etc.)
-          if (Array.isArray(jsonParsed)) {
-            dadosViagensGlobais = jsonParsed;
-          } else if (jsonParsed.viagens && Array.isArray(jsonParsed.viagens)) {
-            dadosViagensGlobais = jsonParsed.viagens;
-          } else if (jsonParsed.data && Array.isArray(jsonParsed.data)) {
-            dadosViagensGlobais = jsonParsed.data;
-          } else {
-            // Se for um objeto único ou chaves do Firestore exportadas, converte em array
-            dadosViagensGlobais = Object.values(jsonParsed);
+          var texto = e.target.result;
+          var linhas = texto.split(/\r\n|\n/);
+          if (linhas.length < 2) {
+            alert('O arquivo CSV parece estar vazio.');
+            return;
           }
 
-          renderizarTabelaViagens(dadosViagensGlobais);
-          document.getElementById('txt-status-online').textContent = 'Online (' + dadosViagensGlobais.length + ' viagens)';
+          // Detecta o separador (vírgula ou ponto e vírgula)
+          var primeiraLinha = linhas[0];
+          var separador = primeiraLinha.includes(';') ? ';' : ',';
+          var cabecalhos = primeiraLinha.split(separador).map(function(h) { return h.trim().replace(/^"|"$/g, ''); });
+
+          viagensCsvGlobais = [];
+
+          for (var i = 1; i < linhas.length; i++) {
+            var linha = linhas[i].trim();
+            if (!linha) continue;
+
+            // Parser simples de CSV considerando possíveis aspas
+            var valores = [];
+            var dentroDeAspas =ാതെ = false;
+            var valorAtual = '';
+            for (var c = 0; c < linha.length; c++) {
+              var char = linha[c];
+              if (char === '"') {
+                dentroDeAspas = !dentroDeAspas;
+              } else if (char === separador && !dentroDeAspas) {
+                valores.push(valorAtual.trim().replace(/^"|"$/g, ''));
+                valorAtual = '';
+              } else {
+                valorAtual += char;
+              }
+            }
+            valores.push(valorAtual.trim().replace(/^"|"$/g, ''));
+
+            var obj = {};
+            for (var j = 0; j < cabecalhos.length; j++) {
+              obj[cabecalhos[j]] = valores[j] || '';
+            }
+            viagensCsvGlobais.push(obj);
+          }
+
+          renderizarTabelaCsv(viagensCsvGlobais);
+          document.getElementById('txt-status-online').textContent = 'Online (' + viagensCsvGlobais.length + ' viagens)';
+          alert('Relatório Carllog importado com sucesso! ' + viagensCsvGlobais.length + ' viagens carregadas.');
         } catch (err) {
-          console.error("Erro ao analisar arquivo:", err);
-          alert('Não foi possível ler o arquivo como JSON. Verifique se o formato exportado pelo Carllog é válido.');
+          console.error("Erro ao processar CSV:", err);
+          alert('Erro ao processar o arquivo CSV. Verifique o formato.');
         }
       };
-      leitor.readAsText(arquivo);
+      leitor.readAsText(arquivo, 'UTF-8');
     }
 
-    function renderizarTabelaViagens(viagens) {
+    function renderizarTabelaCsv(viagens) {
       var tbody = document.getElementById('tabela-viagens-sincronizadas');
       if (!tbody) return;
 
@@ -348,32 +376,33 @@
       var filtroCarro = selectVeiculo ? selectVeiculo.value : 'todos';
 
       var filtradas = viagens.filter(function(v) {
-        if (!v) return false;
         if (filtroCarro === 'todos') return true;
-        var veiculoStr = (v.veiculo || v.car || v.modelo || '').toLowerCase();
-        return veiculoStr.includes(filtroCarro.toLowerCase());
+        var carroStr = (v['Carro'] || v['car'] || '').toUpperCase();
+        return carroStr.includes(filtroCarro.toUpperCase());
       });
 
       if (filtradas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">Nenhuma viagem para o veículo selecionado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400 font-mono text-xs">Nenhuma viagem para o veículo selecionado neste arquivo.</td></tr>';
         return;
       }
 
       filtradas.forEach(function(v) {
-        var veiculoNome = v.veiculo || v.car || v.modelo || 'Veículo EV';
-        var corTexto = veiculoNome.toLowerCase().includes('yuan') ? 'text-purple-400' : 'text-cyan-400';
-        var dataHora = v.dataHora || v.date || v.timestamp || 'Data não informada';
-        var distancia = (v.distancia || v.distance || 0) + ' km';
-        var energia = (v.energia || v.kwh || v.consumoKwh || 0) + ' kWh';
-        var trajeto = v.trajeto || v.route || v.destino || v.percurso || 'Percurso não especificado';
+        var carro = v['Carro'] || 'MINI';
+        var corTexto = carro.toUpperCase().includes('YUN') ? 'text-purple-400' : 'text-cyan-400';
+        var inicio = v['Início'] || v['Inicio'] || '-';
+        var distancia = (v['D(Distância)'] || v['Distância'] || v['Distancia'] || '0') + ' km';
+        var duracao = (v['Duração (min)'] || v['Duração'] || '0') + ' min';
+        var saida = v['Saída'] || v['Saida'] || 'Origem';
+        var chegada = v['Chegada'] || 'Destino';
+        var trajeto = saida + ' ➔ ' + chegada;
 
-        html += '<tr class="hover:bg-slate-800/40 transition" data-carro="' + veiculoNome + '">' +
+        html += '<tr class="hover:bg-slate-800/40 transition" data-carro="' + carro + '">' +
                   '<td class="p-2">' +
-                    '<span class="font-bold ' + corTexto + ' block">' + veiculoNome + '</span>' +
-                    '<span class="text-[10px] text-slate-400 block">' + dataHora + '</span>' +
+                    '<span class="font-bold ' + corTexto + ' block">' + carro + '</span>' +
+                    '<span class="text-[10px] text-slate-400 block">' + inicio + '</span>' +
                   '</td>' +
                   '<td class="p-2 text-right font-bold text-white">' + distancia + '</td>' +
-                  '<td class="p-2 text-right text-purple-400 font-bold">' + energia + '</td>' +
+                  '<td class="p-2 text-right text-purple-400 font-mono">' + duracao + '</td>' +
                   '<td class="p-2 text-slate-300 font-mono">' + trajeto + '</td>' +
                 '</tr>';
       });
@@ -389,8 +418,8 @@
         txtPeriodoExibido.textContent = selectPeriodo.options[selectPeriodo.selectedIndex].text;
       }
 
-      if (dadosViagensGlobais.length > 0) {
-        renderizarTabelaViagens(dadosViagensGlobais);
+      if (viagensCsvGlobais.length > 0) {
+        renderizarTabelaCsv(viagensCsvGlobais);
       }
 
       try {
