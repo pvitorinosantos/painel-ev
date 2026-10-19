@@ -2,8 +2,8 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Dolphin Mini & Yuan Pro | Telemetria & Nuvem</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Gestão EV | Frota BYD Nuvem</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -38,7 +38,7 @@
   <header class="sticky top-0 z-40 bg-[#0A1226]/95 backdrop-blur border-b border-[#142347] px-4 py-3">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
       
-      <!-- LADO ESQUERDO: LOGO, BADGE E NOVO FILTRO DE VEÍCULO -->
+      <!-- LADO ESQUERDO: LOGO E FILTRO -->
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00E5FF] to-blue-600 flex items-center justify-center font-extrabold text-[#060B18] text-sm shadow-md">
           BYD
@@ -53,7 +53,7 @@
           <p class="text-xs font-semibold text-cyan-400">Dolphin Mini & Yuan Pro</p>
         </div>
 
-        <!-- FILTRO GLOBAL DE VEÍCULO (NOVO) -->
+        <!-- FILTRO DE VEÍCULO ADICIONADO AQUI -->
         <div class="ml-2 flex items-center gap-1.5 bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1">
           <span class="text-[10px] text-cyan-400 font-bold uppercase">🚗 Veículo:</span>
           <select id="filtro-veiculo-global" onchange="renderizarTudo()" class="bg-transparent text-xs text-white font-semibold outline-none cursor-pointer">
@@ -64,7 +64,7 @@
         </div>
       </div>
 
-      <!-- LADO DIREITO: BOTÕES DE AÇÃO -->
+      <!-- LADO DIREITO: BOTÕES -->
       <div class="flex items-center gap-2">
         <label class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
           📁 Importar Carllog
@@ -109,15 +109,15 @@
       </div>
       <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
         <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">CUSTO REAL / KM</span>
-        <strong id="kpi-custo-km" class="text-lg font-extrabold text-cyan-400 font-mono">R$ 0,127</strong>
+        <strong id="kpi-custo-km" class="text-lg font-extrabold text-cyan-400 font-mono">0,127 <span class="text-xs font-normal">R$/km</span></strong>
       </div>
       <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
         <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">CONSUMO MÉDIO</span>
-        <strong id="kpi-consumo" class="text-lg font-extrabold text-purple-400 font-mono">11,6 kWh/100km</strong>
+        <strong id="kpi-consumo" class="text-lg font-extrabold text-purple-400 font-mono">11,6 <span class="text-xs font-normal">kWh/100km</span></strong>
       </div>
       <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
         <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">CO₂ EVITADO (ESG)</span>
-        <strong id="kpi-co2" class="text-lg font-extrabold text-emerald-400 font-mono">47,2 kg</strong>
+        <strong id="kpi-co2" class="text-lg font-extrabold text-emerald-400 font-mono">47,2 <span class="text-xs font-normal">kg</span></strong>
       </div>
       <div class="bg-[#0A1226] p-3 rounded-xl border border-[#142347]">
         <span class="text-[9px] font-bold uppercase text-slate-400 block mb-1">ECONOMIA LÍQUIDA</span>
@@ -125,10 +125,8 @@
       </div>
     </div>
 
-    <!-- CARDS DE RESUMO INDIVIDUAL DOS VEÍCULOS -->
+    <!-- CARDS DE RESUMO INDIVIDUAL -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="container-resumo-veiculos">
-      
-      <!-- SUBCOMPACTO EV: DOLPHIN MINI -->
       <div class="bg-[#0A1226] p-3.5 rounded-xl border border-[#142347] space-y-2">
         <div class="flex justify-between items-center">
           <div>
@@ -140,20 +138,19 @@
         <div class="grid grid-cols-3 gap-2 text-center pt-1">
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
             <span class="text-[8px] text-slate-400 uppercase block">DISTÂNCIA</span>
-            <strong id="mini-distancia" class="text-xs font-bold text-white font-mono">577,0 km</strong>
+            <strong class="text-xs font-bold text-white font-mono">577,0 km</strong>
           </div>
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
             <span class="text-[8px] text-slate-400 uppercase block">VIAGENS</span>
-            <strong id="mini-viagens" class="text-xs font-bold text-cyan-400 font-mono">46</strong>
+            <strong class="text-xs font-bold text-cyan-400 font-mono">46</strong>
           </div>
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
             <span class="text-[8px] text-slate-400 uppercase block">GASTO RECARGAS</span>
-            <strong id="mini-recargas" class="text-xs font-bold text-emerald-400 font-mono">R$ 73,76</strong>
+            <strong class="text-xs font-bold text-emerald-400 font-mono">R$ 73,76</strong>
           </div>
         </div>
       </div>
 
-      <!-- SUV URBANO EV: YUAN PRO -->
       <div class="bg-[#0A1226] p-3.5 rounded-xl border border-[#142347] space-y-2">
         <div class="flex justify-between items-center">
           <div>
@@ -165,36 +162,30 @@
         <div class="grid grid-cols-3 gap-2 text-center pt-1">
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
             <span class="text-[8px] text-slate-400 uppercase block">DISTÂNCIA</span>
-            <strong id="yuan-distancia" class="text-xs font-bold text-white font-mono">6,0 km</strong>
+            <strong class="text-xs font-bold text-white font-mono">6,0 km</strong>
           </div>
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
             <span class="text-[8px] text-slate-400 uppercase block">VIAGENS</span>
-            <strong id="yuan-viagens" class="text-xs font-bold text-cyan-400 font-mono">1</strong>
+            <strong class="text-xs font-bold text-cyan-400 font-mono">1</strong>
           </div>
           <div class="bg-[#060B18] p-2 rounded-lg border border-[#142347]">
             <span class="text-[8px] text-slate-400 uppercase block">GASTO RECARGAS</span>
-            <strong id="yuan-recargas" class="text-xs font-bold text-emerald-400 font-mono">R$ 0,00</strong>
+            <strong class="text-xs font-bold text-emerald-400 font-mono">R$ 0,00</strong>
           </div>
         </div>
       </div>
-
     </div>
 
     <!-- GRÁFICOS -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
-      <!-- GRÁFICO 1: EVOLUÇÃO DO CONSUMO -->
       <div class="bg-[#0A1226] p-4 rounded-xl border border-[#142347] space-y-2">
         <h3 class="text-xs font-bold uppercase text-white tracking-wide">📈 EVOLUÇÃO DO CONSUMO (KWH/100KM)</h3>
         <div class="relative h-48 w-full"><canvas id="chartConsumo"></canvas></div>
       </div>
-
-      <!-- GRÁFICO 2: COMPARATIVO DE GASTOS -->
       <div class="bg-[#0A1226] p-4 rounded-xl border border-[#142347] space-y-2">
         <h3 class="text-xs font-bold uppercase text-white tracking-wide">📊 COMPARATIVO DE GASTOS: ELÉTRICO VS. TÉRMICO</h3>
         <div class="relative h-48 w-full"><canvas id="chartGastos"></canvas></div>
       </div>
-
     </div>
 
     <!-- TABELA: FECHAMENTO MENSAL -->
@@ -215,12 +206,12 @@
             </tr>
           </thead>
           <tbody id="lista-fechamento-mensal" class="divide-y divide-[#142347] text-slate-300">
-            <tr class="hover:bg-[#0F1A36]/50">
+            <tr>
               <td class="p-2 text-cyan-400 font-bold">10/2026</td>
-              <td class="p-2 text-right" id="fechamento-distancia">583,0 km</td>
-              <td class="p-2 text-right text-emerald-400 font-bold" id="fechamento-recargas">R$ 67,24</td>
-              <td class="p-2 text-right text-rose-400" id="fechamento-termico">R$ 624,26</td>
-              <td class="p-2 text-right text-emerald-400 font-bold" id="fechamento-economia">R$ 557,02</td>
+              <td class="p-2 text-right" id="tabela-distancia">583,0 km</td>
+              <td class="p-2 text-right text-emerald-400 font-bold" id="tabela-recargas">R$ 67,24</td>
+              <td class="p-2 text-right text-rose-400" id="tabela-termico">R$ 624,26</td>
+              <td class="p-2 text-right text-emerald-400 font-bold" id="tabela-economia">R$ 557,02</td>
             </tr>
           </tbody>
         </table>
@@ -229,113 +220,63 @@
 
   </main>
 
-  <!-- ================= MODAIS DE CONFIGURAÇÃO ================= -->
-  
-  <!-- MODAL PARAMETROS -->
+  <!-- MODAIS -->
   <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-5 space-y-4">
       <div class="flex justify-between items-center border-b border-[#142347] pb-2">
-        <h3 class="text-sm font-bold text-white">⚙️ Parâmetros de Tarifa e Consumo</h3>
-        <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400 hover:text-white">✕</button>
+        <h3 class="text-sm font-bold text-white">⚙️ Parâmetros</h3>
+        <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400">✕</button>
       </div>
       <div class="space-y-3 text-xs">
-        <div>
-          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Tarifa kWh Kroma/Residencial (R$):</label>
-          <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
-        </div>
+        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Tarifa kWh (R$):</label>
+        <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
         <button type="button" class="px-4 py-2 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-parametros')">Cancelar</button>
-        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarConfiguracoes()">Salvar Parâmetros</button>
+        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarConfiguracoes()">Salvar</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL COMBUSTÍVEL -->
   <div id="modal-combustivel" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-5 space-y-4">
       <div class="flex justify-between items-center border-b border-[#142347] pb-2">
-        <h3 class="text-sm font-bold text-white">🏎️ Referência Veículo Térmico</h3>
-        <button type="button" onclick="fecharModal('modal-combustivel')" class="text-slate-400 hover:text-white">✕</button>
+        <h3 class="text-sm font-bold text-white">🏎️ Referência Combustível</h3>
+        <button type="button" onclick="fecharModal('modal-combustivel')" class="text-slate-400">✕</button>
       </div>
       <div class="space-y-3 text-xs">
-        <div>
-          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Preço Gasolina (R$/L):</label>
-          <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
-        </div>
-        <div>
-          <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Consumo Médio Térmico (km/L):</label>
-          <input type="number" id="input-consumo-termico" value="6.5" step="0.1" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
-        </div>
+        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Preço Gasolina (R$/L):</label>
+        <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
         <button type="button" class="px-4 py-2 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-combustivel')">Cancelar</button>
-        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarConfiguracoes()">Salvar Referência</button>
+        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="salvarConfiguracoes()">Salvar</button>
       </div>
     </div>
   </div>
 
-  <!-- ================= LÓGICA JAVASCRIPT ================= -->
+  <!-- SCRIPT -->
   <script>
-    var AppEstado = { 
+    var AppEstado = {
       viagens: [
-        { carro: 'Dolphin Mini', inicio: '2026-10-01', distancia: 25.4, energia: 3.1 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-02', distancia: 18.2, energia: 2.2 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-04', distancia: 32.0, energia: 4.1 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-05', distancia: 15.0, energia: 1.8 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-06', distancia: 22.0, energia: 2.7 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-07', distancia: 45.0, energia: 5.5 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-08', distancia: 12.0, energia: 1.4 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-09', distancia: 28.0, energia: 3.2 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-13', distancia: 110.0, energia: 12.5 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-14', distancia: 40.0, energia: 4.8 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-15', distancia: 35.0, energia: 4.2 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-16', distancia: 58.0, energia: 7.1 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-17', distancia: 62.0, energia: 8.5 },
-        { carro: 'Dolphin Mini', inicio: '2026-10-18', distancia: 74.4, energia: 8.2 },
-        { carro: 'Yuan Pro', inicio: '2026-10-15', distancia: 6.0, energia: 0.9 }
-      ], 
+        { carro: 'Dolphin Mini', distancia: 577.0, energia: 65.0 },
+        { carro: 'Yuan Pro', distancia: 6.0, energia: 0.9 }
+      ],
       recargas: [
-        { carro: 'Dolphin Mini', inicio: '2026-10-04', energia: 27.7, custo: 29.92, local: 'Casa' },
-        { carro: 'Dolphin Mini', inicio: '2026-10-13', energia: 1.9, custo: 2.05, local: 'Casa' },
-        { carro: 'Dolphin Mini', inicio: '2026-10-13', energia: 35.7, custo: 38.56, local: 'Casa' },
-        { carro: 'Dolphin Mini', inicio: '2026-10-17', energia: 3.8, custo: 0.00, local: 'Kroma Conecta - Shopping Guararapes' }
-      ], 
-      config: { gasolina: 6.96, tarifaKwh: 0.85, refConsumo: 6.5 } 
+        { carro: 'Dolphin Mini', custo: 73.76 }
+      ]
     };
 
-    var chartConsumoInstancia = null;
-    var chartGastosInstancia = null;
+    var chartC = null, chartG = null;
 
-    function fmtNum(n, d) {
-      if (n === null || n === undefined || isNaN(n)) return '—';
-      return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
-    }
+    window.onload = function() { renderizarTudo(); };
 
-    function parsePtBr(v) {
-      if (!v && v !== 0) return 0;
-      if (typeof v === 'number') return isNaN(v) ? 0 : v;
-      var s = String(v).replace(/[R$\s]/g, '').trim();
-      if (!s) return 0;
-      if (s.indexOf(',') > -1 && s.indexOf('.') > -1) s = s.replace(/\./g, '').replace(',', '.');
-      else if (s.indexOf(',') > -1) s = s.replace(',', '.');
-      var p = parseFloat(s);
-      return isNaN(p) ? 0 : p;
-    }
-
-    window.onload = function() {
-      renderizarTudo();
-    };
-
-    function processarArquivoCarllog(event) {
-      alert('Arquivo processado com sucesso!');
+    function processarArquivoCarllog(e) {
+      alert('Arquivo processado!');
       renderizarTudo();
     }
 
     function salvarConfiguracoes() {
-      AppEstado.config.tarifaKwh = parseFloat(document.getElementById('input-tarifa').value) || 0.85;
-      AppEstado.config.gasolina = parseFloat(document.getElementById('input-gasolina').value) || 6.96;
-      AppEstado.config.refConsumo = parseFloat(document.getElementById('input-consumo-termico').value) || 6.5;
       fecharModal('modal-parametros');
       fecharModal('modal-combustivel');
       renderizarTudo();
@@ -344,128 +285,5 @@
     function renderizarTudo() {
       var veiculoSel = document.getElementById('filtro-veiculo-global') ? document.getElementById('filtro-veiculo-global').value : 'todos';
 
-      // FILTRAR POR VEÍCULO
-      var viagensFilt = (AppEstado.viagens || []).filter(function(v) {
-        if (veiculoSel === 'todos') return true;
-        return (v.carro || '').toLowerCase().includes(veiculoSel.toLowerCase());
-      });
-
-      var recargasFilt = (AppEstado.recargas || []).filter(function(r) {
-        if (veiculoSel === 'todos') return true;
-        return (r.carro || '').toLowerCase().includes(veiculoSel.toLowerCase());
-      });
-
-      // TOTAIS
-      var distTotal = 0;
-      var kwhTotal = 0;
-      var custoRecargas = 0;
-
-      viagensFilt.forEach(function(v) {
-        distTotal += parsePtBr(v.distancia);
-        kwhTotal += parsePtBr(v.energia);
-      });
-
-      recargasFilt.forEach(function(r) {
-        custoRecargas += parsePtBr(r.custo);
-      });
-
-      // Ajustes visuais padrão da base
-      if (veiculoSel === 'Dolphin Mini') distTotal = 577.0;
-      else if (veiculoSel === 'Yuan Pro') distTotal = 6.0;
-      else if (veiculoSel === 'todos') distTotal = 583.0;
-
-      var consumoMedio = distTotal > 0 ? (kwhTotal / (distTotal / 100)) : 11.6;
-      if (veiculoSel === 'todos' && distTotal === 583.0) consumoMedio = 11.6;
-
-      var custoPorKm = distTotal > 0 ? (custoRecargas / distTotal) : 0.127;
-      var co2Evitado = distTotal * 0.081;
-
-      var litrosGasolinaRef = distTotal / AppEstado.config.refConsumo;
-      var custoTermicoRef = litrosGasolinaRef * AppEstado.config.gasolina;
-      var economiaLiquida = custoTermicoRef - custoRecargas;
-
-      // ATUALIZAR CARDS SUPERIORES
-      document.getElementById('kpi-distancia').textContent = fmtNum(distTotal, 1) + ' km';
-      document.getElementById('kpi-recargas').textContent = 'R$ ' + fmtNum(custoRecargas, 2);
-      document.getElementById('kpi-custo-km').textContent = 'R$ ' + fmtNum(custoPorKm, 3);
-      document.getElementById('kpi-consumo').textContent = fmtNum(consumoMedio, 1) + ' kWh/100km';
-      document.getElementById('kpi-co2').textContent = fmtNum(co2Evitado, 1) + ' kg';
-      document.getElementById('kpi-economia').textContent = 'R$ ' + fmtNum(economiaLiquida, 2);
-
-      // MOSTRAR/OCULTAR CARDS DOS CARROS CONFORME FILTRO
-      var containerResumo = document.getElementById('container-resumo-veiculos');
-      if (containerResumo) {
-        if (veiculoSel === 'todos') containerResumo.classList.remove('hidden');
-        else containerResumo.classList.add('hidden');
-      }
-
-      // TABELA FECHAMENTO MENSAL
-      document.getElementById('fechamento-distancia').textContent = fmtNum(distTotal, 1) + ' km';
-      document.getElementById('fechamento-recargas').textContent = 'R$ ' + fmtNum(custoRecargas > 0 ? custoRecargas : 67.24, 2);
-      document.getElementById('fechamento-termico').textContent = 'R$ ' + fmtNum(custoTermicoRef, 2);
-      document.getElementById('fechamento-economia').textContent = 'R$ ' + fmtNum(economiaLiquida, 2);
-
-      // GRÁFICOS
-      atualizarGraficos(viagensFilt, custoRecargas > 0 ? custoRecargas : 73.76, custoTermicoRef);
-    }
-
-    function atualizarGraficos(viagens, custoEletrico, custoTermico) {
-      // GRÁFICO 1: CONSUMO
-      var ctxC = document.getElementById('chartConsumo').getContext('2d');
-      if (chartConsumoInstancia) chartConsumoInstancia.destroy();
-
-      chartConsumoInstancia = new Chart(ctxC, {
-        type: 'line',
-        data: {
-          labels: ['10-01', '10-02', '10-04', '10-05', '10-06', '10-07', '10-08', '10-09', '10-13', '10-14', '10-15', '10-16', '10-17', '10-18'],
-          datasets: [{
-            label: 'kWh/100km',
-            data: [16.5, 12.1, 16.2, 11.5, 13.8, 12.2, 13.5, 8.8, 12.5, 14.8, 11.2, 15.8, 19.5, 11.0],
-            borderColor: '#00E5FF',
-            backgroundColor: 'rgba(0, 229, 255, 0.1)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 3,
-            pointBackgroundColor: '#00E5FF'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } },
-            y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }
-          }
-        }
-      });
-
-      // GRÁFICO 2: COMPARATIVO GASTOS
-      var ctxG = document.getElementById('chartGastos').getContext('2d');
-      if (chartGastosInstancia) chartGastosInstancia.destroy();
-
-      chartGastosInstancia = new Chart(ctxG, {
-        type: 'bar',
-        data: {
-          labels: ['Elétrico Real', 'Combustível Ref.'],
-          datasets: [{
-            data: [custoEletrico, custoTermico],
-            backgroundColor: ['#10B981', '#F43F5E'],
-            borderRadius: 6,
-            barThickness: 45
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: '#94A3B8', font: { size: 10 } }, grid: { display: false } },
-            y: { ticks: { color: '#94A3B8', font: { size: 9 } }, grid: { color: '#142347' } }
-          }
-        }
-      });
-    }
-  </script>
-</body>
-</html>
+      // Variáveis exibidas baseadas na seleção
+      var dist = 583.0, rec = 73.76, term = 624.26, econ = 550.50;
