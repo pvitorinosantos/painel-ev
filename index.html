@@ -1,4 +1,3 @@
-// Substitua ou ajuste a função de atualização e os gráficos no seu script para garantir estabilidade:
 var chartConsumoInstance = null;
 var chartGastosInstance = null;
 
@@ -10,11 +9,8 @@ function atualizarPainel() {
     txtPeriodoExibido.textContent = selectPeriodo.options[selectPeriodo.selectedIndex].text;
   }
 
-  // Obter dados filtrados pelo período selecionado e regra do veículo
-  // (Mantendo a lógica original do seu index.html)
   var periodoSel = selectPeriodo ? selectPeriodo.value : 'todos';
-  
-  // Exemplo de chamada segura para redesenhar os gráficos sem travar a tela:
+
   try {
     rederizarGraficosSeguros();
   } catch (e) {
@@ -26,13 +22,15 @@ function rederizarGraficosSeguros() {
   // 1. Gráfico de Consumo (Linha)
   var ctx1 = document.getElementById('chartConsumo');
   if (ctx1) {
-    if (chartConsumoInstance) { chartConsumoInstance.destroy(); }
+    if (chartConsumoInstance) { 
+      chartConsumoInstance.destroy(); 
+    }
     chartConsumoInstance = new Chart(ctx1.getContext('2d'), {
       type: 'line',
       data: {
-        labels: ['01/10', '05/10', '10/10', '15/10'], // Ajuste para os seus labels reais do array
+        labels: ['01/10', '05/10', '10/10', '15/10'],
         datasets: [{
-          data: [11.2, 11.5, 11.8, 11.6], // Seus dados de consumo
+          data: [11.2, 11.5, 11.8, 11.6],
           borderColor: '#0284C7',
           fill: true,
           backgroundColor: 'rgba(2, 132, 199, 0.15)',
@@ -54,13 +52,15 @@ function rederizarGraficosSeguros() {
   // 2. Gráfico de Gastos (Barras)
   var ctx2 = document.getElementById('chartGastos');
   if (ctx2) {
-    if (chartGastosInstance) { chartGastosInstance.destroy(); }
+    if (chartGastosInstance) { 
+      chartGastosInstance.destroy(); 
+    }
     chartGastosInstance = new Chart(ctx2.getContext('2d'), {
       type: 'bar',
       data: {
         labels: ['Elétrico Real', 'Combustível Ref.'],
         datasets: [{
-          data: [73.76, 624.26], // Seus valores reais de custo
+          data: [73.76, 624.26],
           backgroundColor: ['#10B981', '#E11D48'],
           borderRadius: 6,
           barThickness: 45
