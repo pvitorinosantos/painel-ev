@@ -64,7 +64,7 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <span class="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200">v2.13.2-TESTE</span>
+        <span id="txt-versao-badge" class="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200">v2.13.3-TESTE</span>
         
         <!-- Input para importação de CSV do Carllog isolado -->
         <input type="file" id="input-arquivo-carllog" class="hidden" accept=".csv,.txt" onchange="processarCsvCarllogIsolado(event)">
@@ -98,7 +98,7 @@
     <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
       <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
         <span class="text-[9px] font-bold uppercase text-slate-500 block mb-1">DISTÂNCIA TOTAL</span>
-        <strong id="kpi-distancia" class="text-lg font-extrabold text-slate-900 font-mono">0,0 km</strong>
+        <strong id="kpi-distancia" class="text-lg font-extrabold text-slate-900 font-mono">583,0 km</strong>
       </div>
       <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
         <span class="text-[9px] font-bold uppercase text-slate-500 block mb-1">CUSTO RECARGAS</span>
@@ -135,11 +135,11 @@
         <div class="grid grid-cols-3 gap-2 text-center pt-1">
           <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
             <span class="text-[8px] text-slate-500 uppercase block">DISTÂNCIA</span>
-            <strong id="resumo-mini-dist" class="text-xs font-bold text-slate-900 font-mono">0,0 km</strong>
+            <strong id="resumo-mini-dist" class="text-xs font-bold text-slate-900 font-mono">577,0 km</strong>
           </div>
           <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
             <span class="text-[8px] text-slate-500 uppercase block">VIAGENS</span>
-            <strong id="resumo-mini-viagens" class="text-xs font-bold text-cyan-600 font-mono">0</strong>
+            <strong id="resumo-mini-viagens" class="text-xs font-bold text-cyan-600 font-mono">46</strong>
           </div>
           <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
             <span class="text-[8px] text-slate-500 uppercase block">GASTO RECARGAS</span>
@@ -159,11 +159,11 @@
         <div class="grid grid-cols-3 gap-2 text-center pt-1">
           <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
             <span class="text-[8px] text-slate-500 uppercase block">DISTÂNCIA</span>
-            <strong id="resumo-yuan-dist" class="text-xs font-bold text-slate-900 font-mono">0,0 km</strong>
+            <strong id="resumo-yuan-dist" class="text-xs font-bold text-slate-900 font-mono">6,0 km</strong>
           </div>
           <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
             <span class="text-[8px] text-slate-500 uppercase block">VIAGENS</span>
-            <strong id="resumo-yuan-viagens" class="text-xs font-bold text-cyan-600 font-mono">0</strong>
+            <strong id="resumo-yuan-viagens" class="text-xs font-bold text-cyan-600 font-mono">1</strong>
           </div>
           <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
             <span class="text-[8px] text-slate-500 uppercase block">GASTO RECARGAS</span>
@@ -208,7 +208,7 @@
             <tbody class="divide-y divide-slate-100 text-slate-700">
               <tr>
                 <td class="p-1.5 text-cyan-600 font-bold">10/2026</td>
-                <td id="tabela-fechamento-dist" class="p-1.5 text-right font-semibold">0,0 km</td>
+                <td id="tabela-fechamento-dist" class="p-1.5 text-right font-semibold">583,0 km</td>
                 <td class="p-1.5 text-right text-emerald-600 font-bold">R$ 73,76</td>
                 <td class="p-1.5 text-right text-rose-600 font-semibold">R$ 624,26</td>
                 <td class="p-1.5 text-right text-emerald-600 font-bold">R$ 550,50</td>
@@ -222,21 +222,21 @@
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
         <div class="flex justify-between items-center border-b border-slate-200 pb-2">
           <h3 class="text-xs font-bold uppercase text-slate-900 flex items-center gap-1.5">
-            ⛽ VEÍCULOA COMBUSTÃO DE REFERÊNCIA
+            ⛽ VEÍCULO A COMBUSTÃO DE REFERÊNCIA
           </h3>
           <div class="flex items-center gap-1.5">
-            <button type="button" onclick="alert('Funcionalidade de alterar veículo de referência')" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-cyan-600 font-bold text-[10px] border border-slate-300">Alterar Veículo</button>
+            <button type="button" onclick="abrirModal('modal-alterar-veiculo')" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-cyan-600 font-bold text-[10px] border border-slate-300">Alterar Veículo</button>
             <span class="text-[9px] font-mono bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200 font-bold">Parâmetro Ativo</span>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3 text-xs pt-1 font-mono">
           <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
             <span class="text-[9px] text-slate-500 uppercase block mb-0.5">Modelo Base de Comparação:</span>
-            <strong class="text-slate-900 text-sm font-bold">Citroën 2011</strong>
+            <strong id="lbl-modelo-ref" class="text-slate-900 text-sm font-bold">Citroën 2011</strong>
           </div>
           <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
             <span class="text-[9px] text-slate-500 uppercase block mb-0.5">Consumo Médio Referência:</span>
-            <strong class="text-slate-900 text-sm font-bold">6,5 km/L</strong>
+            <strong id="lbl-consumo-ref" class="text-slate-900 text-sm font-bold">6,5 km/L</strong>
           </div>
         </div>
       </div>
@@ -272,6 +272,30 @@
 
   </main>
 
+  <!-- MODAL ALTERAR VEÍCULO DE REFERÊNCIA -->
+  <div id="modal-alterar-veiculo" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+        <h3 class="text-sm font-bold text-slate-900">⛽ Alterar Veículo de Combustão de Referência</h3>
+        <button type="button" onclick="fecharModal('modal-alterar-veiculo')" class="text-slate-400 font-bold hover:text-slate-700">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Modelo do Veículo:</label>
+          <input type="text" id="input-modelo-ref" value="Citroën 2011" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-800 font-mono outline-none">
+        </div>
+        <div>
+          <label class="text-[10px] text-slate-500 uppercase font-semibold block mb-1">Consumo Médio (km/L):</label>
+          <input type="number" id="input-consumo-ref" value="6.5" step="0.1" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-800 font-mono outline-none">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+        <button type="button" onclick="fecharModal('modal-alterar-veiculo')" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">Cancelar</button>
+        <button type="button" onclick="salvarVeiculoReferencia()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs">Salvar Alteração</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL PARÂMETROS -->
   <div id="modal-parametros" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-white border border-slate-200 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl">
@@ -291,7 +315,7 @@
 
   <!-- SCRIPT DE PROCESSAMENTO ISOLADO E GRÁFICOS -->
   <script>
-    var CHAVE_STORAGE_TESTE = 'carllog_teste_db_v2';
+    var CHAVE_STORAGE_TESTE = 'carllog_teste_db_v3';
     var chartC = null, chartG = null;
     var viagensTesteGlobais = [];
 
@@ -320,6 +344,15 @@
       } catch (err) {
         console.error("Erro ao salvar dados do teste:", err);
       }
+    }
+
+    function salvarVeiculoReferencia() {
+      var mod = document.getElementById('input-modelo-ref').value;
+      var cons = document.getElementById('input-consumo-ref').value;
+      if(mod) document.getElementById('lbl-modelo-ref').textContent = mod;
+      if(cons) document.getElementById('lbl-consumo-ref').textContent = cons + ' km/L';
+      fecharModal('modal-alterar-veiculo');
+      alert('Veículo de referência atualizado com sucesso no ambiente de teste!');
     }
 
     function processarCsvCarllogIsolado(event) {
@@ -406,139 +439,4 @@
 
       var distTotal = 0, countMini = 0, distMini = 0, countYuan = 0, distYuan = 0;
 
-      viagensTesteGlobais.forEach(function(v) {
-        var carro = obterValorColuna(v, ['carro', 'car']).toUpperCase();
-        var rawDist = obterValorColuna(v, ['distância', 'distancia', 'dist', 'd(distância)']);
-        var dist = parseFloat(rawDist.replace(',', '.')) || 0;
-
-        distTotal += dist;
-        if (carro.includes('MINI')) {
-          countMini++;
-          distMini += dist;
-        } else if (carro.includes('YUN') || carro.includes('YUAN')) {
-          countYuan++;
-          distYuan += dist;
-        }
-      });
-
-      // Atualiza KPIs e resumos
-      if (distTotal > 0) {
-        document.getElementById('kpi-distancia').textContent = distTotal.toFixed(1).replace('.', ',') + ' km';
-        document.getElementById('tabela-fechamento-dist').textContent = distTotal.toFixed(1).replace('.', ',') + ' km';
-      } else {
-        document.getElementById('kpi-distancia').textContent = '583,0 km';
-        document.getElementById('tabela-fechamento-dist').textContent = '583,0 km';
-      }
-
-      document.getElementById('resumo-mini-dist').textContent = distMini > 0 ? distMini.toFixed(1).replace('.', ',') + ' km' : '577,0 km';
-      document.getElementById('resumo-mini-viagens').textContent = countMini > 0 ? countMini : '46';
-      document.getElementById('resumo-yuan-dist').textContent = distYuan > 0 ? distYuan.toFixed(1).replace('.', ',') + ' km' : '6,0 km';
-      document.getElementById('resumo-yuan-viagens').textContent = countYuan > 0 ? countYuan : '1';
-
-      var totalViagens = viagensTesteGlobais.length > 0 ? viagensTesteGlobais.length : 47;
-      document.getElementById('txt-status-online').textContent = 'Online (' + totalViagens + ' viagens)';
-
-      renderizarTabelaTeste(filtroCarro);
-      desenharGraficosTeste();
-    }
-
-    function renderizarTabelaTeste(filtroCarro) {
-      var tbody = document.getElementById('tabela-viagens-sincronizadas');
-      if (!tbody) return;
-
-      var baseViagens = viagensTesteGlobais.length > 0 ? viagensTesteGlobais : [];
-
-      if (baseViagens.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-500 font-mono text-xs">Nenhuma viagem encontrada na base de teste. Importe um arquivo CSV.</td></tr>';
-        return;
-      }
-
-      var filtradas = baseViagens.filter(function(v) {
-        if (filtroCarro === 'todos') return true;
-        var carroStr = obterValorColuna(v, ['carro', 'car']).toUpperCase();
-        return carroStr.includes(filtroCarro.toUpperCase());
-      });
-
-      var html = '';
-      filtradas.forEach(function(v) {
-        var carro = obterValorColuna(v, ['carro', 'car']) || 'MINI';
-        var corTexto = carro.toUpperCase().includes('YUN') || carro.toUpperCase().includes('YUAN') ? 'text-purple-600' : 'text-cyan-600';
-        var inicio = obterValorColuna(v, ['início', 'inicio', 'date']) || '-';
-        var rawDist = obterValorColuna(v, ['distância', 'distancia', 'dist', 'd(distância)']) || '0';
-        var distancia = rawDist + ' km';
-        var duracao = (obterValorColuna(v, ['duração', 'duracao']) || '0') + ' min';
-        var saida = obterValorColuna(v, ['saída', 'saida']) || 'Origem';
-        var chegada = obterValorColuna(v, ['chegada']) || 'Destino';
-        var trajeto = saida + ' ➔ ' + chegada;
-
-        html += '<tr class="hover:bg-slate-50 transition">' +
-                  '<td class="p-2">' +
-                    '<span class="font-bold ' + corTexto + ' block">' + carro + '</span>' +
-                    '<span class="text-[10px] text-slate-500 block">' + inicio + '</span>' +
-                  '</td>' +
-                  '<td class="p-2 text-right font-bold text-slate-900">' + distancia + '</td>' +
-                  '<td class="p-2 text-right text-purple-600 font-mono">' + duracao + '</td>' +
-                  '<td class="p-2 text-slate-700 font-mono">' + trajeto + '</td>' +
-                '</tr>';
-      });
-
-      tbody.innerHTML = html;
-    }
-
-    function desenharGraficosTeste() {
-      var ctx1 = document.getElementById('chartConsumo');
-      if (ctx1) {
-        if (chartC) { chartC.destroy(); }
-        chartC = new Chart(ctx1.getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: ['10-01', '10-02', '10-04', '10-05', '10-06', '10-07', '10-08', '10-09', '10-13', '10-14', '10-15', '10-16', '10-17', '10-18'],
-            datasets: [{
-              data: [16.5, 11.8, 16.2, 11.2, 13.8, 11.9, 13.5, 10.4, 8.9, 13.5, 11.1, 19.8, 11.1, 11.6],
-              borderColor: '#0284C7',
-              fill: true,
-              backgroundColor: 'rgba(2, 132, 199, 0.1)',
-              tension: 0.3
-            }]
-          },
-          options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { ticks: { font: { size: 9 } } },
-              y: { ticks: { font: { size: 9 } } }
-            }
-          }
-        });
-      }
-
-      var ctx2 = document.getElementById('chartGastos');
-      if (ctx2) {
-        if (chartG) { chartG.destroy(); }
-        chartG = new Chart(ctx2.getContext('2d'), {
-          type: 'bar',
-          data: {
-            labels: ['Elétrico Real', 'Combustível Ref.'],
-            datasets: [{
-              data: [73.76, 624.26],
-              backgroundColor: ['#10B981', '#E11D48'],
-              borderRadius: 6,
-              barThickness: 45
-            }]
-          },
-          options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { ticks: { font: { size: 10 } } },
-              y: { ticks: { font: { size: 9 } } }
-            }
-          }
-        });
-      }
-    }
-  </script>
-</body>
-</html>
+      var baseViagens = viagensTesteGlobais.
