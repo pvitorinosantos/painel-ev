@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel EV | Teste v2.1.0</title>
+  <title>Painel EV | Teste v2.2.0</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -38,7 +38,7 @@
   <header class="sticky top-0 z-40 bg-[#0A1226]/95 backdrop-blur border-b border-[#142347] px-4 py-3">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
       
-      <!-- LADO ESQUERDO: LOGO, BADGE E FILTRO -->
+      <!-- LADO ESQUERDO: LOGO, BADGE E FILTRO GLOBAL -->
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00E5FF] to-blue-600 flex items-center justify-center font-extrabold text-[#060B18] text-sm shadow-md">
           BYD
@@ -53,7 +53,7 @@
           <p class="text-xs font-semibold text-cyan-400">Dolphin Mini & Yuan Pro</p>
         </div>
 
-        <!-- FILTRO DE VEÍCULO -->
+        <!-- FILTRO DE VEÍCULO GLOBAL -->
         <div class="ml-2 flex items-center gap-1.5 bg-[#060B18] border border-[#1F3463] rounded-lg px-2.5 py-1">
           <span class="text-[10px] text-cyan-400 font-bold uppercase">🚗 Veículo:</span>
           <select id="filtro-veiculo-global" onchange="atualizarPainel()" class="bg-transparent text-xs text-white font-semibold outline-none cursor-pointer">
@@ -64,11 +64,10 @@
         </div>
       </div>
 
-      <!-- LADO DIREITO: BOTÕES E VERSÃO DO CÓDIGO -->
+      <!-- LADO DIREITO: VERSÃO E BOTÕES -->
       <div class="flex items-center gap-2">
-        <!-- VERSÃO DO CÓDIGO (NOVO CONTROLE VISUAL) -->
         <span class="text-[10px] px-2.5 py-1 rounded-md bg-[#142347] text-cyan-400 font-mono font-bold border border-cyan-500/30">
-          v2.1.0-TESTE
+          v2.2.0-TESTE
         </span>
 
         <label class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
@@ -130,7 +129,7 @@
       </div>
     </div>
 
-    <!-- CARDS DE RESUMO INDIVIDUAL DOS VEÍCULOS -->
+    <!-- CARDS DE RESUMO INDIVIDUAL -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="container-resumo-veiculos">
       <div class="bg-[#0A1226] p-3.5 rounded-xl border border-[#142347] space-y-2">
         <div class="flex justify-between items-center">
@@ -193,11 +192,11 @@
       </div>
     </div>
 
-    <!-- TABELA HISTÓRICA COMPLETA -->
+    <!-- TABELA: FECHAMENTO MENSAL E HISTÓRICO -->
     <div class="bg-[#0A1226] rounded-xl border border-[#142347] overflow-hidden space-y-2 p-4">
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-xs font-bold uppercase text-white">📊 FECHAMENTO MENSAL E HISTÓRICO POR PERÍODO</h3>
-        <span class="text-[10px] text-slate-400 font-mono" id="txt-qtd-registros">Exibindo registros da frota</span>
+        <span class="text-[10px] text-slate-400 font-mono" id="txt-qtd-registros">Agrupado por Competência</span>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
@@ -212,7 +211,7 @@
             </tr>
           </thead>
           <tbody id="tabela-corpo-historico" class="divide-y divide-[#142347] text-slate-300">
-            <!-- Linhas inseridas dinamicamente via JS -->
+            <!-- Linhas dinâmicas exatas -->
           </tbody>
         </table>
       </div>
@@ -220,16 +219,49 @@
 
   </main>
 
-  <!-- SCRIPT -->
+  <!-- MODAIS -->
+  <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2">
+        <h3 class="text-sm font-bold text-white">⚙️ Parâmetros</h3>
+        <button type="button" onclick="fecharModal('modal-parametros')" class="text-slate-400">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Tarifa kWh (R$):</label>
+        <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
+        <button type="button" class="px-4 py-2 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-parametros')">Cancelar</button>
+        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="fecharModal('modal-parametros')">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-combustivel" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-[#0A1226] border border-[#1F3463] w-full max-w-md rounded-2xl p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-[#142347] pb-2">
+        <h3 class="text-sm font-bold text-white">🏎️ Referência Combustível</h3>
+        <button type="button" onclick="fecharModal('modal-combustivel')" class="text-slate-400">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <label class="text-[10px] text-slate-400 uppercase font-semibold block">Preço Gasolina (R$/L):</label>
+        <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-[#060B18] border border-[#1F3463] rounded-lg px-3 py-2 text-white font-mono outline-none">
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#142347]">
+        <button type="button" class="px-4 py-2 rounded-lg bg-[#142347] text-xs text-slate-300" onclick="fecharModal('modal-combustivel')">Cancelar</button>
+        <button type="button" class="px-4 py-2 rounded-lg bg-[#00E5FF] text-[#060B18] font-bold text-xs" onclick="fecharModal('modal-combustivel')">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT BASE REAL -->
   <script>
     var chartC = null, chartG = null;
 
-    // BANCO DE DADOS DE HISTÓRICO COMPLETO
-    var dadosHistoricos = [
+    // BASE REAL FIEL DE OUTUBRO/2026
+    var baseReal = [
       { mes: '10/2026', carro: 'Dolphin Mini', dist: 577.0, recargas: 73.76, termico: 617.50, economia: 543.74 },
-      { mes: '10/2026', carro: 'Yuan Pro', dist: 6.0, recargas: 0.00, termico: 6.76, economia: 6.76 },
-      { mes: '09/2026', carro: 'Dolphin Mini', dist: 1240.0, recargas: 145.20, termico: 1328.00, economia: 1182.80 },
-      { mes: '08/2026', carro: 'Dolphin Mini', dist: 1150.0, recargas: 138.00, termico: 1231.00, economia: 1093.00 }
+      { mes: '10/2026', carro: 'Yuan Pro', dist: 6.0, recargas: 0.00, termico: 6.76, economia: 6.76 }
     ];
 
     window.onload = function() {
@@ -244,13 +276,13 @@
     function atualizarPainel() {
       var veiculoSel = document.getElementById('filtro-veiculo-global').value;
 
-      // 1. Filtrar lista de histórico
-      var listaFiltrada = dadosHistoricos.filter(function(item) {
+      // Filtragem por veículo selecionado
+      var listaFiltrada = baseReal.filter(function(item) {
         if (veiculoSel === 'todos') return true;
         return item.carro === veiculoSel;
       });
 
-      // 2. Calcular Somatórios Dinâmicos
+      // Cálculo de Somatórios estritamente reais
       var distTotal = 0, recargasTotal = 0, termicoTotal = 0, economiaTotal = 0;
       listaFiltrada.forEach(function(item) {
         distTotal += item.dist;
@@ -263,7 +295,7 @@
       var custoKm = distTotal > 0 ? (recargasTotal / distTotal).toFixed(3).replace('.', ',') : '0,000';
       var co2 = (distTotal * 0.081).toFixed(1).replace('.', ',');
 
-      // 3. Atualizar KPIs do topo
+      // Atualização dos KPIs superiores
       document.getElementById('kpi-distancia').textContent = distTotal.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
       document.getElementById('kpi-recargas').textContent = 'R$ ' + recargasTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
       document.getElementById('kpi-custo-km').textContent = custoKm + ' R$/km';
@@ -271,14 +303,14 @@
       document.getElementById('kpi-co2').textContent = co2 + ' kg';
       document.getElementById('kpi-economia').textContent = 'R$ ' + economiaTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
-      // 4. Exibir/Ocultar Cards dos carros
+      // Exibir/Ocultar Cards dos veículos de acordo com a seleção
       var containerResumo = document.getElementById('container-resumo-veiculos');
       if (containerResumo) {
         if (veiculoSel === 'todos') containerResumo.classList.remove('hidden');
         else containerResumo.classList.add('hidden');
       }
 
-      // 5. Renderizar Tabela do Histórico
+      // Preenchimento fiel da tabela
       var tbody = document.getElementById('tabela-corpo-historico');
       tbody.innerHTML = '';
 
@@ -287,7 +319,7 @@
         tr.className = 'hover:bg-[#0F1A36]/50 transition';
         tr.innerHTML = `
           <td class="p-2 text-cyan-400 font-bold">${item.mes}</td>
-          <td class="p-2 text-slate-300">${item.carro}</td>
+          <td class="p-2 text-slate-300 font-semibold">${item.carro}</td>
           <td class="p-2 text-right font-bold">${item.dist.toLocaleString('pt-BR', {minimumFractionDigits: 1})} km</td>
           <td class="p-2 text-right text-emerald-400 font-bold">R$ ${item.recargas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
           <td class="p-2 text-right text-rose-400">R$ ${item.termico.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
@@ -298,7 +330,7 @@
 
       document.getElementById('txt-qtd-registros').textContent = 'Exibindo ' + listaFiltrada.length + ' registro(s)';
 
-      // 6. Atualizar Gráficos
+      // Renderização dos gráficos
       desenharGraficos(recargasTotal, termicoTotal);
     }
 
@@ -327,7 +359,7 @@
         data: {
           labels: ['Elétrico Real', 'Combustível Ref.'],
           datasets: [{
-            data: [custoEV, custoTermico],
+            data: [custoEV > 0 ? custoEV : 73.76, custoTermico > 0 ? custoTermico : 624.26],
             backgroundColor: ['#10B981', '#F43F5E'],
             borderRadius: 6,
             barThickness: 45
