@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel EV | Teste v2.12.0</title>
+  <title>Painel EV | Teste v2.13.1 (Leitura Segura)</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -38,7 +38,6 @@
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 px-4 py-3 shadow-sm">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
       
-      <!-- LADO ESQUERDO: LOGO, BADGE E FILTRO GLOBAL -->
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-extrabold text-white text-sm shadow-md">
           BYD
@@ -47,7 +46,7 @@
           <h1 class="text-sm font-bold text-slate-900 flex items-center gap-2">
             TELEMETRIA & NUVEM
             <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-mono border border-amber-300 font-bold">
-              Ambiente de Teste
+              Ambiente de Teste (Read-Only)
             </span>
           </h1>
           <p class="text-xs font-semibold text-cyan-600">Dolphin Mini & Yuan Pro</p>
@@ -64,18 +63,13 @@
         </div>
       </div>
 
-      <!-- LADO DIREITO: VERSÃO E BOTÕES -->
       <div class="flex items-center gap-2">
         <span class="text-[10px] px-2.5 py-1 rounded-md bg-slate-200 text-cyan-700 font-mono font-bold border border-slate-300">
-          v2.12.0-TESTE
+          v2.13.1-TESTE
         </span>
 
-        <label class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
-          📁 Importar Carllog
-          <input type="file" id="input-arquivo-carllog" accept=".json,.csv,.txt,.tsv" onchange="processarArquivoCarllog(event)" class="hidden">
-        </label>
-        <button type="button" onclick="abrirModal('modal-combustivel')" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs border border-slate-300 transition flex items-center gap-1">
-          🏎️ Ref. Combustível
+        <button type="button" onclick="carregarDadosReais()" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs cursor-pointer transition flex items-center gap-1.5 shadow">
+          🔄 Recarregar Dados
         </button>
         <button type="button" onclick="abrirModal('modal-parametros')" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-cyan-700 font-semibold text-xs border border-slate-300 transition flex items-center gap-1">
           ⚙️ Parâmetros
@@ -222,92 +216,11 @@
       </div>
     </div>
 
-    <!-- LOCAIS FREQUENTES E VEÍCULO TÉRMICO -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-        <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-          <h3 class="text-xs font-bold uppercase text-slate-900 flex items-center gap-1.5">
-            📍 LOCAIS MAIS FREQUENTADOS
-          </h3>
-          <span class="text-[10px] text-cyan-600 font-mono cursor-pointer hover:underline font-bold">Clique no local p/ abrir o Mapa</span>
-        </div>
-        <div class="space-y-2 text-xs font-mono">
-          <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-            <span class="text-slate-700">1º Casa 📍</span>
-            <span class="text-cyan-700 font-bold">48 visitas</span>
-          </div>
-          <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-            <span class="text-slate-700">2º COMPESA 📍</span>
-            <span class="text-cyan-700 font-bold">17 visitas</span>
-          </div>
-          <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-            <span class="text-slate-700">3º JTI 📍</span>
-            <span class="text-cyan-700 font-bold">6 visitas</span>
-          </div>
-          <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-            <span class="text-slate-700">4º Rodovia Governador Mário Covas, Jardim Jordão 📍</span>
-            <span class="text-cyan-700 font-bold">4 visitas</span>
-          </div>
-          <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-            <span class="text-slate-700">5º Estrada da Batalha 📍</span>
-            <span class="text-cyan-700 font-bold">2 visitas</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-        <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-          <h3 class="text-xs font-bold uppercase text-slate-900 flex items-center gap-1.5">
-            🏎️ VEÍCULO A COMBUSTÃO DE REFERÊNCIA
-          </h3>
-          <div class="flex gap-2">
-            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono cursor-pointer font-bold border border-slate-300">Alterar Veículo</span>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-mono font-bold border border-emerald-300">Parâmetro Ativo</span>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3 text-xs font-mono pt-1">
-          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1">
-            <span class="text-[9px] text-slate-500 uppercase block">Modelo Base de Comparação:</span>
-            <strong class="text-slate-900 text-sm font-bold">Citroën 2011</strong>
-          </div>
-          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1">
-            <span class="text-[9px] text-slate-500 uppercase block">Consumo Médio Referência:</span>
-            <strong class="text-cyan-700 text-sm font-bold">6,5 km/L</strong>
-          </div>
-          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1">
-            <span class="text-[9px] text-slate-500 uppercase block">Preço Gasolina Atual:</span>
-            <strong class="text-amber-700 text-sm font-bold">R$ 6,96 / L</strong>
-          </div>
-          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1">
-            <span class="text-[9px] text-slate-500 uppercase block">Custo Estimado Combustível:</span>
-            <strong class="text-rose-600 text-sm font-bold" id="ref-custo-combustivel">R$ 0,00</strong>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- DESPESAS EXTRAS -->
-    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-        <h3 class="text-xs font-bold uppercase text-slate-900 flex items-center gap-1.5">
-          🛠️ DESPESAS EXTRAS (MANUTENÇÃO / SEGURO / IPVA)
-        </h3>
-        <div class="flex items-center gap-3">
-          <span class="text-xs font-mono text-cyan-700 font-bold">Total: R$ 0,00</span>
-          <button type="button" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] uppercase shadow">+ Incluir</button>
-        </div>
-      </div>
-      <p class="text-xs text-slate-500 font-mono text-center py-4">Nenhuma despesa extra cadastrada.</p>
-    </div>
-
     <!-- TABELA COMPLETA: VIAGENS SINCRONIZADAS DA NUVEM -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden space-y-2 p-4">
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xs font-bold uppercase text-slate-900">Viagens Sincronizadas da Nuvem</h3>
-        <div class="flex items-center gap-2">
-          <button type="button" class="px-2.5 py-1 rounded bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-[10px] border border-rose-300">🗑️ Limpar Viagens</button>
-          <span class="text-[10px] text-emerald-700 font-mono bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 font-bold" id="txt-status-online">Online (0 viagens)</span>
-        </div>
+        <h3 class="text-xs font-bold uppercase text-slate-900">Viagens Sincronizadas (Leitura Dinâmica)</h3>
+        <span class="text-[10px] text-emerald-700 font-mono bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 font-bold" id="txt-status-online">Online (0 viagens)</span>
       </div>
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs font-mono">
@@ -320,7 +233,7 @@
             </tr>
           </thead>
           <tbody id="tabela-viagens-sincronizadas" class="divide-y divide-slate-100 text-slate-700">
-            <!-- Linhas alimentadas dinamicamente via JS -->
+            <!-- Dados carregados dinamicamente -->
           </tbody>
         </table>
       </div>
@@ -328,7 +241,7 @@
 
   </main>
 
-  <!-- MODAIS -->
+  <!-- MODAL PARÂMETROS -->
   <div id="modal-parametros" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-white border border-slate-300 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl">
       <div class="flex justify-between items-center border-b border-slate-200 pb-2">
@@ -337,95 +250,39 @@
       </div>
       <div class="space-y-3 text-xs">
         <label class="text-[10px] text-slate-600 uppercase font-semibold block">Tarifa kWh (R$):</label>
-        <input type="number" id="input-tarifa" value="0.85" step="0.01" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono outline-none">
+        <input type="number" id="input-tarifa" value="0.85" step="0.01" onchange="atualizarPainel()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono outline-none">
       </div>
       <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
-        <button type="button" class="px-4 py-2 rounded-lg bg-slate-200 text-xs text-slate-700 font-semibold" onclick="fecharModal('modal-parametros')">Cancelar</button>
-        <button type="button" class="px-4 py-2 rounded-lg bg-cyan-600 text-white font-bold text-xs" onclick="fecharModal('modal-parametros')">Salvar</button>
+        <button type="button" class="px-4 py-2 rounded-lg bg-cyan-600 text-white font-bold text-xs" onclick="fecharModal('modal-parametros')">Fechar</button>
       </div>
     </div>
   </div>
 
-  <div id="modal-combustivel" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white border border-slate-300 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-xl">
-      <div class="flex justify-between items-center border-b border-slate-200 pb-2">
-        <h3 class="text-sm font-bold text-slate-900">🏎️ Referência Combustível</h3>
-        <button type="button" onclick="fecharModal('modal-combustivel')" class="text-slate-500 font-bold">✕</button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <label class="text-[10px] text-slate-600 uppercase font-semibold block">Preço Gasolina (R$/L):</label>
-        <input type="number" id="input-gasolina" value="6.96" step="0.01" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-slate-900 font-mono outline-none">
-      </div>
-      <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
-        <button type="button" class="px-4 py-2 rounded-lg bg-slate-200 text-xs text-slate-700 font-semibold" onclick="fecharModal('modal-combustivel')">Cancelar</button>
-        <button type="button" class="px-4 py-2 rounded-lg bg-cyan-600 text-white font-bold text-xs" onclick="fecharModal('modal-combustivel')">Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SCRIPT V2.12.0 COM AS 47 VIAGENS COMPLETAS DA NUVEM -->
+  <!-- SCRIPT DE LEITURA DINÂMICA SEGURA (READ-ONLY) -->
   <script>
     var chartC = null, chartG = null;
-
-    // BASE DE DADOS COMPLETA COM AS 47 VIAGENS REAIS DE OUTUBRO DE 2026
-    var listaViagensSincronizadas = [
-      { carro: 'MINI', inicio: '2026-10-01 07:10', dist: 9.0, kwh: 1.10, trajeto: '📍 Casa ➔ COMPESA' },
-      { carro: 'MINI', inicio: '2026-10-01 12:30', dist: 9.0, kwh: 1.10, trajeto: '📍 COMPESA ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-01 14:00', dist: 8.5, kwh: 0.95, trajeto: '📍 Casa ➔ COMPESA' },
-      { carro: 'MINI', inicio: '2026-10-01 17:45', dist: 9.0, kwh: 1.50, trajeto: '📍 COMPESA ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-02 06:25', dist: 9.0, kwh: 1.10, trajeto: '📍 Casa ➔ COMPESA' },
-      { carro: 'MINI', inicio: '2026-10-02 12:50', dist: 9.0, kwh: 1.10, trajeto: '📍 COMPESA ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-02 14:00', dist: 8.0, kwh: 0.80, trajeto: '📍 Casa ➔ COMPESA' },
-      { carro: 'MINI', inicio: '2026-10-02 17:30', dist: 9.0, kwh: 1.10, trajeto: '📍 Estrada da Batalha ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-03 07:15', dist: 9.0, kwh: 1.10, trajeto: '📍 Casa ➔ COMPESA' },
-      { carro: 'MINI', inicio: '2026-10-03 12:30', dist: 9.0, kwh: 1.10, trajeto: '📍 COMPESA ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-03 09:45', dist: 14.0, kwh: 2.30, trajeto: '📍 Casa ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-04 09:15', dist: 12.0, kwh: 1.10, trajeto: '📍 Casa ➔ Correios' },
-      { carro: 'MINI', inicio: '2026-10-04 16:30', dist: 12.0, kwh: 1.30, trajeto: '📍 Correios ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-05 08:30', dist: 10.5, kwh: 1.30, trajeto: '📍 Casa ➔ JTI' },
-      { carro: 'MINI', inicio: '2026-10-05 17:00', dist: 10.5, kwh: 1.25, trajeto: '📍 JTI ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-06 07:20', dist: 9.0, kwh: 1.10, trajeto: '📍 Casa ➔ COMPESA' },
-      { carro: 'MINI', inicio: '2026-10-06 13:20', dist: 11.0, kwh: 1.40, trajeto: '📍 JTI ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-07 07:15', dist: 9.5, kwh: 1.15, trajeto: '📍 Casa ➔ COMPESA' },
-      { carro: 'MINI', inicio: '2026-10-07 17:30', dist: 9.5, kwh: 1.20, trajeto: '📍 COMPESA ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-08 08:10', dist: 13.0, kwh: 1.55, trajeto: '📍 Casa ➔ Shopping Guararapes' },
-      { carro: 'MINI', inicio: '2026-10-08 18:00', dist: 13.0, kwh: 1.60, trajeto: '📍 Shopping Guararapes ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-09 10:10', dist: 8.5, kwh: 0.95, trajeto: '📍 Casa ➔ Candeias Centro' },
-      { carro: 'MINI', inicio: '2026-10-09 16:00', dist: 8.5, kwh: 0.95, trajeto: '📍 Candeias Centro ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-10 07:30', dist: 10.0, kwh: 1.20, trajeto: '📍 Casa ➔ COMPESA' },
-      { carro: 'MINI', inicio: '2026-10-10 17:10', dist: 10.0, kwh: 1.20, trajeto: '📍 COMPESA ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-11 09:00', dist: 11.5, kwh: 1.40, trajeto: '📍 Casa ➔ Supermercado' },
-      { carro: 'MINI', inicio: '2026-10-11 11:30', dist: 11.5, kwh: 1.40, trajeto: '📍 Supermercado ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-12 10:00', dist: 14.0, kwh: 1.80, trajeto: '📍 Casa ➔ Praia de Piedade' },
-      { carro: 'MINI', inicio: '2026-10-12 15:00', dist: 14.0, kwh: 1.80, trajeto: '📍 Praia de Piedade ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-13 08:00', dist: 15.0, kwh: 1.90, trajeto: '📍 Casa ➔ Boa Viagem' },
-      { carro: 'MINI', inicio: '2026-10-13 17:20', dist: 15.0, kwh: 1.90, trajeto: '📍 Boa Viagem ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-14 07:40', dist: 12.5, kwh: 1.50, trajeto: '📍 Casa ➔ JTI' },
-      { carro: 'MINI', inicio: '2026-10-14 16:40', dist: 12.5, kwh: 1.50, trajeto: '📍 Boa Viagem ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-15 09:00', dist: 10.0, kwh: 1.20, trajeto: '📍 Casa ➔ COMPESA' },
-      { carro: 'MINI', inicio: '2026-10-15 17:00', dist: 10.0, kwh: 1.20, trajeto: '📍 COMPESA ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-16 08:15', dist: 16.0, kwh: 2.10, trajeto: '📍 Casa ➔ JTI' },
-      { carro: 'MINI', inicio: '2026-10-16 14:15', dist: 16.0, kwh: 2.10, trajeto: '📍 Casa ➔ JTI' },
-      { carro: 'MINI', inicio: '2026-10-17 08:30', dist: 18.0, kwh: 2.50, trajeto: '📍 Casa ➔ Piedade' },
-      { carro: 'MINI', inicio: '2026-10-17 11:30', dist: 18.0, kwh: 2.50, trajeto: '📍 JTI ➔ Piedade ➔ Casa' },
-      { carro: 'MINI', inicio: '2026-10-18 10:00', dist: 7.5, kwh: 0.90, trajeto: '📍 Casa ➔ Farmácia' },
-      { carro: 'MINI', inicio: '2026-10-18 19:10', dist: 7.5, kwh: 0.90, trajeto: '📍 Casa ➔ Supermercado' },
-      { carro: 'YUAN', inicio: '2026-10-15 11:20', dist: 6.0, kwh: 0.90, trajeto: '📍 Casa ➔ Shopping Guararapes' },
-      { carro: 'YUAN', inicio: '2026-10-15 14:00', dist: 6.0, kwh: 0.90, trajeto: '📍 Shopping Guararapes ➔ Casa' },
-      { carro: 'YUAN', inicio: '2026-10-16 10:00', dist: 8.0, kwh: 1.20, trajeto: '📍 Casa ➔ Boa Viagem' },
-      { carro: 'YUAN', inicio: '2026-10-16 17:00', dist: 8.0, kwh: 1.20, trajeto: '📍 Boa Viagem ➔ Casa' },
-      { carro: 'YUAN', inicio: '2026-10-17 15:00', dist: 10.0, kwh: 1.50, trajeto: '📍 Casa ➔ Piedade' },
-      { carro: 'YUAN', inicio: '2026-10-18 16:00', dist: 10.0, kwh: 1.50, trajeto: '📍 Piedade ➔ Casa' }
-    ];
+    var listaViagensSincronizadas = [];
 
     document.addEventListener("DOMContentLoaded", function() {
-      setTimeout(function() {
-        atualizarPainel();
-      }, 100);
+      carregarDadosReais();
     });
 
-    function processarArquivoCarllog(e) {
-      alert('Arquivo processado com sucesso!');
+    function carregarDadosReais() {
+      try {
+        // Tenta ler do localStorage do navegador de forma segura (onde o painel oficial guarda o cache ou sincronização)
+        var dadosSalvos = localStorage.getItem('viagens_ev') || localStorage.getItem('carllog_viagens') || localStorage.getItem('telemetria_ev');
+        
+        if (dadosSalvos) {
+          listaViagensSincronizadas = JSON.parse(dadosSalvos);
+        } else {
+          // Se não houver cache local, fazemos uma leitura segura ou fallback vazio para evitar qualquer erro de chave
+          listaViagensSincronizadas = [];
+        }
+      } catch (err) {
+        console.warn('Aviso ao ler dados locais:', err);
+        listaViagensSincronizadas = [];
+      }
+      
       atualizarPainel();
     }
 
@@ -433,11 +290,13 @@
       var selectVeiculo = document.getElementById('filtro-veiculo-global');
       var selectPeriodo = document.getElementById('filtro-periodo-rapido');
       var txtPeriodoExibido = document.getElementById('txt-periodo-exibido');
+      var inputTarifa = document.getElementById('input-tarifa');
       
       if (!selectVeiculo || !selectPeriodo) return;
       
       var veiculoSel = selectVeiculo.value;
       var periodoSel = selectPeriodo.value;
+      var tarifaKWh = inputTarifa ? parseFloat(inputTarifa.value) || 0.85 : 0.85;
 
       if (txtPeriodoExibido) {
         txtPeriodoExibido.textContent = selectPeriodo.options[selectPeriodo.selectedIndex].text;
@@ -445,25 +304,26 @@
 
       // 1. Filtrar por Período
       var viagensPeriodo = listaViagensSincronizadas.filter(function(v) {
+        var dataStr = v.inicio || v.data || '';
         if (periodoSel === 'mes_atual') {
-          return v.inicio.startsWith('2026-10');
+          return dataStr.startsWith('2026-10');
         } else if (periodoSel === 'ano_atual') {
-          return v.inicio.startsWith('2026');
+          return dataStr.startsWith('2026');
         }
         return true;
       });
 
       // 2. Separar individuais para os cards de resumo
-      var viagensMini = viagensPeriodo.filter(function(v) { return v.carro === 'MINI'; });
-      var viagensYuan = viagensPeriodo.filter(function(v) { return v.carro === 'YUAN'; });
+      var viagensMini = viagensPeriodo.filter(function(v) { return (v.carro || '').toUpperCase().includes('MINI'); });
+      var viagensYuan = viagensPeriodo.filter(function(v) { return (v.carro || '').toUpperCase().includes('YUAN'); });
 
-      var distMini = viagensMini.reduce(function(acc, v) { return acc + v.dist; }, 0);
-      var kwhMini = viagensMini.reduce(function(acc, v) { return acc + v.kwh; }, 0);
-      var custoMini = kwhMini * 0.85;
+      var distMini = viagensMini.reduce(function(acc, v) { return acc + (Number(v.dist) || 0); }, 0);
+      var kwhMini = viagensMini.reduce(function(acc, v) { return acc + (Number(v.kwh) || 0); }, 0);
+      var custoMini = kwhMini * tarifaKWh;
 
-      var distYuan = viagensYuan.reduce(function(acc, v) { return acc + v.dist; }, 0);
-      var kwhYuan = viagensYuan.reduce(function(acc, v) { return acc + v.kwh; }, 0);
-      var custoYuan = kwhYuan * 0.85;
+      var distYuan = viagensYuan.reduce(function(acc, v) { return acc + (Number(v.dist) || 0); }, 0);
+      var kwhYuan = viagensYuan.reduce(function(acc, v) { return acc + (Number(v.kwh) || 0); }, 0);
+      var custoYuan = kwhYuan * tarifaKWh;
 
       // Atualiza os cards individuais de resumo
       document.getElementById('resumo-mini-dist').textContent = distMini.toLocaleString('pt-BR', {minimumFractionDigits: 1}) + ' km';
@@ -476,15 +336,16 @@
 
       // 3. Filtrar por Veículo Global selecionado para os KPIs Principais e Gráficos
       var viagensFiltradas = viagensPeriodo.filter(function(v) {
+        var carroStr = (v.carro || '').toUpperCase();
         if (veiculoSel === 'todos') return true;
-        if (veiculoSel === 'Dolphin Mini') return v.carro === 'MINI';
-        if (veiculoSel === 'Yuan Pro') return v.carro === 'YUAN';
+        if (veiculoSel === 'Dolphin Mini') return carroStr.includes('MINI');
+        if (veiculoSel === 'Yuan Pro') return carroStr.includes('YUAN');
         return true;
       });
 
-      var distTotal = viagensFiltradas.reduce(function(acc, v) { return acc + v.dist; }, 0);
-      var kwhTotal = viagensFiltradas.reduce(function(acc, v) { return acc + v.kwh; }, 0);
-      var custoRecargas = kwhTotal * 0.85; // Tarifa R$ 0,85/kWh
+      var distTotal = viagensFiltradas.reduce(function(acc, v) { return acc + (Number(v.dist) || 0); }, 0);
+      var kwhTotal = viagensFiltradas.reduce(function(acc, v) { return acc + (Number(v.kwh) || 0); }, 0);
+      var custoRecargas = kwhTotal * tarifaKWh;
 
       var custoRealKm = distTotal > 0 ? (custoRecargas / distTotal) : 0;
       var consumoMedio = distTotal > 0 ? (kwhTotal / distTotal) * 100 : 0;
@@ -514,14 +375,17 @@
       document.getElementById('tabela-recargas').textContent = 'R$ ' + custoRecargas.toLocaleString('pt-BR', {minimumFractionDigits: 2});
       document.getElementById('tabela-termico').textContent = 'R$ ' + custoTermicoRef.toLocaleString('pt-BR', {minimumFractionDigits: 2});
       document.getElementById('tabela-economia').textContent = 'R$ ' + economiaLiquida.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-      document.getElementById('ref-custo-combustivel').textContent = 'R$ ' + custoTermicoRef.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
       // Renderiza Tabela de Viagens Sincronizadas
       renderizarTabelaViagens(viagensFiltradas);
 
       // Extrai labels e dados reais para os gráficos
-      var labelsDatas = viagensFiltradas.map(function(v) { return v.inicio.substring(5, 10); });
-      var dadosConsumo = viagensFiltradas.map(function(v) { return v.dist > 0 ? Number(((v.kwh / v.dist) * 100).toFixed(1)) : 0; });
+      var labelsDatas = viagensFiltradas.map(function(v) { return (v.inicio || '').substring(5, 10); });
+      var dadosConsumo = viagensFiltradas.map(function(v) { 
+        var d = Number(v.dist) || 0;
+        var k = Number(v.kwh) || 0;
+        return d > 0 ? Number(((k / d) * 100).toFixed(1)) : 0; 
+      });
 
       if (labelsDatas.length === 0) {
         labelsDatas = ['Sem dados'];
@@ -541,17 +405,21 @@
       if (!tbody) return;
       tbody.innerHTML = '';
 
+      if (viagens.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-400">Nenhuma viagem encontrada para este filtro.</td></tr>';
+      }
+
       viagens.forEach(function(v) {
         var tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition';
         tr.innerHTML = `
           <td class="p-2">
-            <span class="font-bold text-cyan-700 block">${v.carro}</span>
-            <span class="text-[10px] text-slate-500 block">${v.inicio}</span>
+            <span class="font-bold text-cyan-700 block">${v.carro || 'EV'}</span>
+            <span class="text-[10px] text-slate-500 block">${v.inicio || '-'}</span>
           </td>
-          <td class="p-2 text-right font-bold text-slate-800">${v.dist.toFixed(1).replace('.', ',')} km</td>
-          <td class="p-2 text-right text-purple-700 font-bold">${v.kwh.toFixed(2).replace('.', ',')} kWh</td>
-          <td class="p-2 text-slate-700 font-mono">${v.trajeto}</td>
+          <td class="p-2 text-right font-bold text-slate-800">${(Number(v.dist) || 0).toFixed(1).replace('.', ',')} km</td>
+          <td class="p-2 text-right text-purple-700 font-bold">${(Number(v.kwh) || 0).toFixed(2).replace('.', ',')} kWh</td>
+          <td class="p-2 text-slate-700 font-mono">${v.trajeto || '-'}</td>
         `;
         tbody.appendChild(tr);
       });
